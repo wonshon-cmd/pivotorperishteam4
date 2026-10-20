@@ -36,8 +36,8 @@ window.SIM = {
     "BestCo":    [4.0, 3.7, 5.0, 6.0]
   },
 
-  // In-game "fair value" line ≈ 66% of the quadrant leader (measured on all 4 detail charts; slides say 75%)
-  fairRatio: 0.66,
+  // Fair value = 75% of the leader (official rule, Intro slides). The game's white line looked closer to ~66%; we plan to the stricter 75%.
+  fairRatio: 0.75,
 
   // History from the quadrant detail charts: rounds −2, −1, 0, 1 (Low Price R1 = estimate)
   trendRounds: [-2, -1, 0, 1],
@@ -103,18 +103,18 @@ window.SIM = {
 
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
   impacts: [
-    { lever: "Customer service", by: "+$1M", effect: "Experience +0.1, Frictionless +0.05; profit −$1M", conf: "Medium", evidence: "R1: −$8M coincided with Experience −0.9 and Frictionless −0.7 even while experience +$5M and online +$7M" },
+    { lever: "Customer service", by: "+$1M", effect: "Experience +0.1, Frictionless +0.05; profit −$1M; no persistence", conf: "Medium", evidence: "Intro slide: service drives Frictionless AND Experience. R1: −$8M (with analytics −$4M) → Experience −0.9, Frictionless −0.7" },
     { lever: "Shopping experience", by: "+$1M", effect: "Experience +0.05 to +0.1; ~80% expensed this year", conf: "Low", evidence: "R1: +$5M did not offset the service cut; only $12M of $15M hit the P&L" },
     { lever: "Online", by: "+$1M", effect: "Frictionless +0.1, mostly NEXT round; only 40% expensed", conf: "Low", evidence: "R1: $2M → $9M showed no gain yet (lag); slides: online is partly capitalized" },
     { lever: "Vendor management", by: "+$1M", effect: "Unit cost −0.1 to −0.2%, Low Price +0.05; compounds each round", conf: "Medium", evidence: "Professor's slides: most reliable long-term lever; rivals now avg $33.5M" },
-    { lever: "Customer analytics", by: "+$1M", effect: "Boosts experience + online effects ~2–3%; no direct matrix move", conf: "Low", evidence: "Slides: pure multiplier; R1 cut $10M → $6M had no visible separate effect" },
-    { lever: "National brand quality", by: "+1 step", effect: "Brand +0.3 to +0.6; unit cost +1–2%", conf: "Low", evidence: "Untested by us; slides: quality raises willingness to pay and cost" },
+    { lever: "Customer analytics", by: "+$1M", effect: "Frictionless + Experience +0.05 each, mostly by amplifying online & experience spend", conf: "Medium", evidence: "Intro slide maps analytics to Frictionless/Experience; MV slide calls it a multiplier. R1 cut $10M → $6M likely part of the drop" },
+    { lever: "National brand quality", by: "+1 step", effect: "Brand +0.3 to +0.6; unit cost +1–2% (pair with vendor mgmt)", conf: "Medium", evidence: "Intro slide: carrying high-quality brands = Brand quadrant. Untested by us" },
     { lever: "Private brand quality", by: "+1 step", effect: "Brand +0.2 to +0.4; unit cost +~1%", conf: "Low", evidence: "Untested; would offset PB 60% dilution" },
     { lever: "Private brand %", by: "+10 pts", effect: "Unit cost −~1% (margin up); Brand −0.2 to −0.4 at quality 5; CLV value up", conf: "Medium", evidence: "R1: our cost rose 5.3% vs ~6.3% for rivals; Brand fell 1.5 (with depth cut)" },
     { lever: "Depth", by: "−10", effect: "Inventory −~$4M (cash → debt), days −9; Brand/Experience −0.2 to −0.4", conf: "Medium", evidence: "R1: −20 → inventory −$7.9M, days 90 → 72; Brand & Experience both fell" },
     { lever: "Breadth", by: "−10", effect: "Revenue −2 to −4% (customers' #2 value, 1.41); small cash gain", conf: "Low", evidence: "Preferences chart; we haven't changed it. Keep at 50" },
     { lever: "Stores", by: "−5", effect: "Debt −~$5M, sales/store up; revenue −~1%, share −0.1 pt", conf: "Medium", evidence: "R1: −15 stores → sales/store +15.9% but share 13.5% → 13.2%; retail pref rose to 1.15" },
-    { lever: "Markup (lower-cost)", by: "−1 pt", effect: "Low Price +0.05 to +0.1; gross margin −0.6 pt; units +1–2%", conf: "Low", evidence: "Untested; all prices within ±3%, so small moves matter" },
+    { lever: "Markup (lower-cost)", by: "−1 pt", effect: "Low Price +0.05 to +0.1; gross margin −0.6 pt; units +1–2%", conf: "Low", evidence: "Intro slide: markup = Low Price quadrant. Immediate, no persistence" },
     { lever: "Net income", by: "+$1M", effect: "Market value +~$14M (P/E 13.9)", conf: "Medium", evidence: "R1 scorecard: P/E 13.9; assumes P/E stays similar" },
     { lever: "Debt", by: "−$10M", effect: "Interest −~$1M/yr → net income +$0.65M → MV +~$9M; better WACC/credit", conf: "Medium", evidence: "R1: interest $25.5M on $250.5M debt ≈ 10.2%; tax ~35%" }
   ],
@@ -124,13 +124,14 @@ window.SIM = {
     {
       id: "A", name: "Repair & Re-lead", badge: "Recommended", segs: [5, 3],
       tag: "WIN Experience + Brand · undo Round 1's service cut",
-      levers: { vendor: 31, online: 11, experience: 15, service: 10, analytics: 4, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
+      levers: { vendor: 30, online: 10, experience: 14, service: 10, analytics: 7, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
       why: [
-        "<b>Fixes the main mistake.</b> Cutting service $15M → $7M is the likeliest reason Experience (5.7 → 4.8) and Frictionless fell. $10M matches the industry avg ($9.7M).",
+        "<b>Fixes the main mistake.</b> We cut BOTH levers that feed Experience + Frictionless (service $15M → $7M, analytics $10M → $6M). Restore service to $10M (avg $9.7M) and analytics to $7M (avg $6.8M).",
+        "<b>Experience is now BELOW official fair value</b> (4.8 vs 75% × 6.7 = 5.0). This round must lift it.",
         "<b>Takes Brand #1 back cheaply.</b> We're only 0.4 behind Zephara; national brand quality 5 → 6 should cover it.",
-        "<b>Closes the Frictionless gap.</b> Online $9M → $11M matches the industry avg ($11.0M); Round 1's online money should start showing.",
+        "<b>Closes the Frictionless gap.</b> Online $9M → $10M plus service + analytics; Round 1's online money should start showing.",
         "<b>Keeps what worked.</b> Depth 30, 185 stores, PB 60%, same markups: these drove MV +21%, profit +$14.5M and debt −$36.5M.",
-        "<b>Within budget.</b> ≈$71M; analytics trimmed to $4M to pay for service."
+        "<b>Within budget.</b> ≈$71M (budget ≈ prior $69.8M + inflation, since 14% × $403.6M = $56.5M is lower)."
       ],
       risks: ["NB quality 6 raises unit cost (margin dips slightly).", "Zephara keeps rising in Experience (6.7); we're defending, not winning it yet."]
     },
@@ -207,7 +208,7 @@ window.SIM = {
       kpi: { marketValue: 113.0, mvChange: 21.2, revenue: 403.6, ebit: 38.1, interest: 25.5, netIncome: 8.2,
              debt: 250.5, equity: 97.6, currentRatio: 0.60, roic: 10.9, wacc: 7.9, onlineSales: 50.6,
              grossMargin: 36.2, daysInventory: 72, budget: 71.2, clv: 852.5 },
-      matrix: { getchells: [4.7, 4.8, 4.9, 2.7], leader: [5.1, 6.7, 5.3, 7.9], fair: [3.4, 4.5, 3.55, 5.3] },
+      matrix: { getchells: [4.7, 4.8, 4.9, 2.7], leader: [5.1, 6.7, 5.3, 7.9], fair: [3.8, 5.0, 4.0, 5.9] },
       share: {
         "PriceMart": [12.0, 11.5], "BestCo": [10.5, 6.1], "Cadabra": [9.8, 4.9], "Getchells": [10.0, 3.2],
         "Zephara": [10.7, 1.7], "AIM": [8.0, 2.2], "KT Benny": [8.7, 0.7]
@@ -233,9 +234,9 @@ window.SIM = {
       ],
       headline: "Money fixed: MV +21%. <span class=\"hl\">Our positions slipped.</span>",
       moves: [
-        "<b>Restore service to $10M</b>: the $15M → $7M cut likely dragged Experience (5.7 → 4.8) and Frictionless down.",
+        "<b>Restore service ($10M) + analytics ($7M)</b>: both feed Experience + Frictionless; cutting them dragged Experience below fair value (4.8 vs 5.0).",
         "<b>Win Brand back</b>: only 0.4 behind Zephara. National brand quality 5 → 6.",
-        "<b>Online to $11M</b> (industry avg) to finally close the Frictionless gap.",
+        "<b>Customers first this round</b> (professor's step 7): the money moves are done; now rebuild the matrix.",
         "<b>Keep the money moves</b>: depth 30, 185 stores, PB 60%, same markups (MV +21%, profit +$8.2M, debt −$36.5M)."
       ]
     }
