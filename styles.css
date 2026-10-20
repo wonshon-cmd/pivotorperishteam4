@@ -362,3 +362,6 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 .lsl { background: var(--bg); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin-top: 6px; }
 .ls.proj { background: var(--accent-soft); border-radius: 12px; padding: 12px; border-top: 0; margin-top: 8px; }
 @media (max-width: 1250px) { .tl-charts { grid-template-columns: repeat(2, 1fr); } }
+
+.goal { background: var(--ink); color: #fff; border-radius: 14px; padding: 12px 18px; font-size: 15px; margin: 10px 0 4px; line-height: 1.5; }
+.goal b { color: #B8C6FF; }

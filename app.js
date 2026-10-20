@@ -225,7 +225,7 @@
     const R = (a, b) => a + rand() * (b - a);
     const score = r => {
       const hit = target.filter(i => r.cls[i].status === "LEAD").length;
-      const over = Math.max(0, r.spend - budget) + Math.max(0, 0.9 * budget - r.spend); // no idle cash
+      const over = Math.max(0, r.spend - budget); // unspent budget is allowed (professor: don't feel compelled to spend it all)
       // Professor's rules: exactly 2 leads, fair value elsewhere, ROIC > WACC, healthier credit
       const extra = Math.max(0, r.leads - 2);
       return (r.mv + 0.6 * r.dcf + 4 * r.rating) * (1 + 1.0 * hit - 0.25 * r.gaps - 0.3 * extra)
