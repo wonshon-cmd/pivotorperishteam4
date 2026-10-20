@@ -293,7 +293,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 
 /* Top 3 plans */
 .sub { color: var(--muted); margin: -12px 0 18px; }
-.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+.plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
 .plan { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
 .plan.best { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 .ph { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: start; }

@@ -149,6 +149,18 @@ window.SIM = {
       risks: ["NB quality 6 raises unit cost (margin dips slightly).", "Zephara keeps rising in Experience (6.7); we're defending, not winning it yet."]
     },
     {
+      id: "D", name: "Checklist Max", badge: "Most checks", segs: [3, 2],
+      tag: "WIN Brand + Low Price · Experience at fair value · stores 170",
+      levers: { vendor: 30, online: 11.5, experience: 16.5, service: 8, analytics: 5, markupLow: 53, markupHigh: 63, pbQuality: 6, nbQuality: 6, privateBrand: 65, stores: 170, depth: 30 },
+      why: [
+        "<b>Leads 2 quadrants:</b> Brand (PB + NB quality 6 → ≈5.6 vs Zephara 5.1) and Low Price (markups −1/−3 pts + vendor $30M → ≈5.1, in a flat tie led by AIM 5.3).",
+        "<b>Experience back above 75% fair</b> (≈5.1 vs 5.0): experience $16.5M + service $8M.",
+        "<b>ROIC beats WACC</b> (≈9% vs 7%) and <b>within budget</b> ($71M).",
+        "<b>15 more closures (185 → 170)</b> retire ≈$23M of debt; closures don't shrink the budget base this round."
+      ],
+      risks: ["Frictionless stays below fair (needs ≈5.9; no plan reaches it in one round within budget).", "Credit rating stays ~2/9: needs current ratio >1.3, coverage >3.5×, D/E <1.5 — a 2–3 round job.", "Price cuts lower operating profit ≈$4M vs Plan A; retail preference is rising, closures cost some share.", "Switches the WIN pair from Brand + Experience to Brand + Low Price."]
+    },
+    {
       id: "B", name: "Cash Machine", badge: "Safest", segs: [5, 3],
       tag: "Keep the money momentum · hold fair value",
       levers: { vendor: 31, online: 10, experience: 13, service: 9, analytics: 4, markupLow: 55, markupHigh: 67, pbQuality: 5, nbQuality: 5, privateBrand: 65, stores: 180, depth: 28 },
