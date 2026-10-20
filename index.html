@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Getchells Strategy Copilot · Team 4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="top">
+    <div class="brand"><span class="logo">★</span> Getchells <b>Copilot</b> <span class="team" id="teamTag">Team 4</span></div>
+    <nav class="nav">
+      <button data-go="stand" class="on"><span>1</span>Where we stand</button>
+      <button data-go="rivals"><span>2</span>Competitors</button>
+      <button data-go="start"><span>3</span>Build plan</button>
+    </nav>
+    <div id="roundTabs" class="rtabs"></div>
+  </header>
+
+  <!-- Page 1: where we stand -->
+  <section id="stand" class="screen active">
+    <div class="page">
+      <h1 id="standHeadline"></h1>
+      <div id="kpis" class="kpis"></div>
+      <div class="two">
+        <div class="card">
+          <div class="ptitle">Our rank in each quadrant</div>
+          <div id="standQuads" class="sq-grid"></div>
+        </div>
+        <div class="card">
+          <div class="ptitle">Do this next round</div>
+          <ol id="standMoves" class="smoves"></ol>
+          <button class="primary wide" data-go="start">Build the plan →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Page 2: competitors -->
+  <section id="rivals" class="screen">
+    <div class="page">
+      <h1>Who owns each quadrant</h1>
+      <div class="rivals-grid">
+        <div>
+          <div class="axes"><span>Product benefits</span><span>Customer experience</span></div>
+          <div id="landscape" class="landscape"></div>
+        </div>
+        <aside class="edges card">
+          <div class="ptitle">Rivals in one minute</div>
+          <div id="edges"></div>
+        </aside>
+      </div>
+      <div class="card flags-card">
+        <div class="ptitle">What customers value most · all 6 segments</div>
+        <div id="prefs" class="prefs"></div>
+      </div>
+      <div class="card flags-card">
+        <div class="ptitle">Who gets the money · market share by revenue</div>
+        <div id="shares" class="shares"></div>
+        <div class="sh-key"><span><i class="sk lo"></i>Lower-cost products</span><span><i class="sk hi"></i>Higher-cost products</span><span><i class="sk unk"></i>Not captured yet</span></div>
+      </div>
+      <div class="card flags-card">
+        <div class="ptitle">Where our decisions are out of line with the industry</div>
+        <div id="flags" class="flags"></div>
+      </div>
+      <p class="note">Scores from the game's quadrant detail charts (rounds −2 to 0, ±0.2). Fair value line ≈ 66% of the leader, as the game draws it.</p>
+    </div>
+  </section>
+
+  <!-- Page 3a: pick segments -->
+  <section id="start" class="screen">
+    <div class="page">
+      <h1>Top 3 plans for this round</h1>
+      <p class="sub">Same model for all three; live numbers below. Breadth stays at 50/50 in every plan.</p>
+      <div id="plans" class="plans"></div>
+
+      <h1 style="margin-top:48px">How much change makes how much impact</h1>
+      <p class="sub">Our best guesses from Round 1 results + the professor's slides. ●●● High · ●●○ Medium · ●○○ Low confidence.</p>
+      <div class="card"><table id="impacts" class="impacts"></table></div>
+
+      <h1 style="margin-top:48px">Or build your own: which customers do we win?</h1>
+      <div id="ourMix" class="ourmix"></div>
+      <div id="segGrid" class="seg-grid"></div>
+      <div class="go-row">
+        <div id="pairHint" class="pair-hint">Pick 1–2 segments</div>
+        <button id="manualBtn" class="ghost">Set levers myself</button>
+        <button id="goBtn" class="primary" disabled>Build my strategy →</button>
+      </div>
+      <input id="teamName" type="hidden" value="Team 4">
+    </div>
+  </section>
+
+  <!-- Page 3b: AI at work -->
+  <section id="thinking" class="screen">
+    <div class="think-card">
+      <div class="think-head">
+        <div class="spinner"></div>
+        <div>
+          <div class="think-title">Copilot is building your plan</div>
+          <div class="think-sub"><b id="mixCount">0</b> budget mixes simulated</div>
+        </div>
+      </div>
+      <div class="prog"><div id="progFill"></div></div>
+      <ol id="log"></ol>
+    </div>
+  </section>
+
+  <!-- Page 3c: cockpit -->
+  <section id="cockpit" class="screen">
+    <div class="story">
+      <div id="storyLine" class="story-line"></div>
+      <div class="story-btns">
+        <span class="pill ai" id="aiBadge">✦ Copilot plan</span>
+        <button class="ghost sm dark" id="resetBtn">Reset</button>
+        <button class="ghost sm dark" id="dataBtn">Data</button>
+        <button class="primary sm" id="exportBtn">Copy decision</button>
+      </div>
+    </div>
+    <div class="grid">
+      <aside class="panel levers-panel">
+        <div class="ptitle">Your decisions</div>
+        <div id="levers"></div>
+      </aside>
+
+      <main class="panel matrix-panel">
+        <div class="ptitle">Kahn Matrix · us vs the leader</div>
+        <div class="matrix">
+          <div id="ql0" class="quad"></div>
+          <div id="ql1" class="quad"></div>
+          <div id="ql2" class="quad"></div>
+          <div id="ql3" class="quad"></div>
+        </div>
+        <div class="money">
+          <div class="money-head"><span>Where the budget goes</span><b id="moneyTxt"></b></div>
+          <div id="moneyBar" class="money-bar"></div>
+        </div>
+      </main>
+
+      <aside class="panel value-panel">
+        <div class="ptitle">Projected market value</div>
+        <div id="mv" class="mv">$0M</div>
+        <div id="mvDelta" class="mv-delta">—</div>
+        <div id="mvMethod" class="mv-method"></div>
+        <ul id="checks" class="checks"></ul>
+        <div class="ptitle moves-title">Biggest changes</div>
+        <ul id="moves" class="moves"></ul>
+      </aside>
+    </div>
+    <div class="foot">Directional model calibrated to the latest real results (Round 1). Use it to compare options, not as an exact forecast.</div>
+  </section>
+
+  <!-- Data drawer -->
+  <div id="dataPanel" class="drawer">
+    <div class="drawer-inner">
+      <div class="drawer-head">
+        <h2>Round data</h2>
+        <button class="ghost sm" id="dataClose">Close</button>
+      </div>
+      <p class="hint">After each round, copy these from the game's <b>Scorecard</b>, <b>Balance sheet</b> and <b>Matrix</b> tabs. The copilot then recalibrates.</p>
+      <div class="drow">
+        <label>Next round to play <input id="dataRound" type="number" min="1" max="8"></label>
+        <label class="chk"><input id="useSubmitted" type="checkbox" checked> The current levers are what we submitted</label>
+      </div>
+      <h3>Financials (latest round)</h3>
+      <div id="dataFin" class="fin-grid"></div>
+      <h3>Matrix scores (0–10)</h3>
+      <table id="dataRivals" class="rtable"></table>
+      <h3>Market value by round</h3>
+      <div id="histChart"></div>
+      <div class="drawer-foot"><button class="primary" id="dataSave">Save &amp; recalibrate</button></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
