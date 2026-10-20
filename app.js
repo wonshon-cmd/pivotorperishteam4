@@ -269,7 +269,7 @@
 
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
-    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start" }[id];
+    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
   }
@@ -397,6 +397,79 @@
     const dots = c => ({ High: "●●●", Medium: "●●○", Low: "●○○" })[c];
     $("#impacts").innerHTML = `<tr><th>If we change…</th><th>By</th><th>Expected effect (our guess)</th><th>Confidence</th><th>Evidence</th></tr>` +
       S.impacts.map(x => `<tr><td><b>${x.lever}</b></td><td class="by">${x.by}</td><td>${x.effect}</td><td class="cf ${x.conf.toLowerCase()}"><span>${dots(x.conf)}</span> ${x.conf}</td><td class="ev">${x.evidence}</td></tr>`).join("");
+  }
+
+  // ---------- Page 4: Timeline ----------
+  let tlPlan = "A";
+  function renderTimeline() {
+    if (!S.decisionLog || !$("#tlCharts")) return;
+    const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];
+    const nd = Object.assign({}, S.defaults, plan.levers), pr = model(nd);
+    const nextR = S.round;
+    $("#tlPlans").innerHTML = S.plans.map(p => `<button class="chipbtn ${p.id === tlPlan ? "on" : ""}" data-tl="${p.id}">Plan ${p.id}: ${p.name}</button>`).join("");
+    document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { tlPlan = b.dataset.tl; renderTimeline(); });
+
+    // Series: real values per round + projected next round
+    const R = S.rounds;
+    const kp = k => R.map(r => [r.round, r.kpi[k]]);
+    const tr = S.trend, rr = S.trendRounds;
+    const qser = i => rr.map((r, k) => [r, tr[i][S.company][k]]);
+    const fser = i => rr.map((r, k) => [r, tr[i]["Fair value"][k] / 0.66 * (S.fairRatio || 0.75)]);
+    const lser = i => rr.map((r, k) => [r, Math.max(...Object.entries(tr[i]).filter(([n]) => n !== "Fair value" && n !== S.company).map(([, v]) => v[k]))]);
+    const charts = [
+      { t: "Market value ($M)", s: kp("marketValue"), p: pr.mv, fmt: v => "$" + v.toFixed(0) },
+      { t: "Net income ($M)", s: kp("netIncome"), p: null, fmt: v => (v < 0 ? "−$" : "$") + Math.abs(v).toFixed(1) },
+      { t: "Debt ($M)", s: kp("debt"), p: pr.debt, fmt: v => "$" + v.toFixed(0), down: true },
+      ...Q.map((q, i) => ({ t: q, s: qser(i), p: pr.sc[i], fair: fser(i), lead: lser(i), fmt: v => v.toFixed(1), q: true }))
+    ];
+    $("#tlCharts").innerHTML = charts.map(c => miniChart(c, nextR)).join("");
+
+    // Decision table
+    const log = S.decisionLog;
+    const cols = log.map(l => ({ label: l.label, d: l.d })).concat([{ label: "R" + nextR + " Plan " + plan.id, d: nd, plan: true }]);
+    const fmtV = (L, v) => L.unit === "$M" ? "$" + (+v.toFixed(1)) + "M" : (+v.toFixed(1)) + (L.unit || "");
+    $("#tlTable").innerHTML = `<tr><th>Lever</th>${cols.map(c => `<th class="${c.plan ? "pl" : ""}">${c.label}</th>`).join("")}</tr>` +
+      LEVERS.map(L => `<tr><td>${L.label}</td>${cols.map((c, k) => {
+        const v = c.d[L.key], pv = k ? cols[k - 1].d[L.key] : v, dv = v - pv;
+        const ar = Math.abs(dv) < 1e-9 ? "" : `<i class="${dv > 0 ? "up" : "dn"}">${dv > 0 ? "▲" : "▼"}</i>`;
+        return `<td class="${c.plan ? "pl" : ""} ${Math.abs(dv) > 1e-9 ? "chg" : ""}">${fmtV(L, v)} ${ar}</td>`;
+      }).join("")}</tr>`).join("");
+
+    // Lessons + projection card
+    const lead = pr.cls.filter(c => c.status === "LEAD").map(c => c.q).join(" + ") || "none";
+    $("#tlLessons").innerHTML = (S.lessons || []).map(l => `<div class="ls"><div class="lsr">Round ${l.round}</div>
+        <div class="lsg"><div><b>We changed</b><ul>${l.changes.map(x => `<li>${x}</li>`).join("")}</ul></div>
+        <div><b>What happened</b><ul>${l.results.map(x => `<li>${x}</li>`).join("")}</ul></div></div>
+        <div class="lsl">💡 ${l.lesson}</div></div>`).join("") +
+      `<div class="ls proj"><div class="lsr">Round ${nextR} projection · Plan ${plan.id}</div>
+        <ul><li>Market value ≈ <b>$${pr.mv.toFixed(0)}M</b> (likely higher: model ran $10M low last round)</li>
+        <li>Debt ≈ <b>$${pr.debt.toFixed(0)}M</b></li>
+        <li>Leads: <b>${lead}</b> · ${pr.gaps} quadrant(s) below 75% fair value</li></ul>
+        <div class="lsl">Watch next round: did Experience and Frictionless recover after restoring service + analytics?</div></div>`;
+  }
+  function miniChart(c, nextR) {
+    const W = 300, H = 150, P = 26;
+    const pts = c.s.filter(x => x[1] != null);
+    const all = pts.map(x => x[1]).concat(c.p != null ? [c.p] : []).concat(c.fair ? c.fair.map(x => x[1]) : []).concat(c.lead ? c.lead.map(x => x[1]) : []);
+    let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.15 || 1; lo -= pad; hi += pad;
+    const r0 = Math.min(...pts.map(x => x[0]), c.fair ? c.fair[0][0] : 99), r1 = nextR;
+    const x = r => P + (r - r0) / Math.max(r1 - r0, 1) * (W - 2 * P), y = v => H - 22 - (v - lo) / (hi - lo) * (H - 44);
+    const line = (arr, cls) => `<polyline class="${cls}" points="${arr.map(p => x(p[0]) + "," + y(p[1])).join(" ")}"/>`;
+    let g = `<svg viewBox="0 0 ${W} ${H}">`;
+    for (let r = r0; r <= r1; r++) g += `<text x="${x(r)}" y="${H - 6}" class="mx">${r === r1 ? "R" + r + "*" : "R" + r}</text>`;
+    if (c.lead) g += line(c.lead, "mlead");
+    if (c.fair) g += line(c.fair, "mfair");
+    g += line(pts, "mreal");
+    const last = pts[pts.length - 1];
+    if (c.p != null) g += `<line class="mproj" x1="${x(last[0])}" y1="${y(last[1])}" x2="${x(r1)}" y2="${y(c.p)}"/><circle cx="${x(r1)}" cy="${y(c.p)}" r="5" class="mpd"/>`;
+    pts.forEach(p => g += `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="4" class="mrd"/>`);
+    g += `<text x="${x(last[0])}" y="${y(last[1]) - 9}" class="mv1">${c.fmt(last[1])}</text>`;
+    if (c.p != null) g += `<text x="${x(r1)}" y="${y(c.p) - 9}" class="mv2">${c.fmt(c.p)}</text>`;
+    g += "</svg>";
+    const prev = pts.length > 1 ? pts[pts.length - 2][1] : null, dv = prev == null ? 0 : last[1] - prev;
+    const good = c.down ? dv < 0 : dv > 0;
+    return `<div class="mc"><div class="mch"><span>${c.t}</span>${prev == null ? "" : `<em class="${good ? "up" : "dn"}">${dv > 0 ? "▲" : "▼"} ${c.fmt(Math.abs(dv)).replace("−", "")}</em>`}</div>${g}
+      ${c.q ? `<div class="mkey"><i class="k1"></i>us <i class="k2"></i>best rival <i class="k3"></i>75% fair</div>` : ""}</div>`;
   }
 
   // ---------- Top 3 plans ----------
@@ -703,7 +776,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };

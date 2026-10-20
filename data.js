@@ -101,6 +101,19 @@ window.SIM = {
   // Our history (Data → Market CLV / Market Revenue for your company)
   ourTrend: { rounds: [-2, -1, 0, 1], clv: [680.1, 738.0, 818.5, 852.5], revenue: [314.7, 342.0, 372.8, 403.6] },
 
+  // ---- Decision log: what we submitted each round (for the Timeline page) ----
+  decisionLog: [
+    { round: 0, label: "R0 (inherited)", d: { online: 2, service: 15, experience: 10, vendor: 30, analytics: 10, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 50, stores: 200, depth: 50 } },
+    { round: 1, label: "R1 (Plan A)",    d: { online: 9, service: 7, experience: 15, vendor: 30, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 60, stores: 185, depth: 30 } }
+  ],
+  // What each round's changes did (cause → effect → lesson)
+  lessons: [
+    { round: 1,
+      changes: ["Service $15M → $7M", "Analytics $10M → $6M", "Online $2M → $9M", "Experience $10M → $15M", "Depth 50 → 30", "Stores 200 → 185", "Private brand 50% → 60%"],
+      results: ["MV $93.2M → $113.0M (+21%)", "Net income −$6.3M → +$8.2M", "Debt −$36.5M; inventory days 90 → 72", "Brand 6.2 → 4.7 (lost #1)", "Experience 5.7 → 4.8 (below 75% fair)", "Frictionless ~3.4 → ~2.7 (gap)"],
+      lesson: "Cost cuts (depth, stores, service, analytics) fixed the money fast. But service + analytics feed Experience AND Frictionless, so cutting them cancelled the online and experience increases." }
+  ],
+
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
   impacts: [
     { lever: "Customer service", by: "+$1M", effect: "Experience +0.1, Frictionless +0.05; profit −$1M; no persistence", conf: "Medium", evidence: "Intro slide: service drives Frictionless AND Experience. R1: −$8M (with analytics −$4M) → Experience −0.9, Frictionless −0.7" },

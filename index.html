@@ -16,6 +16,7 @@
       <button data-go="stand" class="on"><span>1</span>Where we stand</button>
       <button data-go="rivals"><span>2</span>Competitors</button>
       <button data-go="start"><span>3</span>Build plan</button>
+      <button data-go="timeline"><span>4</span>Timeline</button>
     </nav>
     <div id="roundTabs" class="rtabs"></div>
   </header>
@@ -67,6 +68,26 @@
         <div id="flags" class="flags"></div>
       </div>
       <p class="note">Scores from the game's quadrant detail charts (rounds −2 to 0, ±0.2). Fair value line ≈ 66% of the leader, as the game draws it.</p>
+    </div>
+  </section>
+
+  <!-- Page 4: timeline -->
+  <section id="timeline" class="screen">
+    <div class="page">
+      <h1>What we changed → what happened → where we're heading</h1>
+      <div class="tl-pick">Projection uses: <span id="tlPlans"></span></div>
+      <div id="tlCharts" class="tl-charts"></div>
+      <div class="two">
+        <div class="card">
+          <div class="ptitle">Our decisions by round · <span class="mut">▲▼ = change vs previous round · dashed = plan</span></div>
+          <table id="tlTable" class="tl-table"></table>
+        </div>
+        <div class="card">
+          <div class="ptitle">Cause → effect → lesson</div>
+          <div id="tlLessons"></div>
+        </div>
+      </div>
+      <p class="note">Solid = real game results. Dashed = projection for the selected plan (our model: market value has run low, quadrant moves have run high).</p>
     </div>
   </section>
 
