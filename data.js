@@ -113,7 +113,7 @@ window.SIM = {
     { round: 1, title: "Round 1 · final (kept)",
       changes: ["Same as try 1, EXCEPT:", "Service back to $15M (not $7M)", "PB + NB quality 5 → 6", "Vendor $30M → $25M", "Analytics $5.8M"],
       results: ["MV $184.1M (+97.5%) vs $113M", "Brand 5.1 (#1), Experience 6.2 (#2, 0.1 behind)", "Net income $11.1M; CLV $944M", "Debt $287M → $250M; inventory days 72"],
-      lesson: "Controlled experiment: +$8M service and +1 quality turned +21% into +97.5%. Service is our strongest Experience lever (+$8M ≈ +1.4 Experience); quality 6 ≈ +0.4 Brand. Depth/stores/PB cuts still delivered the cash and debt gains." }
+      lesson: "Model retrained on this A/B test: re-running try 1 now predicts Brand 4.7, Experience 4.8, Low Price 4.9, Frictionless 2.7 (all exact) and MV $105M (actual $113M). Controlled experiment: +$8M service and +1 quality turned +21% into +97.5%. Service is our strongest Experience lever (+$8M ≈ +1.4 Experience); quality 6 ≈ +0.4 Brand. Depth/stores/PB cuts still delivered the cash and debt gains." }
   ],
 
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
@@ -137,7 +137,17 @@ window.SIM = {
   // ---- Top 3 plans for the next round (levers in $M / % / count). Breadth stays 50/50 in all plans. ----
   plans: [
     {
-      id: "A", name: "Same Formula + Online", badge: "Recommended", segs: [5, 3],
+      id: "B", name: "Take Experience #1", badge: "Recommended", segs: [5, 3],
+      tag: "Shift $2M from vendor into experience + online",
+      levers: { vendor: 23, online: 10.5, experience: 17, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
+      why: [
+        "<b>Experience is customers' #1 value (1.44)</b>; we need only +0.1 to lead it. That would give us 2 leads (Brand + Experience).",
+        "<b>Low Price has room:</b> 4.8 vs fair line 3.6, so $2M less vendor is affordable."
+      ],
+      risks: ["Unit cost rises a little (less vendor savings).", "Two levers move at once."]
+    },
+    {
+      id: "A", name: "Same Formula + Online", badge: "Safe", segs: [5, 3],
       tag: "Keep everything · put the spare $1.6M into online",
       levers: { vendor: 25, online: 10.5, experience: 15, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
       why: [
@@ -146,16 +156,6 @@ window.SIM = {
         "<b>Clean read next round:</b> if Frictionless rises, online works."
       ],
       risks: ["Experience lead is not secured (0.1 behind Zephara).", "Online gains have lagged so far."]
-    },
-    {
-      id: "B", name: "Take Experience #1", badge: "Bold", segs: [5, 3],
-      tag: "Shift $2M from vendor into experience + online",
-      levers: { vendor: 23, online: 10.5, experience: 17, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
-      why: [
-        "<b>Experience is customers' #1 value (1.44)</b>; we need only +0.1 to lead it. That would give us 2 leads (Brand + Experience).",
-        "<b>Low Price has room:</b> 4.8 vs fair line 3.6, so $2M less vendor is affordable."
-      ],
-      risks: ["Unit cost rises a little (less vendor savings).", "Two levers move at once."]
     },
     {
       id: "C", name: "Status Quo", badge: "Safest", segs: [5, 3],

@@ -59,10 +59,10 @@
     const am = 0.8 + 0.2 * Math.sqrt(Math.max(d.analytics, 0) / 10);   // analytics = multiplier
     const am0 = 0.8 + 0.2 * Math.sqrt(Math.max(d0.analytics, 0) / 10);
     const f = (dd, m) => [
-      0.45 * dd.pbQuality + 0.35 * dd.nbQuality + 0.012 * dd.privateBrand,
-      m * 4.2 * sq(dd.experience, 10) + 0.9 * sq(dd.service, 15),
-      4.6 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
-      m * 1.8 * Math.log(Math.max(dd.online, 0.5) / 2) + 0.9 * sq(dd.service, 15)
+      0.2 * dd.pbQuality + 0.2 * dd.nbQuality + 0.012 * dd.privateBrand, // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4 Brand
+      m * 4.2 * sq(dd.experience, 10) + 4.4 * sq(dd.service, 15), // R1 A/B: service $7M vs $15M ≈ −1.4 Experience
+      1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
+      m * 1.8 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15)
     ];
     const now = f(d, am), then = f(d0, am0);
     return b.map((v, i) => clamp(v + now[i] - then[i], 0, 10));
@@ -185,7 +185,9 @@
 
     const clvVal = B.clv * (S.base.clvF || 0.1) * dIdx * (1 + 0.004 * (d.privateBrand - 50)) * (1 + 0.04 * (d.pbQuality - 5));
     const liq = cash + 0.6 * B.inventory + 0.8 * B.receivables + 0.4 * B.netPPE * d.stores / D0.stores - debt - B.ap;
-    const mv = Math.max(dcf, clvVal, liq);
+    // Empirical market reaction (R1 A/B test): MV moved ~27% per point of Brand + Experience
+    const mvK = Math.exp(0.27 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
+    const mv = Math.max(dcf, clvVal, liq) * mvK;
     const method = mv === dcf ? "DCF" : mv === clvVal ? "CLV / brand" : "Liquidation";
 
     const spend = d.online + d.service + d.experience + d.vendor + d.analytics + Math.max(0, newStores) * 1.75;
@@ -400,7 +402,7 @@
   }
 
   // ---------- Page 4: Timeline ----------
-  let tlPlan = "A";
+  let tlPlan = "B";
   function renderTimeline() {
     if (!S.decisionLog || !$("#tlCharts")) return;
     const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];
@@ -483,7 +485,7 @@
       const gaps = r.cls.filter(c => c.status === "GAP").length;
       const chips = LEVERS.map(L => ({ L, a: S.defaults[L.key], b: d[L.key] })).filter(x => Math.abs(x.b - x.a) > 1e-6)
         .map(x => `<span class="chip ${x.b > x.a ? "up" : "dn"}">${x.L.label.split(" (")[0]} ${x.L.unit === "$M" ? "$" + x.a + "→" + x.b + "M" : x.a + "→" + x.b + (x.L.unit || "")}</span>`).join("");
-      return `<div class="plan ${p.id === "A" ? "best" : ""}">
+      return `<div class="plan ${p.badge === "Recommended" ? "best" : ""}">
         <div class="ph"><span class="pid">${p.id}</span><div><div class="pn">${p.name}</div><div class="pt">${p.tag}</div></div><span class="pb">${p.badge}</span></div>
         <div class="pm">
           <div><small>Market value</small><b>${fmtM(r.mv)}</b><em class="${dv >= 0 ? "up" : "dn"}">${dv >= 0 ? "▲" : "▼"} ${Math.abs(dv / S.base.marketValue * 100).toFixed(0)}%</em></div>
@@ -494,7 +496,7 @@
         <div class="chips">${chips}</div>
         <div class="pw"><div class="ptitle">Why</div><ul>${p.why.map(w => `<li>${w}</li>`).join("")}</ul></div>
         <div class="pr2"><div class="ptitle">Risks</div><ul>${p.risks.map(w => `<li>${w}</li>`).join("")}</ul></div>
-        <button class="${p.id === "A" ? "primary" : "ghost"} wide" data-plan="${p.id}">Load Plan ${p.id} →</button>
+        <button class="${p.badge === "Recommended" ? "primary" : "ghost"} wide" data-plan="${p.id}">Load Plan ${p.id} →</button>
       </div>`;
     }).join("");
     document.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => {
