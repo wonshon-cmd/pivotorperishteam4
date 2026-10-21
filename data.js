@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R2-results-v6",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R2-results-v7",  // bump whenever data is updated (clears stale browser saves)
   round: 3,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -11,9 +11,9 @@ window.SIM = {
     revenue: 488.7, cogs: 311.3, depreciation: 29.86, otherSGA: 24.43,
     interest: 23.45, cash: 27.47, debt: 241.45, stLoans: 117.40, equity: 123.41, ap: 30.50,
     inventory: 61.31, receivables: 20.08, netPPE: 286.50,
-    wacc: 9.4, marketValue: 361.9, budget: 73.1, stores: 185, clv: 1075.0,
+    wacc: 9.4, marketValue: 361.9, budget: 74.616, stores: 185, clv: 1075.0,
     netIncome: 22.84, pe: 15.8, growth: 0.12
-    // budget 73.1 = ESTIMATE: max(14% × 488.7 = 68.4, 71.42 × ~1.023 inflation). growth = expected revenue growth with no changes (R1→R2 was +14.5%)
+    // budget 74.616 = REAL (game screen, Round 3). growth = expected revenue growth with no changes (R1→R2 was +14.5%)
   },
 
   // Last submitted decisions = Round 2
@@ -32,7 +32,7 @@ window.SIM = {
     "PriceMart": [1.9, 3.7, 5.0, 3.0],
     "AIM":       [3.7, 1.1, 5.5, 1.4],
     "KT Benny":  [2.8, 4.1, 4.9, 1.8],
-    "Zephara":   [5.0, 6.3, 4.9, 3.7],
+    "Zephara":   [4.8, 6.3, 4.9, 3.7],
     "BestCo":    [3.9, 3.4, 5.0, 5.6]
   },
 
@@ -42,7 +42,7 @@ window.SIM = {
   // History from the quadrant detail charts: rounds −2..1 (R1 = final, after undo). Game's white line ≈ 66% of leader.
   trendRounds: [-2, -1, 0, 1],
   trend: [
-    { "Getchells": [6.2, 6.2, 6.2, 5.1], "Zephara": [5.1, 4.9, 4.8, 5.0], "Cadabra": [4.4, 4.1, 4.1, 4.3], "AIM": [3.8, 3.5, 3.4, 3.7], "BestCo": [3.1, 3.4, 3.5, 3.9], "KT Benny": [2.2, 2.4, 2.5, 2.8], "PriceMart": [1.8, 1.8, 1.8, 1.9], "Fair value": [4.1, 4.1, 4.1, 3.4] },
+    { "Getchells": [6.2, 6.2, 6.2, 5.1, 5.1], "Zephara": [5.1, 4.9, 4.8, 5.0, 4.8], "Cadabra": [4.4, 4.1, 4.1, 4.3], "AIM": [3.8, 3.5, 3.4, 3.7], "BestCo": [3.1, 3.4, 3.5, 3.9], "KT Benny": [2.2, 2.4, 2.5, 2.8], "PriceMart": [1.8, 1.8, 1.8, 1.9], "Fair value": [4.1, 4.1, 4.1, 3.4, 3.4] },
     { "Zephara": [5.8, 6.3, 6.4, 6.3], "Getchells": [5.1, 5.6, 5.7, 6.2], "Cadabra": [6.6, 4.1, 3.0, 2.6], "KT Benny": [2.4, 3.1, 3.7, 4.1], "PriceMart": [2.4, 2.9, 3.4, 3.7], "BestCo": [2.3, 2.8, 3.2, 3.4], "AIM": [2.1, 1.6, 1.3, 1.1], "Fair value": [4.3, 4.1, 4.2, 4.2] },
     { "AIM": [5.4, 5.4, 5.3, 5.5], "BestCo": [5.1, 5.0, 5.0, 5.0], "PriceMart": [5.0, 5.0, 5.0, 5.0], "Getchells": [5.0, 4.9, 4.9, 4.8], "Cadabra": [5.0, 4.9, 4.9, 5.0], "KT Benny": [4.9, 4.8, 4.8, 4.9], "Zephara": [4.7, 4.7, 4.75, 4.9], "Fair value": [3.6, 3.6, 3.55, 3.6] },
     { "Cadabra": [9.7, 8.3, 7.9, 7.6], "BestCo": [3.7, 4.4, 5.1, 5.6], "Zephara": [2.6, 3.1, 3.6, 3.7], "Getchells": [3.2, 3.4, 3.4, 3.5], "PriceMart": [1.9, 2.3, 2.8, 3.0], "AIM": [2.2, 1.8, 1.8, 1.4], "KT Benny": [0.9, 1.1, 1.6, 1.8], "Fair value": [6.5, 5.5, 5.2, 5.1] }
@@ -93,9 +93,9 @@ window.SIM = {
   // Market-wide preference intensity (sum of 6 segments), Round 0
   prefs: [
     { n: "Shopping experience", v: 1.44, q: "Experience" }, { n: "Breadth", v: 1.41, q: "Assortment" },
-    { n: "Retail stores", v: 1.15, q: "Stores" }, { n: "Low price", v: 1.12, q: "Low Price" },
+    { n: "Retail stores", v: 1.16, q: "Stores" }, { n: "Low price", v: 1.12, q: "Low Price" },
     { n: "Online", v: 1.02, q: "Frictionless" }, { n: "Customer service", v: 0.96, q: "Frict. / Exp." },
-    { n: "Depth", v: 0.92, q: "Assortment" }, { n: "Brand", v: 0.80, q: "Brand" }
+    { n: "Depth", v: 0.96, q: "Assortment" }, { n: "Brand", v: 0.80, q: "Brand" }
   ],
 
   // Our history (Data → Market CLV / Market Revenue for your company)
@@ -147,13 +147,13 @@ window.SIM = {
   plans: [
     {
       id: "A", name: "Take Experience #1, stay lean", badge: "Recommended", segs: [5, 3],
-      tag: "Experience $17M + service $16M, funded by vendor + analytics · ≈$70.5M of ~$73M",
+      tag: "Experience $17M + service $16M, funded by vendor + analytics · $70.5M of $74.6M",
       levers: { vendor: 23, online: 10.5, experience: 17, service: 16, analytics: 4, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
       why: [
         "<b>Value = P/E × net income</b> (true in all 3 rounds): keep total spend about flat so revenue growth falls to profit.",
         "<b>Experience 6.2 → ≈6.6</b> passes Zephara (6.3): two leads (Brand + Experience), the professor's sweet spot.",
         "<b>Service is our proven lever</b> (+$8M = +1.4 Experience in Round 1); rivals' max is now $16.8M.",
-        "<b>Leaves ≈$2.5M unspent</b>; the professor says we don't have to spend it all."
+        "<b>Leaves ≈$4.1M unspent</b> of the real $74.6M budget; the professor says we don't have to spend it all."
       ],
       risks: ["Vendor $23M is far below the $34.6M average; unit costs keep rising ~6%/yr.", "Frictionless stays below fair value."]
     },
@@ -253,8 +253,9 @@ window.SIM = {
       round: 2, label: "After Round 2",
       kpi: { marketValue: 361.9, mvChange: 96.6, revenue: 488.7, ebit: 58.6, interest: 23.5, netIncome: 22.8,
              debt: 241.4, equity: 123.4, currentRatio: 0.74, roic: 16.4, wacc: 9.4, onlineSales: 50.0,
-             grossMargin: 36.3, daysInventory: 72, budget: 73.1, clv: 1075.0 },
+             grossMargin: 36.3, daysInventory: 72, budget: 74.6, clv: 1075.0 },
       matrix: { getchells: [5.1, 6.2, 4.8, 3.5], leader: [5.1, 6.3, 5.5, 7.6], fair: [3.8, 4.7, 4.1, 5.7] },
+      revenue: { "PriceMart": 808.5, "BestCo": 579.1, "Getchells": 488.7, "Cadabra": 483.1, "Zephara": 410.8, "AIM": 341.6, "KT Benny": 325.4 },
       // Market share by revenue (hovered R2 donut); Getchells split from revenue; Zephara higher = remainder
       share: {
         "PriceMart": [11.9, 11.6], "BestCo": [10.5, 6.3], "Cadabra": [9.5, 4.6], "Getchells": [10.5, 3.7],
@@ -280,7 +281,7 @@ window.SIM = {
       moves: [
         "<b>Value = P/E × net income</b>: protect profit; every +$1M net income ≈ +$16M value.",
         "<b>Keep the formula</b>; rivals now spend more on service ($16.8M max) and online (avg $12.4M).",
-        "<b>Matrix scores below are Round 1</b>: send the 4 quadrant detail charts for Round 2."
+        "<b>Brand lead widened</b> (5.1 vs Zephara 4.8). Experience/Low Price/Frictionless R2 charts still needed."
       ]
     }
   ]
