@@ -2,14 +2,15 @@
 (function () {
   const S = window.SIM;
   const Q = S.quadrants;
-  const STORE_KEY = "getchells-copilot-r1";
+  const STORE_KEY = "getchells-copilot";
 
   // ---------- Saved data (Data panel) ----------
   function loadSaved() {
     if (!S.history) S.history = (S.rounds || []).map(r => ({ round: r.round, marketValue: r.kpi.marketValue, revenue: r.kpi.revenue, wacc: r.kpi.wacc }));
     try {
       const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-      if (!saved) return;
+      // Ignore browser-saved edits made against an older data release
+      if (!saved || saved.dataVersion !== S.dataVersion) { localStorage.removeItem(STORE_KEY); return; }
       Object.assign(S.base, saved.base || {});
       Object.assign(S.defaults, saved.defaults || {});
       if (saved.rivals) S.rivals = saved.rivals;
@@ -21,7 +22,7 @@
   function save() {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       base: S.base, defaults: S.defaults, rivals: S.rivals,
-      history: S.history, round: S.round, team: state.team
+      history: S.history, round: S.round, team: state.team, dataVersion: S.dataVersion
     }));
   }
 
