@@ -344,9 +344,9 @@
     const tile = (label, val, sub, bad) => `<div class="kt ${bad ? "bad" : ""}"><div class="kl">${label}</div><div class="kv">${val}</div><div class="ks">${sub}</div></div>`;
     $("#kpis").innerHTML = [
       tile("Market value", fm(k.marketValue), (k.mvChange >= 0 ? "▲ " : "▼ ") + Math.abs(k.mvChange) + "% last round", false),
-      tile("Profit", fm(k.netIncome), "interest " + fm(k.interest) + " > operating profit " + fm(k.ebit), k.netIncome < 0),
+      tile("Profit", fm(k.netIncome), k.ebit ? "interest " + fm(k.interest) + " vs operating profit " + fm(k.ebit) : "ROE " + (k.netIncome / k.equity * 100).toFixed(0) + "%", k.netIncome < 0),
       tile("Debt", fm(k.debt), (k.debt / k.equity).toFixed(1) + "× equity", k.debt / k.equity > 2),
-      tile("ROIC vs WACC", k.roic + "% vs " + k.wacc + "%", k.roic >= k.wacc ? "creating value" : "growth destroys value", k.roic < k.wacc)
+      k.roic ? tile("ROIC vs WACC", k.roic + "% vs " + k.wacc + "%", k.roic >= k.wacc ? "creating value" : "growth destroys value", k.roic < k.wacc) : tile("Customer lifetime value", fm(k.clv), "WACC " + k.wacc + "%", false)
     ].join("");
 
     const m = r.matrix;
@@ -437,7 +437,7 @@
 
     // Lessons + projection card
     const lead = pr.cls.filter(c => c.status === "LEAD").map(c => c.q).join(" + ") || "none";
-    $("#tlLessons").innerHTML = (S.lessons || []).map(l => `<div class="ls"><div class="lsr">Round ${l.round}</div>
+    $("#tlLessons").innerHTML = (S.lessons || []).map(l => `<div class="ls"><div class="lsr">${l.title || "Round " + l.round}</div>
         <div class="lsg"><div><b>We changed</b><ul>${l.changes.map(x => `<li>${x}</li>`).join("")}</ul></div>
         <div><b>What happened</b><ul>${l.results.map(x => `<li>${x}</li>`).join("")}</ul></div></div>
         <div class="lsl">💡 ${l.lesson}</div></div>`).join("") +
