@@ -361,6 +361,22 @@
         <div class="sq-track"><i style="width:${g * 10}%"></i><span style="left:${L * 10}%"></span></div>
         <div class="sq-n">us ${g.toFixed(1)} · leader ${L.toFixed(1)}</div></div>`;
     }).join("");
+    // Mirror of the game's input screen for the round we're about to play
+    const d0 = S.defaults, rec = (S.plans || []).find(p => p.badge === "Recommended");
+    const spend = d0.online + d0.service + d0.experience + d0.vendor + d0.analytics;
+    const f$ = v => "$" + (+v.toFixed(3)) + "M";
+    const rows = [
+      ["Price markup (lower / higher)", d0.markupLow + "% / " + d0.markupHigh + "%", "markupLow"], ["Breadth", "50 / 50", null], ["Depth", d0.depth + " / " + d0.depth, "depth"],
+      ["Private brand", d0.privateBrand + "% / " + d0.privateBrand + "%", "privateBrand"], ["Private brand quality", d0.pbQuality, "pbQuality"], ["National brand quality", d0.nbQuality, "nbQuality"],
+      ["Retail coverage", d0.stores, "stores"], ["Online investment", f$(d0.online), "online"], ["Customer service", f$(d0.service), "service"],
+      ["Shopping experience", f$(d0.experience), "experience"], ["Vendor management", f$(d0.vendor), "vendor"], ["Customer analytics", f$(d0.analytics), "analytics"]
+    ];
+    $("#curTitle").innerHTML = `Round ${S.round} · current game inputs <span class="mut">(carried over from Round ${S.round - 1})</span>`;
+    $("#curInputs").innerHTML = rows.map(([n, v, k]) => {
+      const nv = rec && k ? rec.levers[k] : undefined, chg = nv !== undefined && nv !== d0[k];
+      return `<div class="cur"><span>${n}</span><b>${v}</b>${chg ? `<em>Plan ${rec.id}: ${["online","service","experience","vendor","analytics"].includes(k) ? f$(nv) : nv}</em>` : ""}</div>`;
+    }).join("") + `<div class="cur tot"><span>Available</span><b>${f$(S.base.budget - spend)}</b></div><div class="cur tot"><span>Total budget</span><b>${f$(S.base.budget)}</b></div>`;
+
     $("#standMoves").innerHTML = r.moves.map((t, i) => `<li><span>${i + 1}</span><div>${t}</div></li>`).join("");
 
     // Page 2 flags: only decisions far from the industry

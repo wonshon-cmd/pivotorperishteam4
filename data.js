@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R1-final-v2",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R2-start-v3",  // bump whenever data is updated (clears stale browser saves)
   round: 2,
 
   // Current financial position ($M) — END OF ROUND 1 (final, after undo). Real scorecard + balance sheet + income statement.
