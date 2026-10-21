@@ -63,10 +63,11 @@
       0.2 * dd.pbQuality + 0.2 * dd.nbQuality + 0.012 * dd.privateBrand, // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4 Brand
       m * 4.2 * sq(dd.experience, 10) + 4.4 * sq(dd.service, 15), // R1 A/B: service $7M vs $15M ≈ −1.4 Experience
       1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
-      m * 1.8 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15)
+      m * 0.15 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // R0→R2: online $2M→$10.5M moved Frictionless only +0.1
     ];
     const now = f(d, am), then = f(d0, am0);
-    return b.map((v, i) => clamp(v + now[i] - then[i], 0, 10));
+    const dr = S.drift || [0, 0, 0, 0]; // standing still loses ground (R2: Experience −0.1)
+    return b.map((v, i) => clamp(v + now[i] - then[i] + dr[i], 0, 10));
   }
 
   function demand(sc) {
