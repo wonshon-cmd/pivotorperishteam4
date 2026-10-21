@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R2-start-v3",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R2-submitted-v4",  // bump whenever data is updated (clears stale browser saves)
   round: 2,
 
   // Current financial position ($M) — END OF ROUND 1 (final, after undo). Real scorecard + balance sheet + income statement.
@@ -103,7 +103,8 @@ window.SIM = {
   decisionLog: [
     { round: 0, label: "R0 (inherited)", d: { online: 2, service: 15, experience: 10, vendor: 30, analytics: 10, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 50, stores: 200, depth: 50 } },
     { round: 1, label: "R1 try 1 (undone)", d: { online: 9, service: 7, experience: 15, vendor: 30, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 60, stores: 185, depth: 30 } },
-    { round: 1, label: "R1 final", d: { online: 9, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } }
+    { round: 1, label: "R1 final", d: { online: 9, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } },
+    { round: 2, label: "R2 submitted", d: { online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } }
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -148,7 +149,7 @@ window.SIM = {
       risks: ["Unit cost rises a little (less vendor savings).", "Two levers move at once."]
     },
     {
-      id: "A", name: "Same Formula + Online", badge: "Safe", segs: [5, 3],
+      id: "A", name: "Same Formula + Online", badge: "Submitted R2", segs: [5, 3],
       tag: "Keep everything · put the spare $1.6M into online",
       levers: { vendor: 25, online: 10.5, experience: 15, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
       why: [
