@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R2-results-v5",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R2-results-v6",  // bump whenever data is updated (clears stale browser saves)
   round: 3,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -255,6 +255,13 @@ window.SIM = {
              debt: 241.4, equity: 123.4, currentRatio: 0.74, roic: 16.4, wacc: 9.4, onlineSales: 50.0,
              grossMargin: 36.3, daysInventory: 72, budget: 73.1, clv: 1075.0 },
       matrix: { getchells: [5.1, 6.2, 4.8, 3.5], leader: [5.1, 6.3, 5.5, 7.6], fair: [3.8, 4.7, 4.1, 5.7] },
+      // Market share by revenue (hovered R2 donut); Getchells split from revenue; Zephara higher = remainder
+      share: {
+        "PriceMart": [11.9, 11.6], "BestCo": [10.5, 6.3], "Cadabra": [9.5, 4.6], "Getchells": [10.5, 3.7],
+        "Zephara": [10.4, 1.6], "AIM": [7.8, 2.1], "KT Benny": [8.8, 0.7]
+      },
+      // Unit cost R2 (Pricing chart): we're mid-pack; Zephara + BestCo cheapest
+      unitCost: { "Zephara": [127.65, 255.30], "BestCo": [128.23, 260.68], "Cadabra": [133.05, 267.61], "Getchells": [133.53, 267.05], "AIM": [133.72, 268.82], "KT Benny": [136.57, 273.14], "PriceMart": [null, 262.85] },
       industry: [
         { name: "Markup · lower-cost",  ours: 54, avg: 48.68, min: 26.28, max: 72.52, unit: "%" },
         { name: "Markup · higher-cost", ours: 66, avg: 53.90, min: 26.28, max: 84.08, unit: "%" },
