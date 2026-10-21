@@ -110,7 +110,7 @@
     const mB = 0.71 * d.markupLow / 100 + 0.29 * d.markupHigh / 100;
     const dIdx = demand(sc);
     const vol = dIdx * Math.pow((1 + m0) / (1 + mB), 3.2) * Math.pow(d.stores / D0.stores, 0.6) * Math.pow((d.depth == null ? 50 : d.depth) / 50, 0.06);
-    const revenue = B.revenue * vol * (1 + mB) / (1 + m0);
+    const revenue = B.revenue * vol * (1 + mB) / (1 + m0) * (1 + (S.base.growth || 0) * (S.noGrowth ? 0 : 1));
 
     const costIdx = (dd) => 1 - 0.08 * sq(dd.vendor, 30) + 0.015 * (dd.pbQuality - 5) + 0.012 * (dd.nbQuality - 5) - 0.0004 * (dd.privateBrand - 50);
     const k = (B.cogs / B.revenue) * (1 + m0) / costIdx(D0);
@@ -188,17 +188,23 @@
     const liq = cash + 0.6 * B.inventory + 0.8 * B.receivables + 0.4 * B.netPPE * d.stores / D0.stores - debt - B.ap;
     // Empirical market reaction (R1 A/B test): MV moved ~27% per point of Brand + Experience
     const mvK = Math.exp(0.27 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
-    const mv = Math.max(dcf, clvVal, liq) * mvK;
-    const method = mv === dcf ? "DCF" : mv === clvVal ? "CLV / brand" : "Liquidation";
+    // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
+    const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
+    const mv = S.base.pe ? Math.max(S.base.pe * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
+    const method = S.base.pe ? "P/E × net income" : mv === dcf ? "DCF" : mv === clvVal ? "CLV / brand" : "Liquidation";
 
     const spend = d.online + d.service + d.experience + d.vendor + d.analytics + Math.max(0, newStores) * 1.75;
 
-    return { sc, cls, leads, gaps, revenue, gross, ebit, roic, wacc, rate, rating, debt, cash, T, g, interest, cr, cov, DE, inventory,
+    return { niProj, sc, cls, leads, gaps, revenue, gross, ebit, roic, wacc, rate, rating, debt, cash, T, g, interest, cr, cov, DE, inventory,
              dcf, clvVal, liq, mv, method, spend, dIdx, dcfRaw };
   }
 
     function calibrate() {
-    S.base.ebit0 = null; S.base.clvF = 0.1; S.base.dcf0 = null; SCALE = 1;
+    S.base.ebit0 = null; S.base.clvF = 0.1; S.base.dcf0 = null; SCALE = 1; S.base.niK = 1;
+    if (S.base.pe) {  // fit earnings so last round's inputs (no growth) reproduce last round's real net income
+      S.noGrowth = true; S.base.ebit0 = run(S.defaults, 1).ebit;
+      const r0 = run(S.defaults, 1); S.base.niK = S.base.netIncome / Math.max(r0.niProj, 0.1); S.noGrowth = false;
+    }
     S.base.ebit0 = run(S.defaults, 1).ebit;
     S.base.dcf0 = run(S.defaults, 1).dcfRaw;
     const r = run(S.defaults, 1);

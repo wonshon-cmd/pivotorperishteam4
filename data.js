@@ -3,20 +3,22 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R2-submitted-v4",  // bump whenever data is updated (clears stale browser saves)
-  round: 2,
+  dataVersion: "R2-results-v5",  // bump whenever data is updated (clears stale browser saves)
+  round: 3,
 
-  // Current financial position ($M) — END OF ROUND 1 (final, after undo). Real scorecard + balance sheet + income statement.
+  // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
   base: {
-    revenue: 426.7, cogs: 272.1, depreciation: 27.26, otherSGA: 21.33,
-    interest: 25.44, cash: 25.57, debt: 250.0, stLoans: 128.24, equity: 100.56, ap: 27.01,
-    inventory: 53.67, receivables: 17.53, netPPE: 280.83,
-    wacc: 7.9, marketValue: 184.1, budget: 71.422, stores: 185, clv: 943.7
+    revenue: 488.7, cogs: 311.3, depreciation: 29.86, otherSGA: 24.43,
+    interest: 23.45, cash: 27.47, debt: 241.45, stLoans: 117.40, equity: 123.41, ap: 30.50,
+    inventory: 61.31, receivables: 20.08, netPPE: 286.50,
+    wacc: 9.4, marketValue: 361.9, budget: 73.1, stores: 185, clv: 1075.0,
+    netIncome: 22.84, pe: 15.8, growth: 0.12
+    // budget 73.1 = ESTIMATE: max(14% × 488.7 = 68.4, 71.42 × ~1.023 inflation). growth = expected revenue growth with no changes (R1→R2 was +14.5%)
   },
 
-  // Last submitted decisions = Round 1 FINAL (replay after undo)
+  // Last submitted decisions = Round 2
   defaults: {
-    online: 9, service: 15, experience: 15, vendor: 25, analytics: 5.8,
+    online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8,
     markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6,
     privateBrand: 60, stores: 185, depth: 30
   },
@@ -97,14 +99,14 @@ window.SIM = {
   ],
 
   // Our history (Data → Market CLV / Market Revenue for your company)
-  ourTrend: { rounds: [-2, -1, 0, 1], clv: [680.1, 738.0, 818.5, 943.7], revenue: [314.7, 342.0, 372.8, 426.7] },
+  ourTrend: { rounds: [-2, -1, 0, 1, 2], clv: [680.1, 738.0, 818.5, 943.7, 1075.0], revenue: [314.7, 342.0, 372.8, 426.7, 488.7] },
 
   // ---- Decision log: what we submitted each round (for the Timeline page) ----
   decisionLog: [
     { round: 0, label: "R0 (inherited)", d: { online: 2, service: 15, experience: 10, vendor: 30, analytics: 10, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 50, stores: 200, depth: 50 } },
     { round: 1, label: "R1 try 1 (undone)", d: { online: 9, service: 7, experience: 15, vendor: 30, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, privateBrand: 60, stores: 185, depth: 30 } },
     { round: 1, label: "R1 final", d: { online: 9, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } },
-    { round: 2, label: "R2 submitted", d: { online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } }
+    { round: 2, label: "R2", d: { online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 } }
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -116,6 +118,11 @@ window.SIM = {
       changes: ["Same as try 1, EXCEPT:", "Service back to $15M (not $7M)", "PB + NB quality 5 → 6", "Vendor $30M → $25M", "Analytics $5.8M"],
       results: ["MV $184.1M (+97.5%) vs $113M", "Brand 5.1 (#1), Experience 6.2 (#2, 0.1 behind)", "Net income $11.1M; CLV $944M", "Debt $287M → $250M; inventory days 72"],
       lesson: "Model retrained on this A/B test: re-running try 1 now predicts Brand 4.7, Experience 4.8, Low Price 4.9, Frictionless 2.7 (all exact) and MV $105M (actual $113M). Controlled experiment: +$8M service and +1 quality turned +21% into +97.5%. Service is our strongest Experience lever (+$8M ≈ +1.4 Experience); quality 6 ≈ +0.4 Brand. Depth/stores/PB cuts still delivered the cash and debt gains." }
+,
+    { round: 2, title: "Round 2 (online $9M → $10.5M only)",
+      changes: ["Online $9M → $10.5M", "Everything else unchanged", "$0.12M of budget unspent"],
+      results: ["MV $361.9M (+96.6%); model forecast was $185M", "Net income $11.1M → $22.8M (revenue +14.5%, opex flat)", "Debt $250.0M → $241.4M; ROE 18.5%", "WACC 7.9% → 9.4%; P/E 15.8"],
+      lesson: "Market value = P/E × net income in every round so far. Holding spending flat while revenue grows ~12–15% doubles profit, so value doubles. Model rebuilt on this." }
   ],
 
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
@@ -139,32 +146,30 @@ window.SIM = {
   // ---- Top 3 plans for the next round (levers in $M / % / count). Breadth stays 50/50 in all plans. ----
   plans: [
     {
-      id: "B", name: "Take Experience #1", badge: "Recommended", segs: [5, 3],
-      tag: "Shift $2M from vendor into experience + online",
-      levers: { vendor: 23, online: 10.5, experience: 17, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
+      id: "A", name: "Take Experience #1, stay lean", badge: "Recommended", segs: [5, 3],
+      tag: "Experience $17M + service $16M, funded by vendor + analytics · ≈$70.5M of ~$73M",
+      levers: { vendor: 23, online: 10.5, experience: 17, service: 16, analytics: 4, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
       why: [
-        "<b>Experience is customers' #1 value (1.44)</b>; we need only +0.1 to lead it. That would give us 2 leads (Brand + Experience).",
-        "<b>Low Price has room:</b> 4.8 vs fair line 3.6, so $2M less vendor is affordable."
+        "<b>Value = P/E × net income</b> (true in all 3 rounds): keep total spend about flat so revenue growth falls to profit.",
+        "<b>Experience 6.2 → ≈6.6</b> passes Zephara (6.3): two leads (Brand + Experience), the professor's sweet spot.",
+        "<b>Service is our proven lever</b> (+$8M = +1.4 Experience in Round 1); rivals' max is now $16.8M.",
+        "<b>Leaves ≈$2.5M unspent</b>; the professor says we don't have to spend it all."
       ],
-      risks: ["Unit cost rises a little (less vendor savings).", "Two levers move at once."]
+      risks: ["Vendor $23M is far below the $34.6M average; unit costs keep rising ~6%/yr.", "Frictionless stays below fair value."]
     },
     {
-      id: "A", name: "Same Formula + Online", badge: "Submitted R2", segs: [5, 3],
-      tag: "Keep everything · put the spare $1.6M into online",
+      id: "B", name: "Hold & bank profit", badge: "Safe", segs: [5, 3],
+      tag: "Change nothing",
       levers: { vendor: 25, online: 10.5, experience: 15, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
-      why: [
-        "<b>Proven:</b> these settings produced MV +97.5%, Brand #1 and Experience a near-tie.",
-        "<b>One change only:</b> online $9M → $10.5M, using the $1.6M left in the $71.4M budget. Frictionless is our only quadrant below fair value.",
-        "<b>Clean read next round:</b> if Frictionless rises, online works."
-      ],
-      risks: ["Experience lead is not secured (0.1 behind Zephara).", "Online gains have lagged so far."]
+      why: ["<b>Same inputs just doubled value</b> twice in a row.", "Revenue growth alone lifts net income."],
+      risks: ["Zephara could pass us in Brand or Experience while we stand still."]
     },
     {
-      id: "C", name: "Status Quo", badge: "Safest", segs: [5, 3],
-      tag: "Change nothing · keep $1.6M unspent",
-      levers: { vendor: 25, online: 9, experience: 15, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
-      why: ["<b>Zero risk</b> of breaking what worked; the professor allows leaving budget unspent."],
-      risks: ["Frictionless stays below fair; Zephara may pass us in Brand."]
+      id: "C", name: "Experience #1, no cuts to analytics", badge: "Middle", segs: [5, 3],
+      tag: "Experience $17M funded by vendor only",
+      levers: { vendor: 23, online: 10.5, experience: 17, service: 15, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, privateBrand: 60, stores: 185, depth: 30 },
+      why: ["<b>Experience ≈6.5</b> takes #1; analytics kept as a multiplier."],
+      risks: ["Smaller profit gain than Plan A."]
     }
   ],
 
@@ -242,6 +247,33 @@ window.SIM = {
         "<b>Keep the formula</b>: service $15M, experience $15M, quality 6/6, depth 30, 185 stores.",
         "<b>Fix Frictionless</b> (3.5 vs fair 5.1): online up with the spare $1.6M.",
         "<b>Optional</b>: $2M vendor → experience to take Experience #1 (Plan B)."
+      ]
+    },
+    {
+      round: 2, label: "After Round 2",
+      kpi: { marketValue: 361.9, mvChange: 96.6, revenue: 488.7, ebit: 58.6, interest: 23.5, netIncome: 22.8,
+             debt: 241.4, equity: 123.4, currentRatio: 0.74, roic: 16.4, wacc: 9.4, onlineSales: 50.0,
+             grossMargin: 36.3, daysInventory: 72, budget: 73.1, clv: 1075.0 },
+      matrix: { getchells: [5.1, 6.2, 4.8, 3.5], leader: [5.1, 6.3, 5.5, 7.6], fair: [3.8, 4.7, 4.1, 5.7] },
+      industry: [
+        { name: "Markup · lower-cost",  ours: 54, avg: 48.68, min: 26.28, max: 72.52, unit: "%" },
+        { name: "Markup · higher-cost", ours: 66, avg: 53.90, min: 26.28, max: 84.08, unit: "%" },
+        { name: "Depth · lower-cost",   ours: 30, avg: 29, min: 21, max: 35, unit: "" },
+        { name: "Private brand · lower", ours: 60, avg: 47, min: 2, max: 100, unit: "%" },
+        { name: "Private brand quality", ours: 6, avg: 5, min: 4, max: 7, unit: "" },
+        { name: "National brand quality", ours: 6, avg: 5, min: 3, max: 7, unit: "" },
+        { name: "Stores", ours: 185, avg: 233, min: 0, max: 500, unit: "" },
+        { name: "Online", ours: 10.5, avg: 12.44, min: 6.93, max: 20.90, unit: "$M" },
+        { name: "Customer service", ours: 15.0, avg: 11.81, min: 5.43, max: 16.79, unit: "$M" },
+        { name: "Shopping experience", ours: 15.0, avg: 9.58, min: 0, max: 15.0, unit: "$M" },
+        { name: "Vendor management", ours: 25.0, avg: 34.61, min: 14.55, max: 65.94, unit: "$M" },
+        { name: "Customer analytics", ours: 5.8, avg: 6.82, min: 2.91, max: 11.64, unit: "$M" }
+      ],
+      headline: "MV +96.6% to $362M. <span class=\"hl\">Profit doubled; send matrix charts.</span>",
+      moves: [
+        "<b>Value = P/E × net income</b>: protect profit; every +$1M net income ≈ +$16M value.",
+        "<b>Keep the formula</b>; rivals now spend more on service ($16.8M max) and online (avg $12.4M).",
+        "<b>Matrix scores below are Round 1</b>: send the 4 quadrant detail charts for Round 2."
       ]
     }
   ]
