@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sS https://wonshon-cmd.github.io/pivotorperishteam4/*)",
+      "Bash(curl -sS -o /dev/null -w * https://wonshon-cmd.github.io/pivotorperishteam4/*)",
+      "WebFetch(domain:wonshon-cmd.github.io)"
+    ]
+  }
+}
