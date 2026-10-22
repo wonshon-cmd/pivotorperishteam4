@@ -698,9 +698,10 @@
     const to = /\bto\s+\$?\s*\d/.test(t), by = /\bby\s+\$?\s*\d/.test(t);
     return { keys: hit, dir: down && !up ? -1 : up && !down ? 1 : (down ? -1 : 0), num: num == null ? null : +num, to, by };
   }
-  function askAnswer(q) {
+  function askAnswer(q, baseOverride) {
     const rec = (S.plans || []).find(p => p.badge === "Recommended") || {};
-    const base = Object.assign({}, S.defaults, rec.levers || {});
+    const base = baseOverride ? Object.assign({}, baseOverride) : Object.assign({}, S.defaults, rec.levers || {});
+    const vsLbl = baseOverride ? "vs your current sliders" : `vs Plan ${rec.id || "A"}`;
     let P = askParse(q);
     const tl = q.toLowerCase(), faqHit = (S.faq || []).find(x => x.keys.some(k => tl.includes(k)));
     if (P && faqHit && P.dir === 0 && P.num == null && /\b(mean|what is|what's|explain|why|how does|how do|score)\b/.test(tl)) P = null;
@@ -747,7 +748,7 @@
     else { verdict = "Roughly neutral this round (within the model's error). Decide on the long-term reason below."; vcls = "meh"; }
     if (k0 === "vendor" && changes[0][2] < changes[0][1] && !lostLead) { verdict = `This round looks like ${m(dMV, 0)}, but the higher-cost penalty builds up over the following rounds (our costs are already 1.8% above rivals). Best saved for the final round.`; vcls = "meh"; }
     const data = (I.data || []).slice(0, 2).map(x => `<li>${x}</li>`).join("");
-    return `<div class="ask-what">${what} <span class="mut">(vs Plan ${rec.id || "A"})</span></div>
+    return `<div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>
       <ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}</ul>
       <div class="ask-verdict ${vcls}">${verdict}</div>
       ${data ? `<div class="ask-data"><b>From the game data</b><ul>${data}</ul></div>` : ""}
@@ -757,9 +758,17 @@
   }
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
+    if ($("#qaForm") && !$("#qaForm").dataset.on) {
+      $("#qaForm").dataset.on = 1;
+      const sugg = ["Cut online by $2M?", "Raise shopping experience by $2M?", "Breadth to 60?", "Raise markup by 2 points?"];
+      document.querySelector(".qa-sugg").innerHTML = sugg.map(x => `<button type="button" class="ask-s">${x}</button>`).join("");
+      const qa = q => { if (!q.trim()) return; $("#qaOut").innerHTML = `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; };
+      $("#qaForm").onsubmit = e => { e.preventDefault(); qa($("#qaIn").value); $("#qaIn").value = ""; };
+      document.querySelectorAll(".qa-sugg .ask-s").forEach(b => b.onclick = () => qa(b.textContent));
+    }
     if (document.getElementById("askBtn")) return;
     const top = document.querySelector(".top") || document.body;
-    top.insertAdjacentHTML("beforeend", `<button id="askBtn">Ask ✦</button>`);
+    top.insertAdjacentHTML("beforeend", `<button id="askBtn"><span class="ask-lbl">Ask</span> <span class="ask-star">✦</span></button>`);
     document.body.insertAdjacentHTML("beforeend", `
       <div id="askPanel"><div class="ask-head"><b>Ask the copilot</b><button id="askClose" aria-label="Close">×</button></div>
       <div id="askLog"><div class="ask-msg bot">Ask a what-if or how-it-works question. I run our model (vs Plan A) and answer in plain English with our confidence.</div></div>

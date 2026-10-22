@@ -483,3 +483,21 @@ details.fold[open] summary { margin-bottom: 12px; }
 #askBtn:hover { animation-play-state: paused; transform: scale(1.06); }
 #askBtn.used { animation: none; }
 @media (prefers-reduced-motion: reduce) { #askBtn { animation: none; } }
+
+/* Sparkle: twinkling star + shimmer sweep */
+#askBtn { position: relative; overflow: hidden; }
+#askBtn .ask-star { display: inline-block; width: 1.3em; text-align: center; margin-left: 2px; animation: askTwinkle 1.6s ease-in-out infinite; }
+@keyframes askTwinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(1.25) rotate(90deg); opacity: .75; text-shadow: 0 0 8px #fff; } }
+#askBtn::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(110deg, transparent, rgba(255,255,255,.55), transparent); animation: askShine 2.8s ease-in-out infinite; }
+@keyframes askShine { 0% { left: -60%; } 60%, 100% { left: 130%; } }
+#askBtn.used::after, #askBtn.used .ask-star { animation: none; }
+@media (prefers-reduced-motion: reduce) { #askBtn::after, #askBtn .ask-star { animation: none; } }
+
+/* Inline Q&A in Build plan */
+.qa { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+.qa-head { font-weight: 800; font-size: 16px; margin-bottom: 8px; } .qa-head span { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
+#qaForm { display: flex; gap: 8px; }
+#qaForm input { flex: 1; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+#qaForm button { padding: 10px 16px; border-radius: 12px; }
+.qa-sugg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.qa-out { display: flex; flex-direction: column; gap: 8px; }
