@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-zeph-v40",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-zeph-v41",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -180,7 +180,7 @@ window.SIM = {
       ["Test", "Own 'wide and premium'", "Our premium range is #1 and growing +14%; Zephara barely sells premium. Breadth 55 targets S2/S4/S6, who want range + stores.", "Low"],
       ["Hold", "Win on profit, not price", "Zephara's costs are lower, so a price war doesn't suit us. Grow faster on flat spending (value = P/E × profit).", "Medium"]
     ],
-    watch: "If Zephara's Experience passes 6.7, hold (don't chase with service). If its Brand starts rising, move quality to 7."
+    watch: "If Zephara's Experience passes 6.7, hold (don't chase with service). <b>Also watch BestCo</b>: its Brand rises ≈+0.2 every round (4.4 now), so if it passes 4.8, move quality to 7. KT Benny is the fastest riser in Experience (4.6) but still far behind."
   },
 
   // Lever page: grouped by how we decide (our thought process)
