@@ -803,6 +803,6 @@ details.fold[open] summary { margin-bottom: 12px; }
 .rc-wt { font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; gap: 8px; align-items: center; } .rc-w p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
 .rc-next { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 16px; font-weight: 600; }
 .rc-row > .rc-cf { justify-self: start; }
-.mike-link { position: absolute; right: 140px; top: 88px; font-size: 13px; font-weight: 700; color: #2E5BFF; background: #eef2ff; border-radius: 999px; padding: 6px 14px; text-decoration: none; }
+.mike-link { position: static; margin-left: auto; margin-right: 120px; font-size: 13px; font-weight: 700; color: #2E5BFF; background: #eef2ff; border-radius: 999px; padding: 6px 14px; text-decoration: none; }
 .mike-link:hover { background: #dfe6ff; }
 @media (max-width: 900px) { .mike-link { position: static; display: inline-block; margin: 6px 0 0 20px; } }
