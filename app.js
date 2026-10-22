@@ -148,8 +148,9 @@
     const opex = 0.4 * d.online + d.service + 0.005 * revenue + 0.8 * d.experience + d.vendor + d.analytics + depreciation + otherSGA;
     const ebit = gross - opex;
 
-    // Profit pays down debt: R2 debt −$8.6M ≈ net income − ~$5M net capex/working capital (cash-flow check, R2 exact)
-    const retained = (ebit - B.interest) * 0.65 - 5;
+    // Debt falls by the free cash flow (exact R2–R4): NI + depreciation − capex − working capital. Inventory growth is in invFreed;
+    // the rest nets to ≈ NI + 2.5 (dep exceeds capex by ~$6M; receivables + cash − payables ≈ $3.5M)
+    const retained = (ebit - B.interest * 0.85) * 0.65 + 2.5;
     const debt = Math.max(0, B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed - retained);
     const cash = B.cash - 0.4 * (openCapex + onlineCap);
     const stLoans = Math.max(0, debt - (B.debt - (B.stLoans || 158.4)));
@@ -452,7 +453,7 @@
   }
 
   // ---------- Page 4: Timeline ----------
-  let tlPlan = "S";
+  let tlPlan = "A";
   function renderTimeline() {
     if (!S.decisionLog || !$("#tlCharts")) return;
     const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];
