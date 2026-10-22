@@ -301,7 +301,7 @@
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
     if (id === "team" && $("#tcCards")) renderTeamCmp();
-    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", guide: "guide", learn: "learn" }[id];
+    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", recap: "recap", guide: "guide", learn: "learn" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
   }
@@ -852,6 +852,29 @@
   }
 
   // ---------- How we beat Zephara card (rendered into every .zeph-slot) ----------
+  // ---------- Last round recap: what we changed → what it did (how much, confidence) + forecast vs actual ----------
+  function renderRecap() {
+    const R = S.recap, el = $("#recapBody"); if (!R || !el) return;
+    const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }, cb = c => `<span class="rc-cf" style="color:${CC[c]};border-color:${CC[c]}">${c}</span>`;
+    const m = v => "$" + (+v).toFixed(1).replace(/\.0$/, "") + "M";
+    const kp = R.kpis.map(k => { const d = k.to - k.from, mx = Math.max(k.to, k.proj, k.from) * 1.05;
+      return `<div class="card rc-k"><div class="rc-kl">${k.k}</div><div class="rc-kv">${m(k.to)}<span class="${(k.k === "Debt" ? -d : d) >= 0 ? "up" : "dn"}">${d >= 0 ? "▲" : "▼"} ${m(Math.abs(d))}</span></div><div class="rc-kf">was ${m(k.from)}</div>
+        <div class="rc-pa"><div><span>Forecast</span><i><b style="width:${k.proj / mx * 100}%;background:#D9822B"></b></i><em>${m(k.proj)}</em></div><div><span>Actual</span><i><b style="width:${k.to / mx * 100}%;background:#2E5BFF"></b></i><em>${m(k.to)}</em></div></div>
+        <div class="rc-kn">${k.note}</div></div>`; }).join("");
+    const qs = R.quads.map(q => { const d = q.to - q.from;
+      return `<div class="rc-q"><b>${q.q}</b><div class="rc-qv">${q.from} → <strong>${q.to}</strong> <span class="${d > 0 ? "up" : d < 0 ? "dn" : "fl"}">${d > 0 ? "▲ +" + d.toFixed(1) : d < 0 ? "▼ " + d.toFixed(1) : "= flat"}</span></div><small>${q.rank} · forecast ${q.proj} · ${q.note}</small></div>`; }).join("");
+    const ch = R.changes.map(c => `<div class="rc-row"><div class="rc-lv"><b>${c.lever}</b><span>${c.from} → <strong>${c.to}</strong></span></div><div class="rc-how">${c.how}</div><div class="rc-ef">${c.effect}</div>${cb(c.conf)}</div>`).join("");
+    const wy = R.why.map(w => `<div class="card rc-w"><div class="rc-wt">${w.t} ${cb(w.conf)}</div><p>${w.d}</p></div>`).join("");
+    el.innerHTML = `<h1>Last round recap</h1><p class="rc-sub"><b>${R.title}</b> · ${R.sub}</p>
+      <div class="rc-legend"><span><i style="background:#D9822B"></i>Our forecast</span><span><i style="background:#2E5BFF"></i>Actual</span><span class="rc-cl">Confidence: ${cb("High")} tested / exact data ${cb("Medium")} model estimate ${cb("Low")} untested</span></div>
+      <div class="rc-kpis">${kp}</div>
+      <div class="rc-h">Quadrants</div><div class="card rc-qs">${qs}</div>
+      <div class="rc-h">What we changed → what it did</div><div class="card rc-ch"><div class="rc-row rc-hd"><div>Lever</div><div>How much</div><div>Effect</div><div>Sure?</div></div>${ch}<div class="rc-un"><b>Didn't touch:</b> ${R.untouched}</div></div>
+      <div class="rc-h">Why the numbers moved</div><div class="rc-ws">${wy}</div>
+      <div class="card rc-next"><div>${R.next}</div><button class="primary" data-go="start">Build this round's plan →</button></div>`;
+    el.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
+  }
+
   function renderZeph() {
     const Z = S.vsZephara; if (!Z) return;
     const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
@@ -963,7 +986,7 @@
     fetch(LIVE + "/json?poll=1&since=12h").then(r => r.text()).then(txt => { let ch = false;
       txt.split("\n").forEach(l => { try { const m = JSON.parse(l); if (m.event === "message" && liveApply(JSON.parse(m.message))) ch = true; } catch (e) {} });
       setLive(true); if (ch) liveRedraw(); pubSnap(); }).catch(() => setLive(false));
-    setInterval(pubSnap, 3 * 3600 * 1000);
+    setInterval(pubSnap, 3600 * 1000);
     const es = new EventSource(LIVE + "/sse");
     es.onopen = () => setLive(true); es.onerror = () => setLive(false);
     es.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "message" && liveApply(JSON.parse(m.message))) liveRedraw(); } catch (x) {} };
@@ -1483,7 +1506,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp(); autoFillTitle(); liveStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); renderTeamCmp(); autoFillTitle(); liveStart();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };

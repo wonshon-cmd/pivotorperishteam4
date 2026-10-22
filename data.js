@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-team-v73",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-team-v74",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -187,6 +187,37 @@ window.SIM = {
     { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low", why: "Premium sales grow fast at 66%, so customers may accept a bit more. Raises profit per item but may cost some premium shoppers." }
   ],
 
+  // Last round recap page (update every round): game screen "Round 4" inputs → Round 5 status
+  recap: {
+    title: "Round 4 screen → Round 5 status",
+    sub: "What we typed in last round, what it changed, and how close our forecast was.",
+    kpis: [
+      { k: "Market value", from: 533.8, to: 772.4, proj: 717, unit: "$M", note: "beat our forecast by $55M" },
+      { k: "Net income", from: 34.4, to: 50.7, proj: 47.2, unit: "$M", note: "beat by $3.5M (lower interest)" },
+      { k: "Revenue", from: 549.2, to: 610.8, proj: 610, unit: "$M", note: "on forecast" },
+      { k: "Debt", from: 212.5, to: 166.7, proj: 180, unit: "$M", note: "paid down $46M from profit" }
+    ],
+    quads: [
+      { q: "Brand", from: 5.1, to: 5.1, proj: 5.1, rank: "#1", note: "Zephara 4.6 · BestCo 4.4 rising" },
+      { q: "Experience", from: 6.3, to: 6.4, proj: 6.29, rank: "#2", note: "Zephara 6.5, gap 0.1" },
+      { q: "Low Price", from: 4.8, to: 4.8, proj: 4.74, rank: "fair", note: "AIM 5.5 · fair line 3.7" },
+      { q: "Frictionless", from: 3.8, to: 3.9, proj: 3.88, rank: "below fair", note: "Cadabra 7.3 · fair 4.8" }
+    ],
+    changes: [
+      { lever: "Shopping experience", from: "$17M", to: "$17.5M", effect: "Experience +0.1 (6.3 → 6.4). Our shopping-experience position stayed #1 (3.5 → 3.6) and keeps building because 20% is capitalized.", how: "+0.1", conf: "High" },
+      { lever: "Customer service", from: "$17M", to: "$18M", effect: "No visible gain: our service position slipped 2.8 → 2.7 because rivals raised service too. Service doesn't build up.", how: "≈0", conf: "High" },
+      { lever: "Online", from: "$11.5M", to: "$12.5M", effect: "Frictionless +0.1 (3.8 → 3.9) as the online position built 1.0 → 1.1. Online sales share did not rise (49.7% → 49.3%).", how: "+0.1", conf: "High" },
+      { lever: "Vendor management", from: "$23M", to: "$20M", effect: "Saved $3M of cost. Low Price held at 4.8, but our unit-cost gap vs rivals widened (+1.5% → +1.8%) and that gap builds over rounds.", how: "+$3M now", conf: "Medium" },
+      { lever: "Customer analytics", from: "$6M", to: "$6M", effect: "Unchanged. The analytics score crept 100.2% → 100.5% (100% = Round 0 level, not a maximum). Tiny effect.", how: "≈0", conf: "Low" }
+    ],
+    untouched: "Markups 54/66, breadth 50/50, depth 30/30, private brand 60/60, quality 6/6, stores 185: Brand stayed 5.1 (#1) and inventory days stayed 72.",
+    why: [
+      { t: "Why value beat the forecast", d: "Interest fell $20.5M → $13.7M: debt dropped $46M (all from profit) and the rate fell 9.0% → 7.2%. That's ≈+$4.4M profit after tax, or ≈+$67M of value at P/E 15.2. The model under-counted debt pay-down; fixed in model v7.", conf: "High" },
+      { t: "Why revenue grew 11%", d: "The market grew 9.2% and we gained share (14.6% → 14.9%). Growth came mostly from S4, S6 and S1 (+13–17%), the segments that want breadth and stores.", conf: "High" },
+      { t: "Why P/E dipped (15.5 → 15.2)", d: "Lower debt means more of our capital is equity, which costs more (WACC 11.6%). That trims P/E a little each round, and is already in the model.", conf: "Medium" }
+    ],
+    next: "So for this round: keep building shopping experience to pass Zephara (gap 0.1), hold online at $12.5M, don't add service, and test breadth (lower-cost) at 55."
+  },
   team: ["Brian", "Patrick", "Abhishek", "Joe", "Michael"], submitter: "Brian", liveTopic: "getchells-t4-39bd523aae1a",  // ntfy.sh relay room (only names + slider numbers are sent)
 
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
