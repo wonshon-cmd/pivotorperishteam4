@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-team-v82",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-team-v83",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -215,6 +215,13 @@ window.SIM = {
       { t: "Why value beat the forecast", d: "Interest fell $20.5M → $13.7M: debt dropped $46M (all from profit) and the rate fell 9.0% → 7.2%. That's ≈+$4.4M profit after tax, or ≈+$67M of value at P/E 15.2. The model under-counted debt pay-down; fixed in model v7.", conf: "High" },
       { t: "Why revenue grew 11%", d: "The market grew 9.2% and we gained share (14.6% → 14.9%). Growth came mostly from S4, S6 and S1 (+13–17%), the segments that want breadth and stores.", conf: "High" },
       { t: "Why P/E dipped (15.5 → 15.2)", d: "Lower debt means more of our capital is equity, which costs more (WACC 11.6%). That trims P/E a little each round, and is already in the model.", conf: "Medium" }
+    ],
+    track: [
+      { r: "R1 (try 1, undone)", model: "v1", mvP: 102.7, mvA: 113.0, niP: null, niA: 8.2, qErr: "≈0.5–1.5 (Brand/Exp fell; not predicted)", fix: "Learned service drives Experience (A/B test with the undo)" },
+      { r: "R2", model: "v2", mvP: 185, mvA: 361.9, niP: null, niA: 22.8, qErr: "Fric 3.8 vs 3.5", fix: "Found value = P/E × net income; added revenue growth" },
+      { r: "R3", model: "v5", mvP: 579, mvA: 533.8, niP: 35.3, niA: 34.4, qErr: "Exp 6.46 vs 6.3 · Fric 3.67 vs 3.8", fix: "Service saturates; P/E drifts down as debt falls" },
+      { r: "R4", model: "v6", mvP: 717, mvA: 772.4, niP: 47.2, niA: 50.7, qErr: "Exp 6.29 vs 6.4 · Fric 3.88 vs 3.9 · LowP 4.74 vs 4.8", fix: "Debt pay-down = free cash flow (model v7)" },
+      { r: "R5 (now)", model: "v7", mvP: 949, mvA: null, niP: 62.2, niA: null, qErr: "Exp ≈6.65 · Fric ≈3.9", fix: "Compare when Round 5 results arrive" }
     ],
     next: "So for this round: keep building shopping experience to pass Zephara (gap 0.1), hold online at $12.5M, don't add service, and test breadth (lower-cost) at 55."
   },

@@ -888,6 +888,9 @@
       <div class="rc-h">Quadrants</div><div class="card rc-qs">${qs}</div>
       <div class="rc-h">What we changed → what it did</div><div class="card rc-ch"><div class="rc-row rc-hd"><div>Lever</div><div>How much</div><div>Effect</div><div>Sure?</div></div>${ch}<div class="rc-un"><b>Didn't touch:</b> ${R.untouched}</div></div>
       <div class="rc-h">Why the numbers moved</div><div class="rc-ws">${wy}</div>
+      <div class="rc-h">Our forecast track record</div><div class="card rc-tr"><table><tr><th>Round</th><th>Model</th><th>Value: forecast → actual</th><th>Miss</th><th>Net income: forecast → actual</th><th>Quadrants</th><th>What we fixed</th></tr>${(R.track || []).map(t => { const miss = t.mvA ? (t.mvP - t.mvA) / t.mvA * 100 : null, cls = miss == null ? "" : Math.abs(miss) <= 10 ? "up" : "dn";
+        return `<tr><td><b>${t.r}</b></td><td>${t.model}</td><td>${m(t.mvP)} → ${t.mvA ? `<b>${m(t.mvA)}</b>` : "<i>pending</i>"}</td><td class="${cls}"><b>${miss == null ? "—" : (miss > 0 ? "+" : "−") + Math.abs(miss).toFixed(0) + "%"}</b></td><td>${t.niP ? m(t.niP) : "—"} → ${t.niA != null ? m(t.niA) : "<i>pending</i>"}</td><td>${t.qErr}</td><td>${t.fix}</td></tr>`; }).join("")}</table>
+        <div class="rc-trn">Value miss: 9% → 49% → 8% → 7%. The big R2 miss came before we found value = P/E × profit; since then we've been within ≈10%, and quadrants within ≈0.15.</div></div>
       <div class="card rc-next"><div>${R.next}</div><button class="primary" data-go="start">Build this round's plan →</button></div>`;
     el.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
   }

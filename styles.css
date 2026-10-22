@@ -824,3 +824,5 @@ details.fold[open] summary { margin-bottom: 12px; }
 .cs-x { width: 24px; height: 24px; border-radius: 6px; background: #f1f2f4 !important; color: var(--muted) !important; font-weight: 800; padding: 0; }
 .cs-add select { width: 100%; border: 1.5px dashed #c9d5ff; border-radius: 10px; padding: 7px 10px; font-size: 13.5px; font-weight: 700; color: #1f3fb8; background: #f6f8ff; margin: 10px 0 6px; cursor: pointer; }
 .cs-list li { padding: 6px 0; }
+.rc-tr { overflow-x: auto; } .rc-tr table { width: 100%; border-collapse: collapse; font-size: 14px; } .rc-tr th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.rc-tr td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; } .rc-trn { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
