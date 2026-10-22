@@ -558,3 +558,10 @@ details.fold[open] summary { margin-bottom: 12px; }
   #cockpit .grid { align-items: start; }
   #cockpit .matrix-panel, #cockpit .value-panel { position: sticky; top: 140px; max-height: calc(100vh - 156px); overflow-y: auto; }
 }
+
+/* Builds-up tag */
+.lt-build { border-radius: 8px; padding: 5px 8px; font-size: 12.5px; line-height: 1.4; margin-top: 6px; }
+.lt-build b { margin-right: 4px; }
+.bu-up { background: #e6f4ea; color: #145c2c; } .bu-slow { background: #fdf3dc; color: #7a5200; } .bu-no { background: #fde8e6; color: #8a1c13; }
+.bu-now { background: #f1f2f4; color: #3f3e44; } .bu-asset { background: #eef2ff; color: #1f3fb8; }
+#levTip.compact .lt-build { display: block; }

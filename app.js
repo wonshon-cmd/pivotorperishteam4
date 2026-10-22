@@ -767,7 +767,7 @@
     if (k0 === "vendor" && changes[0][2] < changes[0][1] && !lostLead) { verdict = `This round looks like ${m(dMV, 0)}, but the higher-cost penalty builds up over the following rounds (our costs are already 1.8% above rivals). Best saved for the final round.`; vcls = "meh"; }
     const data = (I.data || []).slice(0, 2).map(x => `<li>${x}</li>`).join("");
     const goingUp = changes[0][2] > changes[0][1];
-    const plain = I.what ? `<div class="ask-plain"><b>In plain English:</b> ${I.what}<br>${goingUp ? (I.up || "") : (I.down || "")}</div>` : "";
+    const plain = I.what ? `<div class="ask-plain"><b>In plain English:</b> ${I.what}<br>${goingUp ? (I.up || "") : (I.down || "")}${I.build ? `<div class="lt-build bu-${I.build[0]}" style="margin-top:6px"><b>${I.build[1]}:</b> ${I.build[2]}</div>` : ""}</div>` : "";
     return `<div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>${plain}
       <div class="ask-sub">What our model says, in numbers:</div>
       <ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}</ul>
@@ -894,8 +894,9 @@
     const cls = { raise: "raise", test: "test", trim: "trim", cut: "trim", hold: "hold", keep: "hold" }[verb] || "hold";
     const why = (I.why || "").split(/(?<=[.;])\s/)[0].replace(/;$/, ".");
     const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[I.conf];
+    const bu = I.build ? `<div class="lt-build bu-${I.build[0]}"><b>${I.build[1]}</b> ${I.build[2]}</div>` : "";
     tip.innerHTML = `<div class="lt-h">${L.label} <span style="color:${col};border-color:${col}">${I.conf}</span></div>
-      <div class="lt-plain">${(I.what || I.plain || "").replace(/\s*\(e\.g\.[^)]*\)/, "")}</div>
+      <div class="lt-plain">${(I.what || I.plain || "").replace(/\s*\(e\.g\.[^)]*\)/, "")}</div>${bu}
       ${range}
       <div class="lt-sec">If we raise it by ${fmt(step)}</div><div class="ecs">${effectChips(base, up)}</div>
       ${yours}
@@ -964,8 +965,8 @@
       h = `<div class="lt-h">Within budget <span style="color:#1a7f37;border-color:#1a7f37">High</span></div>
         <div class="lt-plain">Budget this round: <b>${fmtM(S.base.budget)}</b>. We don't have to spend it all.</div>
         <div class="lt-sec">Spend vs budget</div>${bar(+(r.spend).toFixed(1), +(S.base.budget).toFixed(1), null, fmtM(r.spend) + " (" + (pct * 100).toFixed(0) + "%)")}
-        <div class="ecs" style="margin-top:6px">${chip("Unspent " + fmtM(Math.max(0, S.base.budget - r.spend)), 1)}${chip("≈ +$" + (Math.max(0, S.base.budget - r.spend) * 10).toFixed(0) + "M of value", 1)}</div>
-        ${call("hold", "Rule", "Each $1M not spent ≈ +$0.65M profit ≈ +$10M value. Spend only where it buys a lead or proven growth.")}`;
+        <div class="ecs" style="margin-top:6px">${chip("Unspent " + fmtM(Math.max(0, S.base.budget - r.spend)), 1)}</div>
+        ${call("raise", "Rule", "Rounds 5–7: spend the full budget, but only on levers that build up (shopping experience, then online). Final round: cut hard. Padding service/vendor/analytics is pure cost.")}`;
     } else if (key === "credit") {
       h = `<div class="lt-h">Credit rating <span style="color:#9a6700;border-color:#9a6700">Medium</span></div>
         <div class="lt-plain">A 0–9 score from three ratios. Better rating = cheaper borrowing.</div>
