@@ -828,3 +828,4 @@ details.fold[open] summary { margin-bottom: 12px; }
 .rc-tr td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; } .rc-trn { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
 .tr-okb.rec { --c: #1f3fb8; border: 1.5px dashed #9fb3ff; background: #f6f8ff; color: #1f3fb8; cursor: default; } .tr-okb.rec.on { background: #1f3fb8; color: #fff; border-style: solid; }
 .rc-grow { transition: width 1s cubic-bezier(.2,.8,.2,1); } .rc-grow.late { transition-delay: .35s; } @media (prefers-reduced-motion: reduce) { .rc-grow { transition: none; } }
+.cs-edited { color: #b42318; font-weight: 700; }

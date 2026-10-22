@@ -1093,7 +1093,9 @@
     const flagBox = flags.length ? `<div class="cs-flags"><div class="cs-ft">⚠ Double-check before we submit</div>${flags.map(f => `<div class="cs-f ${f.conf === "Low" ? "low" : ""}"><b>${f.label}</b>${f.from != null ? ` ${fmt(LEVERS.find(L => L.key === f.key), f.from)} → ${fmt(LEVERS.find(L => L.key === f.key), f.to)}` : ""}<span>${f.why}</span>${badge(f.conf)}</div>`).join("")}</div>` : `<div class="cs-flags ok">✓ No big jumps or untested levers in this plan</div>`;
     const flagKeys = new Set(flags.map(f => f.key));
     const over = r.spend > S.base.budget + 1e-6, left = S.base.budget - r.spend;
-    const srcTxt = c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea";
+    const srcPlan = c.src === "Recommended" ? rec : (t[c.src] ? Object.assign({}, S.defaults, t[c.src].d) : null);
+    const edits = srcPlan ? LEVERS.filter(L => Math.abs(cd[L.key] - srcPlan[L.key]) > 1e-9) : [];
+    const srcTxt = (c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea") + (edits.length ? `, <span class="cs-edited">edited: ${edits.length} box${edits.length > 1 ? "es" : ""} changed from the original (${edits.slice(0, 3).map(L => short(L) + " " + fmt(L, srcPlan[L.key]) + " → " + fmt(L, cd[L.key])).join(", ")}${edits.length > 3 ? "…" : ""})</span>${canEdit ? ` <button class="hp-undo" id="csOrig">↺ Back to original</button>` : ""}` : "");
     const center = `<div class="tr-sub cs">
       <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}${c.ts ? ` (${new Date(c.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })})` : ""}. Click any idea below to bring it here; anyone can edit it and everyone sees the changes live.${canEdit ? "" : " Pick your name above to edit."}</small></div>
         <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}${(() => { const nd = LEVERS.filter(L => Math.abs(cd[L.key] - rec[L.key]) > 1e-9).length;
@@ -1140,6 +1142,7 @@
     document.querySelectorAll("[data-center]").forEach(b => b.onclick = () => { const n = b.dataset.center; setCenter({ src: n, d: Object.assign({}, plans[n]), ts: Date.now(), by: me || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); });
     const edit = (k, v) => { const L = LEVERS.find(x => x.key === k); v = Math.min(L.max, Math.max(L.min, Math.round(v * 100) / 100)); if (isNaN(v)) return renderTeamCmp(); const nd = Object.assign({}, cd, { [k]: v }); setCenter({ src: c.src, d: nd, ts: Date.now(), by: me }); };
     document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { const L = LEVERS.find(x => x.key === b.dataset.cs); edit(L.key, cd[L.key] + (+b.dataset.dir) * (L.step || 1)); });
+    if ($("#csOrig")) $("#csOrig").onclick = () => setCenter({ src: c.src, d: Object.assign({}, srcPlan), ts: Date.now(), by: me });
     document.querySelectorAll("[data-csreset]").forEach(b => b.onclick = () => edit(b.dataset.csreset, S.defaults[b.dataset.csreset]));
     if ($("#csAddSel")) $("#csAddSel").onchange = e => { const k = e.target.value; if (!k) return; const L = LEVERS.find(x => x.key === k); edit(k, cd[k] + (L.step || 1)); setTimeout(() => { const i = document.querySelector(`[data-csin="${k}"]`); if (i) { i.focus(); i.select(); } }, 30); };
     document.querySelectorAll("[data-csin]").forEach(i => { i.onchange = () => edit(i.dataset.csin, parseFloat(i.value)); i.onkeydown = e => { if (e.key === "Enter") i.blur(); }; });
