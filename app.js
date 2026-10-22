@@ -329,10 +329,17 @@
       let rows = all.slice(0, 3);
       if (!rows.some(r => r.n === S.company)) rows.push(all.find(r => r.n === S.company));
       const qn = S.quadNotes ? S.quadNotes[i] : { note: "" };
+      // movement vs last round (from trend history): score change + rank change
+      const T = (S.trend || [])[i] || {}, prevOf = n => { const h = T[n]; return h && h.length > 1 ? h[h.length - 2] : null; };
+      const prevRank = Object.keys(S.rivals).map(n => ({ n, v: prevOf(n) })).filter(x => x.v != null).sort((a, b) => b.v - a.v).map(x => x.n);
       const list = rows.map(r => {
         const pos = all.indexOf(r) + 1, why = (S.why && S.why[r.n] && S.why[r.n][i]) || "";
+        const pv = prevOf(r.n), dv = pv == null ? 0 : +(r.v - pv).toFixed(2), pr = prevRank.indexOf(r.n) + 1, dr = pr ? pr - pos : 0;
+        const mv = Math.abs(dv) < 0.05 ? `<span class="mvb flat" title="No change vs last round">= 0.0</span>`
+          : `<span class="mvb ${dv > 0 ? "up" : "down"}" title="${dv > 0 ? "Up" : "Down"} ${Math.abs(dv).toFixed(1)} vs last round"><i>${dv > 0 ? "▲" : "▼"}</i>${dv > 0 ? "+" : "−"}${Math.abs(dv).toFixed(1)}</span>`;
+        const rk = dr ? `<span class="rkb ${dr > 0 ? "up" : "down"}">${dr > 0 ? "↑" : "↓"}${Math.abs(dr)} place</span>` : "";
         return `<div class="lr ${r.n === S.company ? "me" : ""}"><span class="lpos">${pos}</span>
-          <div><div class="ln">${r.n} <b>${r.v.toFixed(1)}</b></div><div class="lw">${why}</div></div></div>`;
+          <div><div class="ln">${r.n} <b>${r.v.toFixed(1)}</b> ${mv}${rk}</div><div class="lw">${why}</div></div></div>`;
       }).join("");
       return `<div class="lq"><div class="lq-name">${Q[i]}</div>${trendChart(i)}<div class="lrows">${list}</div>
         <div class="lq-note">${qn.note.replace(/(WIN|HOLD|DEFEND|FIX FIRST)/, "<b>$1</b>")}</div></div>`;
