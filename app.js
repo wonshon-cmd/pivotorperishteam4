@@ -452,7 +452,7 @@
   }
 
   // ---------- Page 4: Timeline ----------
-  let tlPlan = "A";
+  let tlPlan = "S";
   function renderTimeline() {
     if (!S.decisionLog || !$("#tlCharts")) return;
     const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];

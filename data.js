@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R4-status-v13",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R4-submitted-v14",  // bump whenever data is updated (clears stale browser saves)
   round: 4,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -11,9 +11,9 @@ window.SIM = {
     revenue: 549.19, cogs: 349.57, depreciation: 31.88, otherSGA: 27.46,
     interest: 20.47, cash: 31.81, debt: 212.52, stLoans: 90.60, equity: 157.77, ap: 34.00,
     inventory: 68.73, receivables: 22.57, netPPE: 281.17,
-    wacc: 11.8, marketValue: 533.8, budget: 76.886, stores: 185, clv: 1201.1,
+    wacc: 11.8, marketValue: 533.8, budget: 74.152, stores: 185, clv: 1201.1,
     netIncome: 34.37, pe: 15.5, peDrift: 0.98, growth: 0.11, debtPrev: 241.45
-    // END OF ROUND 3 (exported CSVs, exact). budget 76.886 = 14% × $549.19M (ESTIMATE until the R4 input screen confirms).
+    // END OF ROUND 3 (exported CSVs, exact). budget 74.152 = REAL (Round 4 input screen). NOT 14% of revenue: 74.152/549.19 = 13.5%; previous budgets 74.616, 71.422.
     // growth: our revenue +14.5%, +14.5%, +12.4% (market +11%, +12%, +9%) → 11% next. peDrift: P/E 16.6 → 15.8 → 15.5 as WACC rises.
   },
 
@@ -114,6 +114,8 @@ window.SIM = {
     { round: 2, label: "R2", d: { online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
 ,
     { round: 3, label: "R3", d: { online: 11.5, service: 17, experience: 17, vendor: 23, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
+,
+    { round: 4, label: "R4 (entered)", d: { online: 12.5, service: 18, experience: 17.5, vendor: 20, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -180,6 +182,17 @@ window.SIM = {
 
   // ---- Top 3 plans for the next round (levers in $M / % / count). Breadth stays 50/50 in all plans. ----
   plans: [
+    {
+      id: "S", name: "ENTERED Round 4 → 5", badge: "Submitted", segs: [5, 3],
+      tag: "Service $18M, experience $17.5M, vendor $20M, online $12.5M, analytics $6M · $74.0M of $74.152M",
+      levers: { vendor: 20, online: 12.5, experience: 17.5, service: 18, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 },
+      why: [
+        "<b>Model projection (v6): market value ≈$717M</b>, net income ≈$47.2M, revenue ≈$610M, debt ≈$180M.",
+        "Brand 5.1 (#1) · Experience ≈6.29 vs Zephara 6.4 (still #2, within 2%) · Low Price ≈4.74 · Frictionless ≈3.88.",
+        "Tests this round: vendor −$3M (cost gap), online +$1M, service +$1M, experience +$0.5M."
+      ],
+      risks: ["Experience likely stays #2.", "Vendor $20M widens the unit-cost gap (now +1.5% vs rivals)."]
+    },
     {
       id: "A", name: "Take Experience #1, same total spend", badge: "Recommended", segs: [5, 3],
       tag: "Shopping experience $20M, paid for by online, analytics, vendor · $74.5M of ≈$76.9M",
