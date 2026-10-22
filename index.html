@@ -7,7 +7,7 @@
   <title>Getchells Strategy Copilot · Team 4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=R5-levers-v23">
+  <link rel="stylesheet" href="styles.css?v=R5-tidy-v25">
 </head>
 <body>
 
@@ -39,9 +39,9 @@
           <div id="standQuads" class="sq-grid"></div>
         </div>
         <div class="card">
-          <div class="ptitle">Do this next round</div>
+          <div class="ptitle">What happened last round</div>
           <ol id="standMoves" class="smoves"></ol>
-          <button class="primary wide" data-go="start">Build the plan →</button>
+          <button class="primary wide" data-go="guide">See our game plan →</button>
         </div>
       </div>
     </div>
@@ -65,15 +65,15 @@
         <div class="ptitle">What customers value most · all 6 segments</div>
         <div id="prefs" class="prefs"></div>
       </div>
-      <div class="card flags-card">
-        <div class="ptitle">Who gets the money · market share by revenue</div>
+      <details class="card fold" style="margin-top:16px">
+        <summary>Show: market share by revenue (who gets the money)</summary>
         <div id="shares" class="shares"></div>
         <div class="sh-key"><span><i class="sk lo"></i>Lower-cost products</span><span><i class="sk hi"></i>Higher-cost products</span><span><i class="sk unk"></i>Not captured yet</span></div>
-      </div>
-      <div class="card flags-card">
-        <div class="ptitle">Where our decisions are out of line with the industry</div>
+      </details>
+      <details class="card fold" style="margin-top:16px">
+        <summary>Show: where our decisions differ most from the industry</summary>
         <div id="flags" class="flags"></div>
-      </div>
+      </details>
       <details class="card fold" style="margin-top:16px">
         <summary>Show: how customers see each retailer (product positions, 0–5)</summary>
         <table id="positions" class="tl-table"></table>
@@ -103,7 +103,7 @@
         <summary>Show: model accuracy (predicted vs actual, every round)</summary>
         <table id="tlAcc" class="tl-table"></table>
       </details>
-      <p class="note">Solid = real game results. Dashed = projection for the selected plan. Back-test: quadrants exact on all 3 runs; Round 2 net income and value within 1%.</p>
+      <p class="note">Solid = real game results. Dashed = projection for the selected plan. Model check: every past round is replayed in "Show: model accuracy" below.</p>
     </div>
   </section>
 
@@ -160,16 +160,13 @@
   </div></section>
   <section id="start" class="screen">
     <div class="page">
-      <div class="goal"><b>Our goal:</b> raise market value · lead (or be close to) <b>2 quadrants</b> · <b>fair value (75% of leader)</b> in the other 2 · budget = max(14% of last revenue, last budget + inflation) · <b>no need to spend it all</b>: protect margins · taxes &amp; interest aren't ours to set (cut debt to lower interest)</div>
+      <div class="goal"><b>Goal:</b> lead 2 quadrants, stay fair in the other 2, and protect profit (value = P/E × profit). We don't have to spend the whole budget.</div>
       <h1>Plans for this round</h1>
-      <p class="sub">Same model for all three; live numbers below. Breadth stays at 50/50 in every plan.</p>
+      <p class="sub">Load a plan, then fine-tune the sliders. Hover any slider to see what it does and why.</p>
       <div id="plans" class="plans"></div>
 
-      <h1 style="margin-top:48px">How much change makes how much impact</h1>
-      <p class="sub">Our best guesses from Round 1 results + the professor's slides. ●●● High · ●●○ Medium · ●○○ Low confidence.</p>
-      <div class="card"><table id="impacts" class="impacts"></table></div>
-
-      <h1 style="margin-top:48px">Or build your own: which customers do we win?</h1>
+      <details class="card fold" style="margin-top:28px">
+      <summary>Advanced: build a plan from the customers we want to win (or set every lever yourself)</summary>
       <div id="ourMix" class="ourmix"></div>
       <div id="segGrid" class="seg-grid"></div>
       <div class="go-row">
@@ -177,6 +174,7 @@
         <button id="manualBtn" class="ghost">Set levers myself</button>
         <button id="goBtn" class="primary" disabled>Build my strategy →</button>
       </div>
+      </details>
       <input id="teamName" type="hidden" value="Team 4">
     </div>
   </section>
@@ -262,7 +260,7 @@
     </div>
   </div>
 
-  <script src="data.js?v=R5-levers-v23"></script>
-  <script src="app.js?v=R5-levers-v23"></script>
+  <script src="data.js?v=R5-tidy-v25"></script>
+  <script src="app.js?v=R5-tidy-v25"></script>
 </body>
 </html>

@@ -446,6 +446,7 @@
 
   // ---------- Impact guide: how much change → how much effect ----------
   function renderImpacts() {
+    if (!$("#impacts")) return;
     if (!S.impacts || !$("#impacts")) return;
     const dots = c => ({ High: "●●●", Medium: "●●○", Low: "●○○" })[c];
     $("#impacts").innerHTML = `<tr><th>If we change…</th><th>By</th><th>Expected effect (our guess)</th><th>Confidence</th><th>Evidence</th></tr>` +
@@ -490,10 +491,13 @@
 
     // Lessons + projection card
     const lead = pr.cls.filter(c => c.status === "LEAD").map(c => c.q).join(" + ") || "none";
-    $("#tlLessons").innerHTML = (S.lessons || []).map(l => `<div class="ls"><div class="lsr">${l.title || "Round " + l.round}</div>
+    const lessonHTML = l => `<div class="ls"><div class="lsr">${l.title || "Round " + l.round}</div>
         <div class="lsg"><div><b>We changed</b><ul>${l.changes.map(x => `<li>${x}</li>`).join("")}</ul></div>
         <div><b>What happened</b><ul>${l.results.map(x => `<li>${x}</li>`).join("")}</ul></div></div>
-        <div class="lsl">💡 ${l.lesson}</div></div>`).join("") +
+        <div class="lsl">💡 ${l.lesson}</div></div>`;
+    const Ls = S.lessons || [], older = Ls.slice(0, -1).reverse();
+    $("#tlLessons").innerHTML = (Ls.length ? lessonHTML(Ls[Ls.length - 1]) : "") +
+      (older.length ? `<details class="fold tl-older"><summary>Earlier rounds (${older.length})</summary>${older.map(lessonHTML).join("")}</details>` : "") +
       `<div class="ls proj"><div class="lsr">Round ${nextR} projection · Plan ${plan.id}</div>
         <ul><li>Market value ≈ <b>$${pr.mv.toFixed(0)}M</b> · net income ≈ $${pr.niProj.toFixed(1)}M</li>
         <li>Debt ≈ <b>$${pr.debt.toFixed(0)}M</b></li>
@@ -691,6 +695,7 @@
             <button class="lv-try" data-try="${k}">Try it →</button></div>
           <details class="lv-more"><summary>How it works</summary>
             <div class="lv-row"><span class="lv-k">What it changes</span><span>${I.effect}</span></div>
+            ${I.data ? `<div class="lv-row"><span class="lv-k">From the game data</span><span><ul class="lv-ul">${I.data.map(x => `<li>${x}</li>`).join("")}</ul></span></div>` : ""}
             ${I.hypothesis ? `<div class="lv-row lv-hyp"><span class="lv-k">Our hypothesis</span><span>${I.hypothesis}</span></div>` : ""}
             <div class="lv-row"><span class="lv-k">Watch next round</span><span>${I.rule}</span></div>
             <div class="lv-row"><span class="lv-k">History</span><span>${I.status}</span></div></details></div>`;
@@ -721,17 +726,19 @@
     const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[I.conf];
     tip.innerHTML = `<div class="lt-h">${L.label} <span style="color:${col};border-color:${col}">${I.conf} confidence</span></div>
       <div class="lt-s">${I.status}</div>
+      <div class="lt-plain">${I.plain || ""}</div>
       <div><b>What it changes:</b> ${I.effect}</div>
-      ${I.hypothesis ? `<div><b>Hypothesis:</b> ${I.hypothesis}</div>` : ""}
+      ${I.data ? `<div class="lt-data"><b>From the game data</b><ul>${I.data.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul></div>` : ""}
+      ${I.hypothesis ? `<div><b>Our hypothesis:</b> ${I.hypothesis}</div>` : ""}
       ${live}
-      <div class="lt-lt"><b>Long-term call:</b> ${I.longTerm}<br><span>${I.why}</span></div>`;
+      <div class="lt-lt"><b>Our recommendation:</b> ${I.longTerm}.<br><span><b>Why:</b> ${I.why}</span></div>`;
     const r = row.getBoundingClientRect();
     tip.style.display = "block";
-    if (r.right + 14 + 390 <= window.innerWidth) {          // room on the right: sit beside the slider
+    if (r.right + 14 + 430 <= window.innerWidth) {          // room on the right: sit beside the slider
       tip.style.left = (r.right + 14) + "px";
       tip.style.top = Math.max(10, Math.min(r.top, window.innerHeight - tip.offsetHeight - 10)) + "px";
     } else {                                                 // narrow screen: sit below (or above) so it never covers the slider
-      tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 390)) + "px";
+      tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 430)) + "px";
       const below = r.bottom + 8, above = r.top - tip.offsetHeight - 8;
       tip.style.top = (below + tip.offsetHeight < window.innerHeight || above < 10 ? below : above) + "px";
     }

@@ -378,7 +378,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 /* Lever hover help */
 .linfo { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--line); color: var(--muted); font-size: 11px; font-weight: 800; font-style: normal; margin-left: 4px; vertical-align: 1px; }
 .lever:hover { background: #f3f5fa; border-radius: 10px; }
-#levTip { display: none; position: fixed; z-index: 50; width: 380px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 14px 16px; font-size: 14px; line-height: 1.45; pointer-events: none; }
+#levTip { display: none; position: fixed; z-index: 50; width: 420px; max-height: 92vh; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 14px 16px; font-size: 14px; line-height: 1.45; pointer-events: none; }
 #levTip > div { margin-top: 6px; }
 #levTip .lt-h { font-weight: 800; font-size: 16px; margin-top: 0; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 #levTip .lt-h span { border: 1.5px solid; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
@@ -434,3 +434,10 @@ details.fold[open] summary { margin-bottom: 12px; }
 .lv-more summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
 .lv-more[open] summary { margin-bottom: 4px; }
 @media (max-width: 900px) { .lv-learn { grid-template-columns: 1fr 1fr; } }
+
+#levTip .lt-plain { color: var(--muted); }
+#levTip .lt-data { background: #f6f7f9; border-radius: 8px; padding: 6px 8px; }
+#levTip .lt-data ul, .lv-ul { margin: 2px 0 0 16px; padding: 0; } #levTip .lt-data li { margin: 2px 0; font-size: 13px; }
+.lv-ul li { margin: 2px 0; }
+
+.tl-older { margin: 10px 0 14px; } .tl-older summary { cursor: pointer; font-weight: 800; color: var(--muted); }
