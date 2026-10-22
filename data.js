@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-legend2-v56",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-team-v65",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -186,6 +186,8 @@ window.SIM = {
     { label: "Online +$1M", change: { online: 13.5 }, when: "If online share < 48%", conf: "Medium", why: "Online builds up (60% capitalized) and slowly lifts Frictionless; S1 and S4 shop online. Add only if our online share of sales keeps slipping." },
     { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low", why: "Premium sales grow fast at 66%, so customers may accept a bit more. Raises profit per item but may cost some premium shoppers." }
   ],
+
+  team: ["Brian", "Patrick", "Abhishek", "Joe", "Michael"],
 
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
   vsZephara: {

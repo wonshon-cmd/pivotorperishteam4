@@ -238,6 +238,16 @@
         <ul id="explore" class="minor"></ul>
       </aside>
     </div>
+    <section class="team-cmp" id="teamCmp">
+      <div class="tc-head"><div><div class="tc-t">Team discussion · before we submit</div><div class="tc-s">Set the sliders, give your idea a title, and add it under your name. The comparison opens so we can talk through the trade-offs and agree on one plan.</div></div>
+        <div class="tc-save"><input id="tcTitle" class="tc-title-in" placeholder="Idea title (optional), e.g. Invest for the Experience lead" maxlength="60"><span><b>Add my idea</b> as:</span><span id="tcNames"></span><button id="tcOpen" class="tc-ref">Open discussion</button></div></div>
+    </section>
+    <div id="tdOverlay" class="td-ov"><div class="td-panel">
+      <div class="td-top"><div><div class="tc-t">Team discussion</div><div class="tc-s">Compare ideas side by side, talk through the trade-offs, then make one our final.</div></div>
+        <div class="td-btns"><button id="tcRefresh" class="tc-ref">↻ Refresh compare</button><button id="tcClear" class="tc-clr">Clear all</button><button id="tdClose" class="tc-clr">← Back to sliders</button></div></div>
+      <div id="tcFinal"></div>
+      <div id="tcCards" class="tc-cards"></div>
+    </div></div>
     <div class="foot">Directional model back-tested on every real round through Round 5 status (incl. the mulligan). Use it to compare options, not as an exact forecast.</div>
   </section>
 

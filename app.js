@@ -27,23 +27,23 @@
   }
 
   // ---------- Levers ----------
-  const LEVERS = [   // same order as the game's input screen
-    { key: "markupLow",   label: "Markup · lower-cost",  unit: "%", min: 20, max: 90, step: 1,   q: "Low Price",    group: "Products (lower-cost / higher-cost)" },
-    { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Products (lower-cost / higher-cost)" },
-    { key: "breadthLow",  label: "Breadth · lower-cost",  unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Products (lower-cost / higher-cost)" },
-    { key: "breadthHigh", label: "Breadth · higher-cost", unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Products (lower-cost / higher-cost)" },
-    { key: "depthLow",    label: "Depth · lower-cost",    unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Products (lower-cost / higher-cost)" },
-    { key: "depthHigh",   label: "Depth · higher-cost",   unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Products (lower-cost / higher-cost)" },
-    { key: "pbLow",       label: "Private brand · lower-cost",  unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Products (lower-cost / higher-cost)" },
-    { key: "pbHigh",      label: "Private brand · higher-cost", unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Products (lower-cost / higher-cost)" },
-    { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Quality" },
-    { key: "nbQuality",   label: "National brand quality", unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Quality" },
-    { key: "stores",      label: "Retail coverage (stores)", unit: "", min: 120, max: 320, step: 5, q: "Debt",     group: "Stores & investments ($)" },
-    { key: "online",      label: "Online investment",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frictionless", group: "Stores & investments ($)" },
-    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frict. / Exp.", group: "Stores & investments ($)" },
-    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 30, step: 0.5, q: "Experience",   group: "Stores & investments ($)" },
-    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 70,  step: 1,   q: "Low Price",    group: "Stores & investments ($)" },
-    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 15,  step: 0.5, q: "Multiplier",   group: "Stores & investments ($)" }
+  const LEVERS = [
+    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 70,  step: 1,   q: "Low Price",    group: "Invest" },
+    { key: "online",      label: "Online",            unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frictionless", group: "Invest" },
+    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 30, step: 0.5, q: "Experience",   group: "Invest" },
+    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frict. / Exp.", group: "Invest" },
+    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 15,  step: 0.5, q: "Multiplier",   group: "Invest" },
+    { key: "markupLow",   label: "Markup · lower-cost",  unit: "%", min: 20, max: 90, step: 1,   q: "Low Price",    group: "Price" },
+    { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Price" },
+    { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
+    { key: "nbQuality",   label: "National brand quality", unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
+    { key: "pbLow",       label: "Private brand · lower-cost",  unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
+    { key: "pbHigh",      label: "Private brand · higher-cost", unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
+    { key: "breadthLow",  label: "Breadth · lower-cost",  unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
+    { key: "breadthHigh", label: "Breadth · higher-cost", unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
+    { key: "depthLow",    label: "Depth · lower-cost",    unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
+    { key: "depthHigh",   label: "Depth · higher-cost",   unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
+    { key: "stores",      label: "Stores",            unit: "",   min: 120, max: 320, step: 5,  q: "Debt",         group: "Stores" }
   ];
 
 
@@ -829,6 +829,128 @@
     document.querySelectorAll(".zeph-slot").forEach(el => el.innerHTML = html);
   }
 
+
+  // ---------- Team plans on the Build plan screen: save per person, compare vs recommended, pros & cons ----------
+  const TEAM_KEY = "getchells-team-r" + S.round;
+  const teamLoad = () => { try { return JSON.parse(localStorage.getItem(TEAM_KEY) || "{}"); } catch (e) { return {}; } };
+  const teamSave = t => localStorage.setItem(TEAM_KEY, JSON.stringify(t));
+  const VOTE_KEY = TEAM_KEY + "-votes", FINAL_KEY = TEAM_KEY + "-final";
+  const voteLoad = () => { try { return JSON.parse(localStorage.getItem(VOTE_KEY) || "{}"); } catch (e) { return {}; } };
+  const finalLoad = () => localStorage.getItem(FINAL_KEY) || "";
+  // Long-term (strategic) effect of moving a lever up/down — based on what builds up and our end-game plan
+  const LT = {
+    experience: { up: [1, "Builds an Experience lead that carries to Round 8 (20% capitalized)"], down: [-1, "Experience position stops building; Zephara can pass us"] },
+    online: { up: [1, "Online position keeps building → Frictionless creeps toward fair value"], down: [-1, "Online position stops building; S1/S4 (growing) shop online"] },
+    service: { up: [-1, "Doesn't build up: rivals keep matching service spend"], down: [-1, "Experience drops right away (service is judged every round)"] },
+    vendor: { up: [1, "Lower costs compound over rounds"], down: [-1, "Cost gap vs rivals widens every round; better saved for the final round"] },
+    analytics: { up: [-1, "Small, unproven effect; doesn't build"], down: [0, "Little long-term effect"] },
+    breadthLow: { up: [1, "Tests our growth lever for growing segments (S2, S4, S6)"], down: [-1, "Drops the breadth test; no read on our growth lever"] },
+    breadthHigh: { up: [0, "Already at the max"], down: [-1, "Weakens our #1 premium range (fastest-growing line)"] },
+    depthLow: { up: [-1, "Ties up cash in stock (more debt)"], down: [-1, "Stock-outs as customers value depth more each round"] },
+    depthHigh: { up: [-1, "Ties up cash in stock"], down: [-1, "Stock-outs on premium products"] },
+    pbQuality: { up: [1, "Brand insurance against BestCo's rise"], down: [-1, "Risks our Brand #1"] },
+    nbQuality: { up: [1, "Brand insurance against BestCo's rise"], down: [-1, "Risks our Brand #1"] },
+    pbLow: { up: [-1, "More own-label may weaken Brand"], down: [1, "Tests whether more national brands lift Brand"] },
+    pbHigh: { up: [-1, "More own-label may weaken Brand"], down: [1, "Tests whether more national brands lift Brand"] },
+    markupLow: { up: [-1, "Low Price could slip toward fair value"], down: [-1, "Thinner margins every round"] },
+    markupHigh: { up: [0, "Untested: premium shoppers may accept it"], down: [-1, "Thinner premium margins"] },
+    stores: { up: [-1, "More debt + depreciation for years (value trap per slides)"], down: [-1, "Loses store shoppers (S2, S4, S6 are growing)"] }
+  };
+  function prosCons(d, rec) {
+    const r = model(d), r0 = model(rec), now = { pro: [], con: [] }, lt = { pro: [], con: [] };
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+    LEVERS.forEach(L => {
+      if (Math.abs(d[L.key] - rec[L.key]) < 1e-9) return;
+      const one = Object.assign({}, rec, { [L.key]: d[L.key] }), dv = model(one).mv - r0.mv, I = (S.leverInfo || {})[L.key] || {};
+      (dv >= 0 ? now.pro : now.con).push([Math.abs(dv), `${L.label} ${fmt(L, rec[L.key])} → ${fmt(L, d[L.key])}: ${dv >= 0 ? "+" : "−"}$${Math.abs(dv).toFixed(0)}M${I.conf === "Low" ? " (untested)" : ""}`]);
+      const e = (LT[L.key] || {})[d[L.key] > rec[L.key] ? "up" : "down"];
+      if (e && e[0] !== 0) (e[0] > 0 ? lt.pro : lt.con).push([Math.abs(dv) + 1, `${L.label}: ${e[1]}`]);
+    });
+    const exp = r.cls[1];
+    if (exp.score >= exp.leader) now.pro.push([99, `Experience ${exp.score.toFixed(2)} ≥ Zephara ${exp.leader}: two leads`]); else now.con.push([99, `Experience ${exp.score.toFixed(2)} < Zephara ${exp.leader}: stays #2`]);
+    if (r.spend > S.base.budget + 1e-6) now.con.push([100, `Over budget by ${fmtM(r.spend - S.base.budget)}: the game will reject it`]);
+    else if (S.base.budget - r.spend > 1) lt.con.push([5, `${fmtM(S.base.budget - r.spend)} unspent: positions that build up don't get built`]);
+    const top = arr => arr.sort((x, y) => y[0] - x[0]).slice(0, 3).map(x => x[1]);
+    return { r, now: { pro: top(now.pro), con: top(now.con) }, lt: { pro: top(lt.pro), con: top(lt.con) } };
+  }
+  // Strategy title from what the plan does (used when no title is typed)
+  function autoTitle(d, rec) {
+    const r = model(d), parts = [], unspent = S.base.budget - r.spend;
+    if (d.experience > rec.experience + 0.4) parts.push("Push the Experience lead"); else if (d.experience < rec.experience - 0.4) parts.push("Lighter on Experience");
+    if (d.vendor < rec.vendor - 0.4) parts.push("cut costs early"); else if (d.vendor > rec.vendor + 0.4) parts.push("invest in lower costs");
+    if (d.online > rec.online + 0.4) parts.push("build Frictionless"); else if (d.online < rec.online - 0.4) parts.push("trim online");
+    if (d.service > rec.service + 0.4) parts.push("more service");
+    if (d.breadthLow > rec.breadthLow) parts.push("wider range"); else if (d.breadthLow < rec.breadthLow) parts.push("no breadth test");
+    if (d.pbQuality > rec.pbQuality || d.nbQuality > rec.nbQuality) parts.push("Brand insurance");
+    if (unspent > 2) parts.unshift("Bank profit now");
+    if (!parts.length) return "Same as recommended";
+    const s = parts.slice(0, 3).join(", "); return s[0].toUpperCase() + s.slice(1);
+  }
+  function openTD() { renderTeamCmp(); const o = $("#tdOverlay"); if (o) { o.classList.add("open"); o.scrollTop = 0; document.body.style.overflow = "hidden"; } }
+  function closeTD() { const o = $("#tdOverlay"); if (o) o.classList.remove("open"); document.body.style.overflow = ""; }
+  function renderTeamCmp() {
+    if (!$("#tcCards")) return;
+    const t = teamLoad(), recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
+    $("#tcNames").innerHTML = (S.team || []).map(n => `<button class="tc-nm ${t[n] ? "in" : ""}" data-tcsave="${n}">${t[n] ? "✓ " : ""}${n}</button>`).join("");
+    const names = Object.keys(t);
+    const plans = [["Recommended", rec, true]].concat(names.map(n => [n, Object.assign({}, S.defaults, t[n].d), false]));
+    if (names.length >= 2) { const avg = {}; LEVERS.forEach(L => avg[L.key] = Math.round(names.reduce((s, n) => s + Object.assign({}, S.defaults, t[n].d)[L.key], 0) / names.length * 100) / 100); plans.push(["Team average", avg, false, true]); }
+    const votes = voteLoad(), fin = finalLoad(), tally = p => Object.values(votes).filter(v => v === p).length;
+    const titleOf = p => p[2] ? (recP ? recP.name : "Recommended plan") : p[3] ? "Middle ground of everyone's ideas" : ((t[p[0]] && t[p[0]].title) || autoTitle(p[1], rec));
+    const pcs = plans.map(p => prosCons(p[1], rec)), rs = pcs.map(x => x.r), r0 = rs[0];
+    const best = -1;   // no "winner" styling: this is for discussion, not ranking
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+    if (!names.length) { $("#tcCards").innerHTML = `<div class="tc-empty">No ideas added yet. Set the sliders and click your name above; each idea appears here next to the recommended plan so we can talk through the trade-offs.</div>`; }
+    else {
+      // 1) value chart
+      const mx = Math.max(...rs.map(r => r.mv)), mn = Math.min(...rs.map(r => r.mv)), lo = mn - (mx - mn) * 0.6 - 10, w = v => ((v - lo) / (mx - lo) * 100).toFixed(1);
+      const chart = `<div class="tc-chart">${plans.map((p, i) => `<div class="tcb"><span class="tcb-n">${p[0]}<small>${titleOf(p)}</small></span><div class="tcb-track"><div class="tcb-bar ${p[2] ? "rec" : ""}" style="width:${w(rs[i].mv)}%"></div><span class="tcb-ref" style="left:${w(r0.mv)}%"></span></div><b>${fmtM(rs[i].mv)}</b><span class="tcb-d">${i ? (rs[i].mv >= r0.mv ? "+" : "−") + "$" + Math.abs(rs[i].mv - r0.mv).toFixed(0) + "M" : "baseline"}</span></div>`).join("")}</div>`;
+      // 2) table: results, differing levers, pros/cons
+      const head = `<tr><th></th>${plans.map((p, i) => `<th class="${p[2] ? "rec" : ""}${i === best ? " best" : ""}">${p[0]}${fin === p[0] ? ' <span class="tc-fin">FINAL</span>' : ""}<div class="tc-ttl">“${titleOf(p)}”</div>${!p[2] && !p[3] ? `<div class="tc-time">${new Date(t[p[0]].ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div><div class="tc-act"><button data-tcload="${p[0]}">Load</button><button data-tcdel="${p[0]}">✕</button></div>` : ""}</th>`).join("")}</tr>`;
+      // expected result rows: confidence + typical error; show only rows where plans differ; highlight standouts
+      const res = [
+        ["Market value", r => fmtM(r.mv), r => r.mv, "Medium", "±8%", v => Math.abs(v) * 0.03],
+        ["Net income", r => fmtM(r.niProj), r => r.niProj, "Medium", "±7%", v => Math.abs(v) * 0.03],
+        ["Experience (Zephara " + r0.cls[1].leader + ")", r => r.sc[1].toFixed(2) + (r.sc[1] >= r.cls[1].leader ? " #1" : " #2"), r => r.sc[1], "High", "±0.1", () => 0.05],
+        ["Brand", r => r.sc[0].toFixed(2), r => r.sc[0], "High", "±0.1", () => 0.05],
+        ["Low Price", r => r.sc[2].toFixed(2), r => r.sc[2], "High", "±0.1", () => 0.05],
+        ["Frictionless", r => r.sc[3].toFixed(2), r => r.sc[3], "Medium", "±0.2", () => 0.05],
+        ["Spend of " + fmtM(S.base.budget), r => fmtM(r.spend) + (r.spend > S.base.budget + 1e-6 ? " ⚠ over" : ""), r => r.spend, "High", "exact", () => 0.4]
+      ];
+      const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
+      const shown = res.filter(([n, f, g, c, e, th], k) => k === 0 || rs.some(r => Math.abs(g(r) - g(r0)) > th(g(r0))));
+      const resRows = `<tr class="tc-g"><td colspan="${plans.length + 1}">Expected result · only what differs</td></tr>` + shown.map(([n, f, g, c, e, th]) => `<tr><td>${n}<span class="tc-cf" style="color:${CC[c]};border-color:${CC[c]}">${c} ${e}</span></td>${rs.map((r, i) => { const so = i > 0 && Math.abs(g(r) - g(r0)) > th(g(r0));
+        return `<td class="${so ? "std" : ""}">${f(r)}</td>`; }).join("")}</tr>`).join("");
+      const diffL = LEVERS.filter(L => plans.some(p => Math.abs(p[1][L.key] - rec[L.key]) > 1e-9));
+      const diffRows = diffL.length ? `<tr class="tc-g"><td colspan="${plans.length + 1}">Where plans differ (— = same as recommended)</td></tr>` + diffL.map(L => `<tr><td>${L.label}</td>${plans.map((p, i) => { const v = p[1][L.key], same = Math.abs(v - rec[L.key]) < 1e-9;
+        return `<td class="${i === 0 ? "recv" : same ? "same" : v > rec[L.key] ? "up" : "dn"}">${i === 0 || !same ? fmt(L, v) : "—"}</td>`; }).join("")}</tr>`).join("") : "";
+      const pcRow = (lbl, key) => `<tr class="tc-g"><td colspan="${plans.length + 1}">${lbl}</td></tr><tr class="tc-pcr"><td></td>${pcs.map((x, i) => i === 0 ? `<td class="recv"><span class="tc-mut">baseline</span></td>` :
+        `<td>${x[key].pro.map(s => `<div class="pp">↑ ${s}</div>`).join("")}${x[key].con.map(s => `<div class="cc">⚖ ${s}</div>`).join("") || ""}${!x[key].pro.length && !x[key].con.length ? '<span class="tc-mut">—</span>' : ""}</td>`).join("")}</tr>`;
+      const decideRow = `<tr class="tc-vr"><td></td>${plans.map(p => `<td><button class="tc-dec ${fin === p[0] ? "on" : ""}" data-final="${p[0]}">${fin === p[0] ? "✓ Our final" : "Make this our final"}</button></td>`).join("")}</tr>`;
+      $("#tcCards").innerHTML = chart + `<div class="tc-tw"><table class="tc-table">${head}${resRows}${diffRows}${pcRow("Upsides &amp; trade-offs · this round", "now")}${pcRow("Upsides &amp; trade-offs · long term (to Round 8)", "lt")}${decideRow}</table></div>
+        <p class="tc-note">Blue = higher than recommended, orange = lower (just a difference, not good or bad). Long-term notes use what builds up vs what doesn't. Model numbers are Medium confidence: use them to discuss, not to score.</p>`;
+    }
+    document.querySelectorAll("[data-tcsave]").forEach(b => b.onclick = () => { const tt = teamLoad(); const ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || ""; tt[b.dataset.tcsave] = { d: Object.assign({}, state.d), ts: Date.now(), title: ti }; teamSave(tt); if ($("#tcTitle")) $("#tcTitle").value = ""; renderTeamCmp();
+      openTD(); });
+    const planByName = n => { const p = plans.find(x => x[0] === n); return p ? p[1] : null; };
+    document.querySelectorAll("[data-final]").forEach(b => b.onclick = () => { const n = b.dataset.final, d = planByName(n); if (!d) return;
+      localStorage.setItem(FINAL_KEY, n); state.d = Object.assign({}, d); syncLevers(); update(); renderTeamCmp(); });
+    // final decision banner (what to type into the game)
+    const fn = finalLoad(), fd = names.length || fn === "Recommended" ? planByName(fn) : null;
+    if ($("#tcFinal")) $("#tcFinal").innerHTML = fd ? (() => { const ch = LEVERS.filter(L => Math.abs(fd[L.key] - S.defaults[L.key]) > 1e-9), rf = model(fd);
+      const lines = ch.map(L => `${L.label}: ${fmt(L, S.defaults[L.key])} → ${fmt(L, fd[L.key])}`);
+      return `<div class="tc-final"><div><b>Final decision: ${fn}${fn === "Team average" || fn === "Recommended" ? "" : "'s plan"} · “${titleOf(plans.find(x => x[0] === fn) || ["", fd, false])}”</b> · value ≈ ${fmtM(rf.mv)} · spend ${fmtM(rf.spend)} of ${fmtM(S.base.budget)}${rf.spend > S.base.budget + 1e-6 ? " ⚠ over budget" : ""}</div>
+        <div class="tc-fl">${lines.map(l => `<span>${l}</span>`).join("") || "<span>No changes from last round</span>"}</div><button class="primary sm" id="tcCopyFinal">Copy what to type into the game</button></div>`; })() : "";
+    if ($("#tcCopyFinal")) $("#tcCopyFinal").onclick = () => { const d = planByName(finalLoad()); const txt = "FINAL (" + finalLoad() + ") — type into the game:\n" + LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9).map(L => `${L.label}: ${fmt(L, S.defaults[L.key])} -> ${fmt(L, d[L.key])}`).join("\n");
+      navigator.clipboard && navigator.clipboard.writeText(txt).catch(() => {}); $("#tcCopyFinal").textContent = "Copied ✓"; };
+    if ($("#tcOpen")) { $("#tcOpen").textContent = `Open discussion (${names.length} idea${names.length === 1 ? "" : "s"})`; $("#tcOpen").onclick = openTD; }
+    if ($("#tdClose")) $("#tdClose").onclick = closeTD;
+    if ($("#tcRefresh")) $("#tcRefresh").onclick = () => { renderTeamCmp(); $("#tcRefresh").textContent = "↻ Updated"; setTimeout(() => { const r = $("#tcRefresh"); if (r) r.textContent = "↻ Refresh compare"; }, 1200); };
+    if ($("#tcClear")) $("#tcClear").onclick = () => { if (!confirm("Clear all team plans, votes and the final decision for this round?")) return; [TEAM_KEY, VOTE_KEY, FINAL_KEY].forEach(k => localStorage.removeItem(k)); renderTeamCmp(); };
+    document.querySelectorAll("[data-tcload]").forEach(b => b.onclick = () => { const tt = teamLoad(); state.d = Object.assign({}, S.defaults, tt[b.dataset.tcload].d); syncLevers(); update(); closeTD(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+    document.querySelectorAll("[data-tcdel]").forEach(b => b.onclick = () => { const tt = teamLoad(); delete tt[b.dataset.tcdel]; teamSave(tt); renderTeamCmp(); });
+  }
+
   // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
   let lvFilter = "all";
   function renderLearn() {
@@ -1225,7 +1347,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
