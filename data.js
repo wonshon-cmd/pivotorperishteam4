@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-budget-v39",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-zeph-v40",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -169,6 +169,20 @@ window.SIM = {
 
 
   // ---- Hover help on Build plan sliders: confidence, effect, hypothesis (untested levers), long-term call + why ----
+  // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
+  vsZephara: {
+    title: "How we beat Zephara",
+    sub: "Zephara is chasing our Experience customers. Instead of a spending war, we compete where it's weak.",
+    compare: [["Experience score", "6.4", "6.5 ↑", 0], ["Brand score", "5.1", "4.6 ↓", 1], ["Premium breadth position", "4.0 (#1)", "1.6", 1], ["Premium sales share", "4.2%", "1.4%", 1], ["Product costs", "+1.8% vs rivals", "lowest", -1], ["Revenue growth", "+11.2%", "+8%", 1]],
+    moves: [
+      ["Hold", "Stay close in Experience, don't chase", "Within 5% of the leader already counts as 'close'. Shopping experience to $20.5M; no service war (it's saturating).", "Medium"],
+      ["Raise", "Make Brand our clear lead", "Zephara's Brand fell 4 rounds in a row. Quality is cheap and proven (+0.2 per step): go to 7 if anyone gets within 0.3.", "High"],
+      ["Test", "Own 'wide and premium'", "Our premium range is #1 and growing +14%; Zephara barely sells premium. Breadth 55 targets S2/S4/S6, who want range + stores.", "Low"],
+      ["Hold", "Win on profit, not price", "Zephara's costs are lower, so a price war doesn't suit us. Grow faster on flat spending (value = P/E × profit).", "Medium"]
+    ],
+    watch: "If Zephara's Experience passes 6.7, hold (don't chase with service). If its Brand starts rising, move quality to 7."
+  },
+
   // Lever page: grouped by how we decide (our thought process)
   leverGroups: [
     { q: "1 · Does it help us WIN Brand or Experience?", why: "Leading two quadrants lifts our P/E (≈ +10% per point of Brand + Experience).",
@@ -216,6 +230,7 @@ window.SIM = {
     { keys: ["fair value", "frictionless gap", "frictionless"], conf: "Medium", a: "Fair value = 75% of the leader. We pass in Low Price (4.8 vs 4.1) but not Frictionless (3.9 vs 5.5). Closing it would cost ≈$15M a year ≈ −$150M of value, and our target customers care least about online.", rec: "Accept the small Frictionless gap; nudge it with service, not online." },
     { keys: ["win", "strategy", "thesis", "plan", "how do we"], conf: "Medium", a: "Be the <b>premium, wide-assortment department store</b>: lead Brand and Experience, stay fair in Low Price, accept a small Frictionless gap, and keep spending flat so profit (and value) grows.", rec: "This round: shopping experience → $20.5M, online → $10.5M, service → $17M, lower-cost breadth → 55." },
     { keys: ["final round", "last round", "endgame", "round 8"], conf: "Medium", a: "In the final round, effects that build up slowly (vendor cost savings) can't come back to hurt us. Cutting vendor to ≈$15M and online/analytics to minimum boosts final-year profit, which sets final value.", rec: "Keep service + shopping experience so both leads hold; cut the rest." },
+    { keys: ["beat zephara", "differentiate", "zephara catching", "zephara following", "against zephara", "vs zephara"], conf: "Medium", a: "Don't out-spend Zephara on Experience: service is saturating and it keeps matching us. Stay within 5% of it in Experience (that counts as 'close to the leader'), make <b>Brand</b> our clear lead (its Brand fell 4 rounds in a row), and own <b>wide and premium</b>: our premium range is #1 (position 4.0 vs 1.6) and growing +14%, while Zephara barely sells premium (1.4% share).", rec: "This round: shopping experience $20.5M, breadth 55, quality 6 (→ 7 if Brand gets within 0.3)." },
     { keys: ["zephara", "competitor", "rival", "bestco", "cadabra"], conf: "High", a: "Zephara leads Experience (6.5 vs our 6.4) with the best service position; its Brand is falling (4.6). BestCo's Brand is rising (4.4). Cadabra owns Frictionless (7.3) but is sliding.", rec: "Watch Zephara Experience > 6.6 and BestCo Brand > 4.8 every round." }
   ],
 
@@ -247,6 +262,7 @@ window.SIM = {
         "<b>Experience 6.4 → ≈6.54</b> vs Zephara 6.5: shopping experience is our #1 position (3.6) and the best $ lever; service is saturated.",
         "<b>Online +$1M did ~+0.05 Frictionless</b> twice: it funds the shift. Same total spend as Round 4.",
         "<b>Breadth 55 (lower-cost)</b>: customers' #2 value; growth is in S4 (+17%), S6 (+14%), S1 (+13%), which weight breadth heavily. Costs only ≈$0.3M interest.",
+        "<b>Differentiate from Zephara</b>: stay close in Experience, win on Brand + a wide premium range (see 'How we beat Zephara').",
         "<b>Model value ≈$959M</b> (+24%), net income ≈$63.5M."
       ],
       risks: ["Frictionless ≈3.8 (−0.1) from the online/service trim.", "Breadth is untested: if lower-cost revenue grows < 11%, set it back to 50."]

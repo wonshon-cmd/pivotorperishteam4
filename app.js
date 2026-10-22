@@ -788,6 +788,17 @@
     document.querySelectorAll(".ask-s").forEach(b => b.onclick = () => ask(b.textContent));
   }
 
+  // ---------- How we beat Zephara card (rendered into every .zeph-slot) ----------
+  function renderZeph() {
+    const Z = S.vsZephara; if (!Z) return;
+    const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
+    const html = `<div class="zc"><div class="zc-h"><div><div class="zc-t">${Z.title}</div><div class="zc-s">${Z.sub}</div></div></div>
+      <div class="zc-grid"><table class="zc-tab"><tr><th></th><th>Us</th><th>Zephara</th></tr>${Z.compare.map(([n, u, z, w]) => `<tr><td>${n}</td><td class="${w > 0 ? "win" : w < 0 ? "lose" : ""}">${u}</td><td>${z}</td></tr>`).join("")}</table>
+      <div class="zc-moves">${Z.moves.map(([v, t, d, c]) => `<div class="zm"><span class="cb ${v.toLowerCase()}">${v}</span><div><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div>
+      <div class="zc-w"><b>Watch next round:</b> ${Z.watch}</div></div>`;
+    document.querySelectorAll(".zeph-slot").forEach(el => el.innerHTML = html);
+  }
+
   // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
   let lvFilter = "all";
   function renderLearn() {
@@ -1127,7 +1138,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
