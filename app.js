@@ -758,7 +758,9 @@
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
     if (document.getElementById("askBtn")) return;
-    document.body.insertAdjacentHTML("beforeend", `<button id="askBtn">Ask ✦</button>
+    const top = document.querySelector(".top") || document.body;
+    top.insertAdjacentHTML("beforeend", `<button id="askBtn">Ask ✦</button>`);
+    document.body.insertAdjacentHTML("beforeend", `
       <div id="askPanel"><div class="ask-head"><b>Ask the copilot</b><button id="askClose" aria-label="Close">×</button></div>
       <div id="askLog"><div class="ask-msg bot">Ask a what-if or how-it-works question. I run our model (vs Plan A) and answer in plain English with our confidence.</div></div>
       <div class="ask-sugg">${["What if we lower online to $8M?", "Raise markup by 2 points?", "Should we cut vendor management?", "What if breadth goes to 60?", "What does the analytics score mean?", "Should we pay down debt?", "How do we beat $1.5B?"].map(x => `<button class="ask-s">${x}</button>`).join("")}</div>
