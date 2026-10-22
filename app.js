@@ -27,24 +27,25 @@
   }
 
   // ---------- Levers ----------
-  const LEVERS = [
-    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 70,  step: 1,   q: "Low Price",    group: "Invest" },
-    { key: "online",      label: "Online",            unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frictionless", group: "Invest" },
-    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 30, step: 0.5, q: "Experience",   group: "Invest" },
-    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frict. / Exp.", group: "Invest" },
-    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 15,  step: 0.5, q: "Multiplier",   group: "Invest" },
-    { key: "markupLow",   label: "Markup · lower-cost",  unit: "%", min: 20, max: 90, step: 1,   q: "Low Price",    group: "Price" },
-    { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Price" },
-    { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
-    { key: "nbQuality",   label: "National brand quality", unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
-    { key: "pbLow",       label: "Private brand · lower-cost",  unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
-    { key: "pbHigh",      label: "Private brand · higher-cost", unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
-    { key: "breadthLow",  label: "Breadth · lower-cost",  unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
-    { key: "breadthHigh", label: "Breadth · higher-cost", unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
-    { key: "depthLow",    label: "Depth · lower-cost",    unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
-    { key: "depthHigh",   label: "Depth · higher-cost",   unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
-    { key: "stores",      label: "Stores",            unit: "",   min: 120, max: 320, step: 5,  q: "Debt",         group: "Stores" }
+  const LEVERS = [   // same order as the game's input screen
+    { key: "markupLow",   label: "Markup · lower-cost",  unit: "%", min: 20, max: 90, step: 1,   q: "Low Price",    group: "Products (lower-cost / higher-cost)" },
+    { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Products (lower-cost / higher-cost)" },
+    { key: "breadthLow",  label: "Breadth · lower-cost",  unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Products (lower-cost / higher-cost)" },
+    { key: "breadthHigh", label: "Breadth · higher-cost", unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Products (lower-cost / higher-cost)" },
+    { key: "depthLow",    label: "Depth · lower-cost",    unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Products (lower-cost / higher-cost)" },
+    { key: "depthHigh",   label: "Depth · higher-cost",   unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Products (lower-cost / higher-cost)" },
+    { key: "pbLow",       label: "Private brand · lower-cost",  unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Products (lower-cost / higher-cost)" },
+    { key: "pbHigh",      label: "Private brand · higher-cost", unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Products (lower-cost / higher-cost)" },
+    { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Quality" },
+    { key: "nbQuality",   label: "National brand quality", unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Quality" },
+    { key: "stores",      label: "Retail coverage (stores)", unit: "", min: 120, max: 320, step: 5, q: "Debt",     group: "Stores & investments ($)" },
+    { key: "online",      label: "Online investment",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frictionless", group: "Stores & investments ($)" },
+    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frict. / Exp.", group: "Stores & investments ($)" },
+    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 30, step: 0.5, q: "Experience",   group: "Stores & investments ($)" },
+    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 70,  step: 1,   q: "Low Price",    group: "Stores & investments ($)" },
+    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 15,  step: 0.5, q: "Multiplier",   group: "Stores & investments ($)" }
   ];
+
 
   // ---------- Model ----------
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -659,7 +660,7 @@
       if (L.group !== group) { group = L.group; const h = document.createElement("div"); h.className = "lgroup"; h.textContent = group; wrap.appendChild(h); }
       const row = document.createElement("div"); row.className = "lever";
       row.innerHTML = `<div class="lrow"><label>${L.label}</label><span class="tag">${L.q}</span>
-        <div class="num">${L.unit === "$M" ? "<i>$</i>" : ""}<input type="number" step="${L.step}" min="${L.min}" max="${L.max}" data-k="${L.key}">${L.unit === "%" ? "<i>%</i>" : L.unit === "$M" ? "<i>M</i>" : ""}</div></div>
+        <div class="stepper"><button class="stp" data-stp="-1" data-k="${L.key}" aria-label="Decrease">−</button><div class="num">${L.unit === "$M" ? "<i>$</i>" : ""}<input type="number" step="${L.step}" min="${L.min}" max="${L.max}" data-k="${L.key}">${L.unit === "%" ? "<i>%</i>" : L.unit === "$M" ? "<i>M</i>" : ""}</div><button class="stp" data-stp="1" data-k="${L.key}" aria-label="Increase">+</button></div></div>
         <div class="rng"><input type="range" min="${L.min}" max="${L.max}" step="${L.step}" data-k="${L.key}"><span class="was-tick" style="left:${((S.defaults[L.key] - L.min) / (L.max - L.min) * 100).toFixed(2)}%"></span></div>
         <div class="was-row"><span class="was-txt" data-was="${L.key}"></span><button class="lv-undo" data-undo="${L.key}" title="Put back to the loaded plan">↺ undo</button></div>`;
       row.dataset.k = L.key;
@@ -668,6 +669,11 @@
       row.addEventListener("mouseleave", hideLeverTip);
       wrap.appendChild(row);
     });
+    // − / + buttons: exact steps ($1M for spend levers, 1 unit otherwise)
+    wrap.addEventListener("click", e => { const b = e.target.closest("[data-stp]"); if (!b) return;
+      const L = LEVERS.find(x => x.key === b.dataset.k), st = L.unit === "$M" ? 1 : (L.key === "stores" ? 5 : 1);
+      state.d[L.key] = Math.max(L.min, Math.min(L.max, Math.round((state.d[L.key] + st * +b.dataset.stp) * 100) / 100)); syncLevers(); update();
+      const row = b.closest(".lever"); if (row) showLeverTip(row, L); });
     wrap.addEventListener("click", e => { const sv = e.target.closest("[data-setk]");
       if (sv) { state.d[sv.dataset.setk] = +sv.dataset.setv; syncLevers(); update(); hideLeverTip(); return; } });
     wrap.addEventListener("click", e => { const b = e.target.closest("[data-undo]"); if (!b) return;
@@ -1086,7 +1092,25 @@
     const tipKeys = ["lead", "fair", "roic", "budget", "credit"];
     $("#checks").innerHTML = checks.map(([ok, t, s], i) => `<li data-tip="${tipKeys[i]}" class="${ok ? "ok" : "no"}"><span class="ic">${ok ? "✓" : "!"}</span><span class="ct">${t}</span><span class="cs">${s}</span></li>`).join("");
     renderStory(r);
+    renderEntries();
     state.last = r;
+  }
+
+  // "Type this into the game": changed boxes, in game-screen order
+  function renderEntries() {
+    const box = $("#entryList"); if (!box) return;
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+v.toFixed(2)) + "M" : (+v.toFixed(2)) + (L.unit === "%" ? "%" : "");
+    const ch = LEVERS.filter(L => Math.abs(state.d[L.key] - S.defaults[L.key]) > 1e-9);
+    const spend = state.d.online + state.d.service + state.d.experience + state.d.vendor + state.d.analytics;
+    box.innerHTML = `<div class="en-h"><b>Type this into the game</b><button id="entryCopy" class="en-copy">Copy</button></div>` +
+      (ch.length ? `<ol class="en-list">${ch.map(L => `<li><span>${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, state.d[L.key])}</em></b></li>`).join("")}</ol>`
+        : `<div class="en-none">No changes from last round.</div>`) +
+      `<div class="en-foot">All other boxes: same as last round · investments total ${fmt({ unit: "$M" }, spend)} of $${S.base.budget}M</div>`;
+    $("#entryCopy").onclick = () => {
+      const txt = "Round " + S.round + " entries (changes from last round, game order):\n" + (ch.length ? ch.map(L => `${L.label}: ${fmt(L, S.defaults[L.key])} -> ${fmt(L, state.d[L.key])}`).join("\n") : "No changes") + `\nInvestments total: ${fmt({ unit: "$M" }, spend)} of $${S.base.budget}M`;
+      navigator.clipboard && navigator.clipboard.writeText(txt).catch(() => {});
+      $("#entryCopy").textContent = "Copied ✓"; setTimeout(() => { const b = $("#entryCopy"); if (b) b.textContent = "Copy"; }, 1400);
+    };
   }
 
   // Quadrant colors for the money bar (one accent family, different strengths)

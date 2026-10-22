@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-undo-v52",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-steps-v54",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -275,8 +275,8 @@ window.SIM = {
   plans: [
     {
       id: "A", name: "Take Experience #1 + breadth test", badge: "Recommended", segs: [5, 3],
-      tag: "Invest the full budget where it builds up: shopping experience $22M; online held; lower-cost breadth 55 · $77.48M",
-      levers: { vendor: 20, online: 12.5, experience: 22, service: 17, analytics: 6, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
+      tag: "Invest the full budget where it builds up: shopping experience $21.98M; online held; lower-cost breadth 55 · exactly $77.48M",
+      levers: { vendor: 20, online: 12.5, experience: 21.98, service: 17, analytics: 6, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
       why: [
         "<b>Experience 6.4 → ≈6.65</b> vs Zephara 6.5: shopping experience is our #1 position (3.6), it BUILDS over rounds (20% capitalized), and service is saturated.",
         "<b>Invest fully now, cut in the final round</b>: positions we build stay; the cost leaves final-year profit. Only the final market value decides the winner.",
