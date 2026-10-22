@@ -71,10 +71,13 @@
       0.2 * dd.pbQuality + 0.2 * dd.nbQuality - 0.08 * mix(dd, "pb") + 0.04 * mix(dd, "depth"),
       m * 2.34 * sq(dd.experience, 10) + 6.85 * (1 - Math.exp(-dd.service / 5.2)), // v6: service SATURATES (R3: +$2M → only ≈+0.12); fits try 1, R1 final, R2, R3 exactly
       1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
-      m * 0.08 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // R0→R2: online $2M→$10.5M moved Frictionless only +0.1
+      m * 0.08 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // immediate effect small; the build-up is in the drift below
     ];
     const now = f(d, am), then = f(d0, am0);
-    const dr = S.drift || [0, 0, 0, 0]; // standing still loses ground (R2: Experience −0.1)
+    const dr = (S.drift || [0, 0, 0, 0]).slice(); // standing still loses ground (R2: Experience −0.1)
+    // Audit R0–R4: online is 60% capitalized, so our online position builds ≈+0.3/round at ~0.83× industry spend,
+    // offset by our service position slipping as rivals raise service → net Frictionless build ≈ +0.1/round, scaled by online spend
+    dr[3] += 0.1 * Math.min(1.5, d.online / Math.max(d0.online, 1));
     return b.map((v, i) => clamp(v + now[i] - then[i] + dr[i], 0, 10));
   }
 

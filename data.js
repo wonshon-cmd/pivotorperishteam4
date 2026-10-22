@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-online-v45",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-audit-v46",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -264,7 +264,7 @@ window.SIM = {
         "<b>Online held at $12.5M</b>: ~half our sales are online and S1/S4 (growing) shop there; cutting would save only ≈$0.8M this year (40% expensed).",
         "<b>Breadth 55 (lower-cost)</b>: customers' #2 value; growth is in S4 (+17%), S6 (+14%), S1 (+13%), which weight breadth heavily. Costs only ≈$0.3M interest.",
         "<b>Differentiate from Zephara</b>: stay close in Experience, win on Brand + a wide premium range (see 'How we beat Zephara').",
-        "<b>Model value ≈$952M</b> (+23%), net income ≈$63.0M."
+        "<b>Model value ≈$951M</b> (+23%), net income ≈$63.0M."
       ],
       risks: ["Spends $76.0M of $77.48M (≈$1.5M unspent).", "Breadth is untested: if lower-cost revenue grows < 11%, set it back to 50."]
     },
@@ -272,7 +272,7 @@ window.SIM = {
       id: "B", name: "Bank profit, breadth test", badge: "Lean", segs: [5, 3],
       tag: "Trim service + analytics; online held; breadth 55 · $72.5M of $77.48M ($5M unspent)",
       levers: { vendor: 20, online: 12.5, experience: 18, service: 17, analytics: 5, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
-      why: ["<b>Highest net income (≈$64.7M)</b>; model value ≈$957M.", "Experience ≈6.33 = 97% of Zephara: still 'close to leader'."],
+      why: ["<b>Highest net income (≈$64.7M)</b>; model value ≈$956M.", "Experience ≈6.33 = 97% of Zephara: still 'close to leader'."],
       risks: ["Stays #2 in Experience; if Zephara climbs we slip below 95%."]
     },
     {

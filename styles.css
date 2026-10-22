@@ -552,3 +552,9 @@ details.fold[open] summary { margin-bottom: 12px; }
 #levTip.ghost { opacity: .12; }
 
 #levTip.compact .lt-range, #levTip.compact .lt-plain { display: none; }
+
+/* Keep the matrix + market value in view while scrolling the sliders */
+@media (min-width: 1101px) {
+  #cockpit .grid { align-items: start; }
+  #cockpit .matrix-panel, #cockpit .value-panel { position: sticky; top: 140px; max-height: calc(100vh - 156px); overflow-y: auto; }
+}
