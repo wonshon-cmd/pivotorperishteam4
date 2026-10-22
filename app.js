@@ -1085,9 +1085,6 @@
     const c = centerLoad() || { src: "Recommended", d: rec, ts: 0, by: "" }, cd = Object.assign({}, S.defaults, c.d), canEdit = !!me;
     const o = outlook(cd), r = o.r, pc = prosCons(cd, S.defaults), ok = okLoad().m;
     const groups = [...new Set(LEVERS.map(L => L.group))], flagged = new Set(riskFlags(cd).map(f => f.key));
-    const mini = groups.map(g => `<div class="cs-g">${g}</div>` + LEVERS.filter(L => L.group === g).map(L => { const v = cd[L.key], was = S.defaults[L.key], ch = Math.abs(v - was) > 1e-9;
-      return `<div class="cs-row ${ch ? "chg" : ""} ${flagged.has(L.key) ? "flag" : ""}"><span class="cs-l">${short(L)}</span><span class="cs-was">${ch ? "was " + fmt(L, was) : ""}</span>
-        ${canEdit ? `<span class="cs-ed"><button data-cs="${L.key}" data-dir="-1">−</button><input data-csin="${L.key}" value="${+(+v).toFixed(2)}" inputmode="decimal"><button data-cs="${L.key}" data-dir="1">+</button></span>` : `<b class="cs-v">${fmt(L, v)}</b>`}</div>`; }).join("")).join("");
     const chL = LEVERS.filter(L => Math.abs(cd[L.key] - S.defaults[L.key]) > 1e-9);
     const quads = ["Brand", "Experience", "Low Price", "Frictionless"];
     const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader, rk = rankOf(s, k); return `<div class="tr-q4 cs-q"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}</b><small class="${rk.rank === 1 ? "up" : "dn"}">${rk.txt}</small></div>`; }).join("");
@@ -1099,19 +1096,19 @@
     const center = `<div class="tr-sub cs">
       <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}${c.ts ? ` (${new Date(c.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })})` : ""}. Click any idea below to bring it here; anyone can edit it and everyone sees the changes live.${canEdit ? "" : " Pick your name above to edit."}</small></div>
         <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
-      <div class="cs-grid">
-        <div class="cs-mini"><div class="tr-lab">Mini build plan ${canEdit ? "· edit here" : ""}</div>
-          ${canEdit ? `<form class="cs-hyp" id="csHyp"><input id="csHypIn" placeholder="Type a change, e.g. experience to 24 and vendor to 18" autocomplete="off"><button class="tc-ref">Apply</button></form><div id="csHypOut"></div>` : ""}${mini}</div>
+      <div class="cs-grid cs-grid2">
+        <div class="cs-right"><div class="tr-lab">Type into the game (changes from last round)${canEdit ? " · adjust here" : ""}</div>
+          ${flagBox}${chL.length ? `<ol class="cs-list">${chL.map(L => `<li class="${flagKeys.has(L.key) ? "flag" : ""}"><span>${flagKeys.has(L.key) ? "⚠ " : ""}${L.label}</span><div class="cs-li"><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, cd[L.key])}</em></b>${canEdit ? `<span class="cs-ed"><button data-cs="${L.key}" data-dir="-1">−</button><input data-csin="${L.key}" value="${+(+cd[L.key]).toFixed(2)}" inputmode="decimal"><button data-cs="${L.key}" data-dir="1">+</button><button class="cs-x" data-csreset="${L.key}" title="Back to last round">↺</button></span>` : ""}</div></li>`).join("")}</ol>` : `<div class="tc-mut">No changes from last round</div>`}
+          ${canEdit ? `<div class="cs-add"><select id="csAddSel"><option value="">＋ Change another box…</option>${LEVERS.filter(L => Math.abs(cd[L.key] - S.defaults[L.key]) < 1e-9).map(L => `<option value="${L.key}">${L.label} (now ${fmt(L, cd[L.key])})</option>`).join("")}</select></div>
+          <form class="cs-hyp" id="csHyp"><input id="csHypIn" placeholder="Or type it: experience to 24 and vendor to 18" autocomplete="off"><button class="tc-ref">Apply</button></form><div id="csHypOut"></div>` : ""}
+          <div class="cs-foot">Every other box: same as last round.</div></div>
         <div class="cs-mid"><div class="tr-lab">Expected outcome</div>
           <div class="cs-mv">${fmtM(r.mv)}</div><div class="tr-rng">likely ${fmtR(o.lo)}–${fmtR(o.hi)} ${badge("Medium")}</div>
           <div class="tr-ol"><div><span>Positioning</span><b style="color:${o.posTag[1]}">${o.posTag[0]}</b>${badge("High")}<p>${o.posTxt}</p></div>
             <div><span>Long term</span><b style="color:${o.via[1]}">${o.via[0]}</b>${badge("Low")}<p>${o.why}</p></div>
             <div><span>Net income</span><b>${fmtM(r.niProj)}</b>${badge("Medium")}</div></div>
           <div class="tr-bars" style="margin-top:8px">${qb}</div>
-          <div class="tr-sp" style="margin-top:8px"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)} · ${over ? `<b style="color:#b42318">⚠ ${fmtM(-left)} over: the game will reject it</b>` : left > 0.005 ? fmtM(left) + " unspent" : "exactly on budget"}</span><div><div style="width:${Math.min(100, r.spend / S.base.budget * 100)}%;${over ? "background:#b42318" : ""}"></div></div></div></div>
-        <div class="cs-right"><div class="tr-lab">Type into the game (changes from last round)</div>
-          ${flagBox}${chL.length ? `<ol class="cs-list">${chL.map(L => `<li class="${flagKeys.has(L.key) ? "flag" : ""}"><span>${flagKeys.has(L.key) ? "⚠ " : ""}${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, cd[L.key])}</em></b></li>`).join("")}</ol>` : `<div class="tc-mut">No changes from last round</div>`}
-          <div class="cs-foot">Every other box: same as last round.</div>
+          <div class="tr-sp" style="margin-top:8px"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)} · ${over ? `<b style="color:#b42318">⚠ ${fmtM(-left)} over: the game will reject it</b>` : left > 0.005 ? fmtM(left) + " unspent" : "exactly on budget"}</span><div><div style="width:${Math.min(100, r.spend / S.base.budget * 100)}%;${over ? "background:#b42318" : ""}"></div></div></div>
           <div class="tr-lab" style="margin-top:12px">👍 What it does well</div>${pc.now.pro.concat(pc.lt.pro).slice(0, 3).map(x => `<div class="pp">${x}</div>`).join("") || '<div class="tc-mut">Same as last round</div>'}
           <div class="tr-lab" style="margin-top:10px">👀 Worth keeping an eye on</div>${pc.now.con.concat(pc.lt.con).slice(0, 3).map(x => `<div class="cc">${x}</div>`).join("") || '<div class="tc-mut">Nothing notable</div>'}</div>
       </div></div>`;
@@ -1141,6 +1138,8 @@
     document.querySelectorAll("[data-center]").forEach(b => b.onclick = () => { const n = b.dataset.center; setCenter({ src: n, d: Object.assign({}, plans[n]), ts: Date.now(), by: me || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); });
     const edit = (k, v) => { const L = LEVERS.find(x => x.key === k); v = Math.min(L.max, Math.max(L.min, Math.round(v * 100) / 100)); if (isNaN(v)) return renderTeamCmp(); const nd = Object.assign({}, cd, { [k]: v }); setCenter({ src: c.src, d: nd, ts: Date.now(), by: me }); };
     document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { const L = LEVERS.find(x => x.key === b.dataset.cs); edit(L.key, cd[L.key] + (+b.dataset.dir) * (L.step || 1)); });
+    document.querySelectorAll("[data-csreset]").forEach(b => b.onclick = () => edit(b.dataset.csreset, S.defaults[b.dataset.csreset]));
+    if ($("#csAddSel")) $("#csAddSel").onchange = e => { const k = e.target.value; if (!k) return; const L = LEVERS.find(x => x.key === k); edit(k, cd[k] + (L.step || 1)); setTimeout(() => { const i = document.querySelector(`[data-csin="${k}"]`); if (i) { i.focus(); i.select(); } }, 30); };
     document.querySelectorAll("[data-csin]").forEach(i => { i.onchange = () => edit(i.dataset.csin, parseFloat(i.value)); i.onkeydown = e => { if (e.key === "Enter") i.blur(); }; });
     if ($("#csHyp")) $("#csHyp").onsubmit = e => { e.preventDefault(); const q = $("#csHypIn").value; const hp = askPlan(q, cd);
       if (!hp.changes.length) { $("#csHypOut").innerHTML = `<div class="cs-hmsg">I couldn't find a change in that. Try “experience to 24” or “cut vendor by 2”.</div>`; return; }
