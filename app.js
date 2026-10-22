@@ -902,10 +902,18 @@
       const tt = teamLoad(); tt[o.n] = { d: Object.assign({}, S.defaults, o.d), ts: o.ts || Date.now(), title: o.t || "" }; teamSave(tt); return o.n;
     } catch (e) { return ""; }
   }
+  // idea title fills itself from what the sliders do; typing your own keeps it (clear the box to go back to auto)
+  function autoFillTitle() {
+    const el = $("#tcTitle"); if (!el) return;
+    if (!el.dataset.bound) { el.dataset.bound = "1"; el.addEventListener("input", () => { el.dataset.typed = el.value.trim() ? "1" : ""; if (!el.dataset.typed) autoFillTitle(); }); }
+    if (el.dataset.typed === "1") return;
+    const recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
+    el.value = autoTitle(state.d, rec);
+  }
   function addMyIdea() {
     const me = meLoad(); if (!me) { pendingAdd = true; openTD(); return; }
     const tt = teamLoad(), ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || ""; tt[me] = { d: Object.assign({}, state.d), ts: Date.now(), title: ti }; teamSave(tt);
-    if ($("#tcTitle")) $("#tcTitle").value = ""; openTD();
+    if ($("#tcTitle")) { $("#tcTitle").dataset.typed = ""; autoFillTitle(); } openTD();
   }
   function openTD() { renderTeamCmp(); const o = $("#tdOverlay"); if (o) { o.classList.add("open"); o.scrollTop = 0; document.body.style.overflow = "hidden"; } }
   function closeTD() { const o = $("#tdOverlay"); if (o) o.classList.remove("open"); document.body.style.overflow = ""; }
@@ -980,7 +988,7 @@
           <div class="tr-lab" style="margin-top:12px">Expected outcome</div><div class="tr-out">${outc.map(o => `<div><small>${o[0]}</small><b>${o[1]}</b><span class="tc-cf" style="color:${o[3]};border-color:${o[3]};margin:0">${o[2]}</span></div>`).join("")}</div></div>
         <div><div class="tr-lab">👍 What it does well</div>${pcs.map(x => `<div class="pp">${x}</div>`).join("") || '<div class="tc-mut">—</div>'}
           <div class="tr-lab" style="margin-top:10px">👀 Worth keeping an eye on</div>${watch.map(x => `<div class="cc">${x}</div>`).join("") || '<div class="tc-mut">Nothing notable</div>'}</div></div></div>`;
-    $("#tcCards").innerHTML = submit + `<div class="tr-sec">Everyone's ideas <small>each one is a mini screen</small></div>` + screens + table + share + `<div class="tr-foot"><span>No votes, no winners: just everyone's thinking in one place. The model's numbers are estimates.</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
+    $("#tcCards").innerHTML = submit + `<div class="tr-sec">Everyone's ideas <small>each one is a mini screen</small></div>` + screens + table + share + `<div class="tr-foot"><span>The model's numbers are estimates.</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
     // events
     document.querySelectorAll("[data-me]").forEach(b => b.onclick = () => { localStorage.setItem(ME_KEY, b.dataset.me); if (pendingAdd) { pendingAdd = false; addMyIdea(); } else renderTeamCmp(); });
     if ($("#trCopy") && mine) $("#trCopy").onclick = () => { navigator.clipboard && navigator.clipboard.writeText(mine).catch(() => {}); $("#trCopy").textContent = "Copied ✓ paste it in the group chat"; };
@@ -1243,6 +1251,7 @@
   }
 
   function update() {
+    autoFillTitle();
     const d = state.d, r = model(d);
     const base = S.rivals[S.company];
     renderQuads(r, base);
@@ -1280,15 +1289,10 @@
     const fmt = (L, v) => L.unit === "$M" ? "$" + (+v.toFixed(2)) + "M" : (+v.toFixed(2)) + (L.unit === "%" ? "%" : "");
     const ch = LEVERS.filter(L => Math.abs(state.d[L.key] - S.defaults[L.key]) > 1e-9);
     const spend = state.d.online + state.d.service + state.d.experience + state.d.vendor + state.d.analytics;
-    box.innerHTML = `<div class="en-h"><b>Type this into the game</b><button id="entryCopy" class="en-copy">Copy</button></div>` +
+    box.innerHTML = `<div class="en-h"><b>Type this into the game</b></div>` +
       (ch.length ? `<ol class="en-list">${ch.map(L => `<li><span>${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, state.d[L.key])}</em></b></li>`).join("")}</ol>`
         : `<div class="en-none">No changes from last round.</div>`) +
       `<div class="en-foot">All other boxes: same as last round · investments total ${fmt({ unit: "$M" }, spend)} of $${S.base.budget}M</div>`;
-    $("#entryCopy").onclick = () => {
-      const txt = "Round " + S.round + " entries (changes from last round, game order):\n" + (ch.length ? ch.map(L => `${L.label}: ${fmt(L, S.defaults[L.key])} -> ${fmt(L, state.d[L.key])}`).join("\n") : "No changes") + `\nInvestments total: ${fmt({ unit: "$M" }, spend)} of $${S.base.budget}M`;
-      navigator.clipboard && navigator.clipboard.writeText(txt).catch(() => {});
-      $("#entryCopy").textContent = "Copied ✓"; setTimeout(() => { const b = $("#entryCopy"); if (b) b.textContent = "Copy"; }, 1400);
-    };
   }
 
   // Quadrant colors for the money bar (one accent family, different strengths)
@@ -1395,7 +1399,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp(); teamFromHash();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp(); autoFillTitle(); teamFromHash();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
@@ -1403,7 +1407,7 @@
     $("#dataBtn").onclick = openData;
     $("#dataClose").onclick = () => $("#dataPanel").classList.remove("open");
     $("#dataSave").onclick = saveData;
-    $("#exportBtn").onclick = exportPlan;
+    if ($("#exportBtn")) $("#exportBtn").onclick = exportPlan;
     $("#manualBtn").onclick = () => { state.team = $("#teamName").value.trim() || "Team 4"; state.d = Object.assign({}, S.defaults); openCockpit(false); };
   });
 
