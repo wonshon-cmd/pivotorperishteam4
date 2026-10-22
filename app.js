@@ -664,11 +664,18 @@
       row.addEventListener("mouseleave", hideLeverTip);
       wrap.appendChild(row);
     });
+    const ghost = on => { const t = document.getElementById("levTip"); if (t) t.classList.toggle("ghost", on); };
+    wrap.querySelectorAll("input[type=range]").forEach(inp => {
+      inp.addEventListener("pointerdown", () => ghost(true));
+      ["pointerup", "pointercancel", "change"].forEach(ev => inp.addEventListener(ev, () => setTimeout(() => ghost(false), 400)));
+    });
     wrap.querySelectorAll("input").forEach(inp => {
       inp.addEventListener("input", () => {
         const k = inp.dataset.k; let v = parseFloat(inp.value);
         if (isNaN(v)) return;
         state.d[k] = v; syncLevers(inp); update();
+        const row = inp.closest(".lever"), t = document.getElementById("levTip");
+        if (row && t && t.style.display === "block") { const L = LEVERS.find(x => x.key === k); if (L) showLeverTip(row, L); }
       });
     });
   }
@@ -875,8 +882,8 @@
     let range = "";
     if (ind) {
       const lo = Math.min(ind.min, now), hi = Math.max(ind.max, now), pos = v => ((v - lo) / Math.max(hi - lo, 1e-6) * 100).toFixed(1);
-      range = `<div class="lt-sec">Vs the industry</div><div class="rb"><div class="rb-line"></div><div class="rb-avg" style="left:${pos(ind.avg)}%"></div><div class="rb-us" style="left:${pos(now)}%"></div></div>
-        <div class="rb-lab"><span>min ${fmt(+(+ind.min).toFixed(1))}</span><span>avg ${fmt(+(+ind.avg).toFixed(1))}</span><span>max ${fmt(+(+ind.max).toFixed(1))}</span></div>`;
+      range = `<div class="lt-sec lt-range">Vs the industry</div><div class="rb lt-range"><div class="rb-line"></div><div class="rb-avg" style="left:${pos(ind.avg)}%"></div><div class="rb-us" style="left:${pos(now)}%"></div></div>
+        <div class="rb-lab lt-range"><span>min ${fmt(+(+ind.min).toFixed(1))}</span><span>avg ${fmt(+(+ind.avg).toFixed(1))}</span><span>max ${fmt(+(+ind.max).toFixed(1))}</span></div>`;
     }
     const step = STEP[L.key] || 1, up = Object.assign({}, base, { [L.key]: Math.min(L.max, now + step) });
     const yours = now !== was ? `<div class="lt-sec">Your change ${fmt(was)} → ${fmt(now)}</div><div class="ecs">${effectChips(Object.assign({}, base, { [L.key]: was }), base)}</div>` : "";
@@ -891,10 +898,15 @@
       ${yours}
       <div class="lt-call"><span class="cb ${cls}">${verb ? verb[0].toUpperCase() + verb.slice(1) : "Hold"}</span><span>${(I.longTerm || "").replace(/^\w+\s*/, "")}${why ? " · " + why : ""}</span></div>`;
     const r = row.getBoundingClientRect();
-    tip.style.display = "block";
+    tip.style.display = "block"; tip.classList.add("see");
+    const mx = document.getElementById("ql1") && document.getElementById("ql1").parentElement.getBoundingClientRect();
     if (r.right + 14 + 390 <= window.innerWidth) {
       tip.style.left = (r.right + 14) + "px";
-      tip.style.top = Math.max(10, Math.min(r.top, window.innerHeight - tip.offsetHeight - 10)) + "px";
+      // sit below the Kahn matrix so the quadrant bars stay visible
+      const below = mx && mx.bottom > 0 ? mx.bottom + 8 : r.top;
+      tip.classList.remove("compact");
+      if (below + tip.offsetHeight > window.innerHeight - 10) tip.classList.add("compact");   // drop the range bar to fit under the matrix
+      tip.style.top = Math.max(10, Math.min(Math.max(r.top, below), window.innerHeight - tip.offsetHeight - 10)) + "px";
     } else {
       tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 390)) + "px";
       const below = r.bottom + 8, above = r.top - tip.offsetHeight - 8;

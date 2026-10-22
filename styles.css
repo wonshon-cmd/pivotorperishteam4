@@ -546,3 +546,9 @@ details.fold[open] summary { margin-bottom: 12px; }
 @keyframes mvDown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 .rkb { font-size: 11.5px; font-weight: 800; margin-left: 5px; vertical-align: 2px; } .rkb.up { color: #1a7f37; } .rkb.down { color: #b42318; }
 @media (prefers-reduced-motion: reduce) { .mvb i { animation: none !important; } }
+
+/* Hover card: see-through, and nearly invisible while dragging a slider */
+#levTip.see { background: #fff; transition: opacity .15s; }
+#levTip.ghost { opacity: .12; }
+
+#levTip.compact .lt-range, #levTip.compact .lt-plain { display: none; }
