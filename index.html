@@ -91,7 +91,11 @@
           <div id="tlLessons"></div>
         </div>
       </div>
-      <p class="note">Solid = real game results. Dashed = projection for the selected plan (our model: market value has run low, quadrant moves have run high).</p>
+      <div class="card" style="margin-top:16px">
+        <div class="ptitle">Model accuracy · <span class="mut">back-test: each past round replayed from the real state it started in (predicted / actual)</span></div>
+        <table id="tlAcc" class="tl-table"></table>
+      </div>
+      <p class="note">Solid = real game results. Dashed = projection for the selected plan. Back-test: quadrants exact on all 3 runs; Round 2 net income and value within 1%.</p>
     </div>
   </section>
 
@@ -175,7 +179,7 @@
         <ul id="moves" class="moves"></ul>
       </aside>
     </div>
-    <div class="foot">Directional model calibrated to the latest real results (Round 1). Use it to compare options, not as an exact forecast.</div>
+    <div class="foot">Directional model back-tested on every real round (R1 mulligan, R1 final, R2). Use it to compare options, not as an exact forecast.</div>
   </section>
 
   <!-- Data drawer -->

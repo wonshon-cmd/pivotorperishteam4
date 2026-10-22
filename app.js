@@ -37,14 +37,21 @@
     { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Price" },
     { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
     { key: "nbQuality",   label: "National brand quality", unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
-    { key: "privateBrand", label: "Private brand mix",  unit: "%", min: 0, max: 100, step: 1,  q: "Brand",        group: "Brand" },
-    { key: "depth",       label: "Depth (inventory)",  unit: "", min: 10, max: 60, step: 1, q: "Cash",       group: "Stores & inventory" },
-    { key: "stores",      label: "Stores",            unit: "",   min: 120, max: 320, step: 5,  q: "Debt",         group: "Stores & inventory" }
+    { key: "pbLow",       label: "Private brand · lower-cost",  unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
+    { key: "pbHigh",      label: "Private brand · higher-cost", unit: "%", min: 0, max: 100, step: 1, q: "Brand / cost", group: "Brand" },
+    { key: "breadthLow",  label: "Breadth · lower-cost",  unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
+    { key: "breadthHigh", label: "Breadth · higher-cost", unit: "", min: 5, max: 80, step: 1, q: "Revenue",  group: "Assortment" },
+    { key: "depthLow",    label: "Depth · lower-cost",    unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
+    { key: "depthHigh",   label: "Depth · higher-cost",   unit: "", min: 5, max: 60, step: 1, q: "Cash",     group: "Assortment" },
+    { key: "stores",      label: "Stores",            unit: "",   min: 120, max: 320, step: 5,  q: "Debt",         group: "Stores" }
   ];
 
   // ---------- Model ----------
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const sq = (x, ref) => Math.sqrt(Math.max(x, 0) / ref) - 1;
+  // Lower-cost products = 74% of our revenue (R2 income statement: $361.4M of $488.7M)
+  const WL = 0.74;
+  const mix = (d, k) => WL * (d[k + "Low"] ?? 50) + (1 - WL) * (d[k + "High"] ?? 50);
 
   function rivalLeaders() {
     const lead = [0, 0, 0, 0], who = ["", "", "", ""];
@@ -60,10 +67,11 @@
     const am = 0.8 + 0.2 * Math.sqrt(Math.max(d.analytics, 0) / 10);   // analytics = multiplier
     const am0 = 0.8 + 0.2 * Math.sqrt(Math.max(d0.analytics, 0) / 10);
     const f = (dd, m) => [
-      0.2 * dd.pbQuality + 0.2 * dd.nbQuality + 0.012 * dd.privateBrand, // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4 Brand
-      m * 4.2 * sq(dd.experience, 10) + 4.4 * sq(dd.service, 15), // R1 A/B: service $7M vs $15M ≈ −1.4 Experience
+      // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4. R0→R1 (both runs): PB 50→60% + depth 50→30 cost Brand −1.6 (split 50/50, low confidence)
+      0.2 * dd.pbQuality + 0.2 * dd.nbQuality - 0.08 * mix(dd, "pb") + 0.04 * mix(dd, "depth"),
+      m * 2.35 * sq(dd.experience, 10) + 4.4 * sq(dd.service, 15), // refit on R0→R1 try 1 + final + R2 (all within 0.05); service $7M vs $15M ≈ −1.4
       1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
-      m * 0.15 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // R0→R2: online $2M→$10.5M moved Frictionless only +0.1
+      m * 0.08 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // R0→R2: online $2M→$10.5M moved Frictionless only +0.1
     ];
     const now = f(d, am), then = f(d0, am0);
     const dr = S.drift || [0, 0, 0, 0]; // standing still loses ground (R2: Experience −0.1)
@@ -107,13 +115,15 @@
     const leads = cls.filter(c => c.status === "LEAD").length;
     const gaps = cls.filter(c => c.status === "GAP").length;
 
-    const m0 = 0.71 * D0.markupLow / 100 + 0.29 * D0.markupHigh / 100;
-    const mB = 0.71 * d.markupLow / 100 + 0.29 * d.markupHigh / 100;
+    const m0 = WL * D0.markupLow / 100 + (1 - WL) * D0.markupHigh / 100;
+    const mB = WL * d.markupLow / 100 + (1 - WL) * d.markupHigh / 100;
     const dIdx = demand(sc);
-    const vol = dIdx * Math.pow((1 + m0) / (1 + mB), 3.2) * Math.pow(d.stores / D0.stores, 0.6) * Math.pow((d.depth == null ? 50 : d.depth) / 50, 0.06);
+    const vol = dIdx * Math.pow((1 + m0) / (1 + mB), 3.2) * Math.pow(d.stores / D0.stores, 0.1) * Math.pow(mix(d, "depth") / mix(D0, "depth"), 0.02)
+      * Math.pow(mix(d, "breadth") / mix(D0, "breadth"), 0.15); // breadth = customers' #2 value (1.41); low confidence, never tested
     const revenue = B.revenue * vol * (1 + mB) / (1 + m0) * (1 + (S.base.growth || 0) * (S.noGrowth ? 0 : 1));
 
-    const costIdx = (dd) => 1 - 0.08 * sq(dd.vendor, 30) + 0.015 * (dd.pbQuality - 5) + 0.012 * (dd.nbQuality - 5) - 0.0004 * (dd.privateBrand - 50);
+    // Gross margin held 36.2–36.3% in R0–R2 despite quality 5→6 and vendor 30→25: cost effects are small
+    const costIdx = (dd) => 1 - 0.03 * sq(dd.vendor, 30) + 0.003 * (dd.pbQuality - 5) + 0.003 * (dd.nbQuality - 5) - 0.0004 * (mix(dd, "pb") - 50);
     const k = (B.cogs / B.revenue) * (1 + m0) / costIdx(D0);
     const cogs = revenue / (1 + mB) * costIdx(d) * k;
     const gross = revenue - cogs;
@@ -123,20 +133,24 @@
     const ppePerStore = B.netPPE / D0.stores;
     const openCapex = Math.max(0, newStores) * 1.75;
     const closeRecover = Math.max(0, -newStores) * ppePerStore;
-    const onlineCap = 0.6 * Math.max(0, d.online - D0.online);
+    const onlineCap = 0.6 * Math.max(0, d.online - D0.online) + 0.2 * Math.max(0, d.experience - D0.experience);
     const capex = openCapex + onlineCap - closeRecover;
 
-    // Depth ties up inventory (Getchells is at the industry max of 50)
-    const depth = d.depth == null ? 50 : d.depth;
-    const inventory = B.inventory * depth / 50 * (revenue / B.revenue);
+    // Inventory scales with depth and (more weakly) breadth, relative to last round's inputs
+    const inventory = B.inventory * (mix(d, "depth") / mix(D0, "depth")) * Math.pow(mix(d, "breadth") / mix(D0, "breadth"), 0.5) * (revenue / B.revenue);
     const invFreed = B.inventory - inventory;
 
-    const depreciation = B.depreciation * d.stores / D0.stores + onlineCap * 0.2;
-    const otherSGA = B.otherSGA * (revenue / B.revenue) + 0.12 * (revenue - B.revenue);
-    const opex = 0.4 * d.online + d.service + d.experience + d.vendor + d.analytics + depreciation + otherSGA;
+    // Depreciation grew ~5%/yr with flat inputs (R0 26.9 → R1 27.3 with 15 closures → R2 29.9)
+    const depreciation = B.depreciation * 1.06 * Math.pow(d.stores / D0.stores, 0.3) + onlineCap * 0.2;
+    // Exact game accounting (R0–R2 income statements): other SGA = 5.0% of revenue; service expense = input + 0.5% of revenue;
+    // shopping experience 80% expensed (20% capitalized); online 40% expensed (60% capitalized)
+    const otherSGA = 0.05 * revenue;
+    const opex = 0.4 * d.online + d.service + 0.005 * revenue + 0.8 * d.experience + d.vendor + d.analytics + depreciation + otherSGA;
     const ebit = gross - opex;
 
-    const debt = Math.max(0, B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed);
+    // Profit pays down debt: R2 debt −$8.6M ≈ net income − ~$5M net capex/working capital (cash-flow check, R2 exact)
+    const retained = (ebit - B.interest) * 0.65 - 5;
+    const debt = Math.max(0, B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed - retained);
     const cash = B.cash - 0.4 * (openCapex + onlineCap);
     const stLoans = Math.max(0, debt - (B.debt - (B.stLoans || 158.4)));
     const DE = debt / B.equity, DE0 = B.debt / B.equity;
@@ -144,7 +158,8 @@
     // Credit rating 0–9 from the professor's three ratios
     const ratingOf = (cr, cov, de) => clamp(Math.round(
       3 * clamp((cr - 0.5) / 1.5, 0, 1) + 3 * clamp((cov - 0.5) / 5.5, 0, 1) + 3 * clamp((3.5 - de) / 3, 0, 1)), 0, 9);
-    const rate0 = B.interest / B.debt * 100;
+    const avgDebt0 = (B.debt + (B.debtPrev || B.debt)) / 2;
+    const rate0 = B.interest / avgDebt0 * 100; // interest ≈ 9.5% of average debt in R1 and R2
     const ebit0 = S.base.ebit0 || ebit;
     const cr0 = (B.cash + B.receivables + B.inventory) / (B.ap + (B.stLoans || 158.4));
     const rating0 = ratingOf(cr0, ebit0 / B.interest, DE0);
@@ -153,8 +168,8 @@
       cov = ebit / Math.max(interest, 0.1);
       cr = (cash + B.receivables + inventory) / (B.ap + stLoans);
       rating = ratingOf(cr, cov, DE);
-      rate = clamp(rate0 - 0.8 * (rating - rating0) + 2 * (DE - DE0) / DE0, 3.5, 18);
-      interest = debt * rate / 100;
+      rate = clamp(rate0 - 0.3 * (rating - rating0) + 2 * (DE - DE0) / DE0, 3.5, 18);
+      interest = (B.debt + debt) / 2 * rate / 100;
     }
     const sp = 0; void sp;
 
@@ -185,10 +200,10 @@
     const base0 = S.base.dcf0 == null ? dcfRaw : S.base.dcf0;
     const dcf = (base0 + 0.5 * (dcfRaw - base0)) * (scale || 1) - 0.5 * unspent;
 
-    const clvVal = B.clv * (S.base.clvF || 0.1) * dIdx * (1 + 0.004 * (d.privateBrand - 50)) * (1 + 0.04 * (d.pbQuality - 5));
+    const clvVal = B.clv * (S.base.clvF || 0.1) * dIdx * (1 + 0.004 * (mix(d, "pb") - 50)) * (1 + 0.04 * (d.pbQuality - 5));
     const liq = cash + 0.6 * B.inventory + 0.8 * B.receivables + 0.4 * B.netPPE * d.stores / D0.stores - debt - B.ap;
-    // Empirical market reaction (R1 A/B test): MV moved ~27% per point of Brand + Experience
-    const mvK = Math.exp(0.27 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
+    // R1 mulligan A/B: P/E 13.9 → 16.6 for +1.8 Brand+Experience ≈ +10% P/E per point (profit effect is modelled separately)
+    const mvK = Math.exp(0.10 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
     // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
     const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
     const mv = S.base.pe ? Math.max(S.base.pe * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
@@ -245,7 +260,8 @@
     const RANGE = {
       vendor: [28, 48], online: [6, 16], experience: [9, 16], service: [6, 12], analytics: [5, 9],
       markupLow: [48, 56], markupHigh: [56, 68], pbQuality: [5, 7], nbQuality: [5, 6],
-      privateBrand: [50, 70], stores: [S.defaults.stores - 20, S.defaults.stores], depth: [30, 45]
+      pbLow: [50, 70], pbHigh: [50, 70], stores: [S.defaults.stores - 20, S.defaults.stores],
+      depthLow: [25, 35], depthHigh: [25, 35], breadthLow: [45, 55], breadthHigh: [45, 55]
     };
     const sample = () => {
       const d = {};
@@ -373,8 +389,8 @@
     const spend = d0.online + d0.service + d0.experience + d0.vendor + d0.analytics;
     const f$ = v => "$" + (+v.toFixed(3)) + "M";
     const rows = [
-      ["Price markup (lower / higher)", d0.markupLow + "% / " + d0.markupHigh + "%", "markupLow"], ["Breadth", "50 / 50", null], ["Depth", d0.depth + " / " + d0.depth, "depth"],
-      ["Private brand", d0.privateBrand + "% / " + d0.privateBrand + "%", "privateBrand"], ["Private brand quality", d0.pbQuality, "pbQuality"], ["National brand quality", d0.nbQuality, "nbQuality"],
+      ["Price markup (lower / higher)", d0.markupLow + "% / " + d0.markupHigh + "%", "markupLow"], ["Breadth (lower / higher)", d0.breadthLow + " / " + d0.breadthHigh, "breadthLow"], ["Depth (lower / higher)", d0.depthLow + " / " + d0.depthHigh, "depthLow"],
+      ["Private brand (lower / higher)", d0.pbLow + "% / " + d0.pbHigh + "%", "pbLow"], ["Private brand quality", d0.pbQuality, "pbQuality"], ["National brand quality", d0.nbQuality, "nbQuality"],
       ["Retail coverage", d0.stores, "stores"], ["Online investment", f$(d0.online), "online"], ["Customer service", f$(d0.service), "service"],
       ["Shopping experience", f$(d0.experience), "experience"], ["Vendor management", f$(d0.vendor), "vendor"], ["Customer analytics", f$(d0.analytics), "analytics"]
     ];
@@ -468,10 +484,12 @@
         <div><b>What happened</b><ul>${l.results.map(x => `<li>${x}</li>`).join("")}</ul></div></div>
         <div class="lsl">💡 ${l.lesson}</div></div>`).join("") +
       `<div class="ls proj"><div class="lsr">Round ${nextR} projection · Plan ${plan.id}</div>
-        <ul><li>Market value ≈ <b>$${pr.mv.toFixed(0)}M</b> (likely higher: model ran $10M low last round)</li>
+        <ul><li>Market value ≈ <b>$${pr.mv.toFixed(0)}M</b> · net income ≈ $${pr.niProj.toFixed(1)}M</li>
         <li>Debt ≈ <b>$${pr.debt.toFixed(0)}M</b></li>
         <li>Leads: <b>${lead}</b> · ${pr.gaps} quadrant(s) below 75% fair value</li></ul>
-        <div class="lsl">Watch next round: did Experience and Frictionless recover after restoring service + analytics?</div></div>`;
+        <div class="lsl">Watch next round: does Experience pass Zephara, and how much does service move Frictionless?</div></div>`;
+    if ($("#tlAcc") && S.backtest) $("#tlAcc").innerHTML = `<tr><th>Run</th><th>Brand</th><th>Experience</th><th>Low Price</th><th>Frictionless</th><th>Revenue</th><th>Net income</th><th>Market value</th></tr>` +
+      S.backtest.map(b => `<tr><td>${b.run}</td>${b.cells.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
   }
   function miniChart(c, nextR) {
     const W = 300, H = 150, P = 26;
@@ -792,7 +810,7 @@
 
   function exportPlan() {
     const d = state.d, r = state.last;
-    const txt = `Getchells · Round ${S.round} decision (${state.team || "Team"})${state.plan ? " · Plan " + state.plan.id + " " + state.plan.name : ""}\nBreadth: 50 / 50 (unchanged)\n` +
+    const txt = `Getchells · Round ${S.round} decision (${state.team || "Team"})${state.plan ? " · Plan " + state.plan.id + " " + state.plan.name : ""}\n` +
       LEVERS.map(L => `${L.label}: ${L.unit === "$M" ? "$" + d[L.key] + "M" : d[L.key] + (L.unit || "")}`).join("\n") +
       `\n\nProjected market value: ${fmtM(r.mv)} · ROIC ${r.roic.toFixed(1)}% vs WACC ${r.wacc.toFixed(1)}%\n` +
       r.cls.map(c => `${c.q}: ${c.score.toFixed(1)} (${c.status})`).join(" · ");
