@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-steps-v54",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-explore-v55",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -180,11 +180,11 @@ window.SIM = {
     ["analytics", "Hold $6M", "Small effect; cut only in the final round."]
   ],
   explore: [
-    { label: "Brand quality 6 → 7", change: { pbQuality: 7, nbQuality: 7 }, when: "If Brand lead < 0.3", conf: "High" },
-    { label: "Breadth (lower) → 60", change: { breadthLow: 60 }, when: "If lower-cost sales grow > 11% after 55", conf: "Low" },
-    { label: "Private brand → 55%", change: { pbLow: 55, pbHigh: 55 }, when: "Round 6 test, on its own", conf: "Low" },
-    { label: "Online +$1M", change: { online: 13.5 }, when: "If online share < 48%", conf: "Medium" },
-    { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low" }
+    { label: "Brand quality 6 → 7", change: { pbQuality: 7, nbQuality: 7 }, when: "If Brand lead < 0.3", conf: "High", why: "Proven lever (+0.2 Brand per step). BestCo's Brand rises ≈+0.2 a round, so this is our insurance to keep Brand #1." },
+    { label: "Breadth (lower) → 60", change: { breadthLow: 60 }, when: "If lower-cost sales grow > 11% after 55", conf: "Low", why: "Customers' #2 need; our growing segments (S2, S4, S6) want range, and PriceMart leads it. Only go further once the 55 test shows sales respond." },
+    { label: "Private brand → 55%", change: { pbLow: 55, pbHigh: 55 }, when: "Round 6 test, on its own", conf: "Low", why: "Brand fell −1.6 when we went 50 → 60% (together with a depth cut). More national brands may lift Brand; margins barely moved last time." },
+    { label: "Online +$1M", change: { online: 13.5 }, when: "If online share < 48%", conf: "Medium", why: "Online builds up (60% capitalized) and slowly lifts Frictionless; S1 and S4 shop online. Add only if our online share of sales keeps slipping." },
+    { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low", why: "Premium sales grow fast at 66%, so customers may accept a bit more. Raises profit per item but may cost some premium shoppers." }
   ],
 
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.

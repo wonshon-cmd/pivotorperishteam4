@@ -606,3 +606,9 @@ details.fold[open] summary { margin-bottom: 12px; }
 .stepper { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .stp { width: 26px; height: 26px; border-radius: 8px; background: #eef2ff; color: #1f3fb8; font-weight: 800; font-size: 16px; line-height: 1; display: grid; place-items: center; padding: 0; }
 .stp:hover { background: #d6e0ff; }
+
+/* Explore chip + hover section */
+.set-v.xp { background: #f3eefe; color: #6d28d9; } .set-v.xp b { color: #6d28d9; } .set-v.xp:hover { background: #e9ddfd; }
+.lt-x { margin-top: 10px; background: #f6f2ff; border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.45; }
+.lt-xh { display: flex; justify-content: space-between; gap: 8px; color: #4c1d95; } .lt-xh .pos { color: #1a7f37; font-weight: 800; } .lt-xh .neg { color: #b42318; font-weight: 800; }
+.lt-xw { color: var(--muted); font-size: 12px; margin-top: 2px; }

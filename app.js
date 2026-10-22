@@ -674,6 +674,8 @@
       const L = LEVERS.find(x => x.key === b.dataset.k), st = L.unit === "$M" ? 1 : (L.key === "stores" ? 5 : 1);
       state.d[L.key] = Math.max(L.min, Math.min(L.max, Math.round((state.d[L.key] + st * +b.dataset.stp) * 100) / 100)); syncLevers(); update();
       const row = b.closest(".lever"); if (row) showLeverTip(row, L); });
+    wrap.addEventListener("click", e => { const x = e.target.closest("[data-xp]"); if (!x) return;
+      Object.assign(state.d, S.explore[+x.dataset.xp].change); syncLevers(); update(); });
     wrap.addEventListener("click", e => { const sv = e.target.closest("[data-setk]");
       if (sv) { state.d[sv.dataset.setk] = +sv.dataset.setv; syncLevers(); update(); hideLeverTip(); return; } });
     wrap.addEventListener("click", e => { const b = e.target.closest("[data-undo]"); if (!b) return;
@@ -910,6 +912,10 @@
       <div class="lt-plain">${(I.what || I.plain || "").replace(/\s*\(e\.g\.[^)]*\)/, "")}</div>${bu}
       ${range}
       <div class="lt-sec">If we raise it by ${fmt(step)}</div><div class="ecs">${effectChips(base, up)}</div>
+      ${(() => { const X = (S.explore || []).find(x => x.change[L.key] != null); if (!X) return "";
+        const dv = model(Object.assign({}, base, X.change)).mv - model(base).mv, cc = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[X.conf];
+        return `<div class="lt-x"><div class="lt-xh"><b>Worth exploring: ${X.label}</b><span class="${dv >= 0 ? "pos" : "neg"}">${dv >= 0 ? "+" : "−"}$${Math.abs(dv).toFixed(0)}M</span></div>
+          <div>${X.why || ""}</div><div class="lt-xw">When: ${X.when} · <span style="color:${cc}">${X.conf} confidence</span></div></div>`; })()}
       ${yours}
       <div class="lt-call"><span class="cb ${cls}">${verb ? verb[0].toUpperCase() + verb.slice(1) : "Hold"}</span><span>${(I.longTerm || "").replace(/^\w+\s*/, "")}${why ? " · " + why : ""}</span></div>`;
     const r = row.getBoundingClientRect();
@@ -1013,7 +1019,9 @@
       if (!w) return;
       const last = S.defaults[L.key], rv = rec[L.key], b = base[L.key], now = state.d[L.key];
       const chip = (lbl, v) => `<button class="set-v ${Math.abs(now - v) < 1e-9 ? "on" : ""}" data-setk="${L.key}" data-setv="${v}" title="Set to ${f(v)}">${lbl} <b>${f(v)}</b></button>`;
-      w.innerHTML = Math.abs(last - rv) < 1e-9 ? chip("Last round = recommended", last) : chip("Last round", last) + chip("Recommended", rv);
+      const xi = (S.explore || []).findIndex(x => x.change[L.key] != null);
+      const xchip = xi >= 0 ? `<button class="set-v xp" data-xp="${xi}" title="${S.explore[xi].label}">Explore <b>${f(S.explore[xi].change[L.key])}</b></button>` : "";
+      w.innerHTML = (Math.abs(last - rv) < 1e-9 ? chip("Last round = recommended", last) : chip("Last round", last) + chip("Recommended", rv)) + xchip;
       u.style.visibility = Math.abs(now - b) > 1e-9 && Math.abs(b - last) > 1e-9 && Math.abs(b - rv) > 1e-9 ? "visible" : "hidden";
     });
   }
