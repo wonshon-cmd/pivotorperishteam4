@@ -916,6 +916,20 @@
     const tt = teamLoad(), ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || ""; tt[me] = { d: Object.assign({}, state.d), ts: Date.now(), title: ti }; teamSave(tt);
     if ($("#tcTitle")) { $("#tcTitle").dataset.typed = ""; autoFillTitle(); } openTD();
   }
+  // Outlook for any plan: expected value with confidence range, positioning vs the goal (lead 2, fair in 2), long-term viability to Round 8
+  const fmtR = v => v >= 1000 ? "$" + (v / 1000).toFixed(2) + "B" : "$" + v.toFixed(0) + "M";
+  function outlook(d) {
+    const r = model(d), q = ["Brand", "Experience", "Low Price", "Frictionless"], st = k => r.cls[k].status;
+    const leads = q.filter((x, k) => st(k) === "LEAD"), gaps = q.filter((x, k) => st(k) === "GAP");
+    const posTxt = (leads.length ? "Leads " + leads.join(" + ") : "No lead") + (gaps.length ? " · below fair in " + gaps.join(", ") : " · fair in the rest");
+    const posTag = leads.length >= 2 && !gaps.length ? ["On goal", "#1a7f37"] : leads.length >= 2 ? ["2 leads ✓", "#1a7f37"] : leads.length === 1 ? ["1 lead", "#9a6700"] : ["No lead", "#b42318"];
+    const pc = prosCons(d, S.defaults), unspent = S.base.budget - r.spend, build = d.experience + d.online;
+    let v = pc.lt.pro.length - pc.lt.con.length + (leads.length >= 2 ? 1 : -1) + (build >= S.defaults.experience + S.defaults.online ? 1 : -1);
+    if (r.spend > S.base.budget + 1e-6) v -= 3;
+    const via = v >= 2 ? ["Strong", "#1a7f37"] : v >= 0 ? ["Okay", "#9a6700"] : ["Fragile", "#b42318"];
+    const why = r.spend > S.base.budget + 1e-6 ? "Over budget: the game won't accept it" : (v >= 0 ? (pc.lt.pro[0] || "Keeps building the levers that carry to Round 8") : (pc.lt.con[0] || "Builds less of what carries to Round 8")).replace(/^[^:]+: /, "");
+    return { r, lo: r.mv * 0.92, hi: r.mv * 1.08, posTxt, posTag, via, why: why.length > 90 ? why.slice(0, 88) + "…" : why };
+  }
   function openTD() { renderTeamCmp(); show("team"); }
   function closeTD() { show("cockpit"); }
   function renderTeamCmp() {
@@ -946,6 +960,10 @@
         <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "added " + new Date(it.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</small></div></div>
         <div class="tdf-title">“${isRec ? (recP ? recP.name : "Recommended plan") : (it.title || autoTitle(d, rec))}”</div>
         <div class="tdf-mv">${fmtM(r.mv)}<span>${isRec ? "expected value" : (Math.abs(dv) < 0.5 ? "same as rec." : (dv > 0 ? "+" : "−") + "$" + Math.abs(dv).toFixed(0) + "M vs rec.")}</span></div>
+        <div class="tr-rng">likely ${fmtR(r.mv * 0.92)}–${fmtR(r.mv * 1.08)} <em>Medium</em></div>
+        ${(() => { const o = outlook(d); return `<div class="tr-ol">
+          <div><span>Positioning</span><b style="color:${o.posTag[1]}">${o.posTag[0]}</b><em style="color:#1a7f37;border-color:#1a7f37">High</em><p>${o.posTxt}</p></div>
+          <div><span>Long term</span><b style="color:${o.via[1]}">${o.via[0]}</b><em style="color:#b42318;border-color:#b42318">Low</em><p>${o.why}</p></div></div>`; })()}
         <div class="tr-bars">${bars}</div>
         <div class="tr-sp"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)}${r.spend > S.base.budget + 1e-6 ? " ⚠ over" : ""}</span><div><div style="width:${sp}%"></div></div></div>
         <div class="tdf-chips">${chips}</div>
@@ -981,7 +999,8 @@
     let pcs = subPc.now.pro.concat(subPc.lt.pro); if (pcs.length < 3 && recP && recP.why) pcs = pcs.concat([].concat(recP.why)); pcs = pcs.slice(0, 4);
     const watch = subPc.now.con.concat(subPc.lt.con).slice(0, 4);
     const exp = subR.cls[1];
-    const outc = [["Market value", fmtM(subR.mv), "Medium ±8%", "#9a6700"], ["Net income", fmtM(subR.niProj), "Medium ±7%", "#9a6700"],
+    const subO = outlook(subD);
+    const outc = [["Market value", fmtM(subR.mv) + `<small>likely ${fmtR(subO.lo)}–${fmtR(subO.hi)}</small>`, "Medium ±8%", "#9a6700"], ["Positioning", `<span style="color:${subO.posTag[1]}">${subO.posTag[0]}</span><small>${subO.posTxt}</small>`, "High", "#1a7f37"], ["Long-term viability", `<span style="color:${subO.via[1]}">${subO.via[0]}</span><small>${subO.why}</small>`, "Low · judgment", "#b42318"], ["Net income", fmtM(subR.niProj), "Medium ±7%", "#9a6700"],
       ["Experience", subR.sc[1].toFixed(2) + (subR.sc[1] >= exp.leader ? " · #1" : " · #2 (Zephara " + exp.leader + ")"), "High ±0.1", "#1a7f37"], ["Spend", fmtM(subR.spend) + " of " + fmtM(S.base.budget), "High · exact", "#1a7f37"]];
     const submit = `<div class="tr-sub" style="--c:${avColor(SUB)}"><div class="tr-subh"><div class="tr-h"><i>${SUB[0]}</i><div><b>${SUB}'s screen · what we'll type into the game</b><small>${t[SUB] ? "“" + (t[SUB].title || autoTitle(subD, rec)) + "”" : SUB + " hasn't added an idea yet, so this shows the recommended plan"}</small></div></div>
         <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
