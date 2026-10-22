@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-team-v76",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-team-v77",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -218,7 +218,7 @@ window.SIM = {
     ],
     next: "So for this round: keep building shopping experience to pass Zephara (gap 0.1), hold online at $12.5M, don't add service, and test breadth (lower-cost) at 55."
   },
-  team: ["Brian", "Patrick", "Abhishek", "Joe", "Michael"], submitter: "Brian", liveTopic: "getchells-t4-39bd523aae1a",  // ntfy.sh relay room (only names + slider numbers are sent)
+  team: ["Mike", "Brian", "Patrick", "Abhishek", "Joe"], submitter: "Brian", liveTopic: "getchells-t4-39bd523aae1a",  // ntfy.sh relay room (only names + slider numbers are sent)
 
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
   vsZephara: {
