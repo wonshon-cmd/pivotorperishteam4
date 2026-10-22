@@ -542,17 +542,17 @@
       const gaps = r.cls.filter(c => c.status === "GAP").length;
       const chips = LEVERS.map(L => ({ L, a: S.defaults[L.key], b: d[L.key] })).filter(x => Math.abs(x.b - x.a) > 1e-6)
         .map(x => `<span class="chip ${x.b > x.a ? "up" : "dn"}">${x.L.label.split(" (")[0]} ${x.L.unit === "$M" ? "$" + x.a + "→" + x.b + "M" : x.a + "→" + x.b + (x.L.unit || "")}</span>`).join("");
+      const expQ = r.cls[1];
       return `<div class="plan ${p.badge === "Recommended" ? "best" : ""}">
-        <div class="ph"><span class="pid">${p.id}</span><div><div class="pn">${p.name}</div><div class="pt">${p.tag}</div></div><span class="pb">${p.badge}</span></div>
-        <div class="pm">
+        <div class="ph"><span class="pid">${p.id}</span><div class="pn">${p.name}</div><span class="pb">${p.badge}</span></div>
+        <div class="pm3">
           <div><small>Market value</small><b>${fmtM(r.mv)}</b><em class="${dv >= 0 ? "up" : "dn"}">${dv >= 0 ? "▲" : "▼"} ${Math.abs(dv / S.base.marketValue * 100).toFixed(0)}%</em></div>
-          <div><small>Leads</small><b class="sm">${leads}</b><em>${gaps ? gaps + " gap" : "fair value ✓"}</em></div>
-          <div><small>ROIC vs WACC</small><b>${r.roic.toFixed(0)}% / ${r.wacc.toFixed(1)}%</b><em class="${r.roic > r.wacc ? "up" : "dn"}">${r.roic > r.wacc ? "creating value" : "destroying"}</em></div>
-          <div><small>Debt</small><b>${fmtM(r.debt)}</b><em class="up">▼ ${fmtM(base.debt - r.debt)}</em></div>
+          <div><small>Net income</small><b>${fmtM(r.niProj)}</b><em>spend ${fmtM(r.spend)}</em></div>
+          <div><small>Experience</small><b>${expQ.score.toFixed(2)}</b><em class="${expQ.score >= expQ.leader ? "up" : ""}">${expQ.score >= expQ.leader ? "#1" : "#2"} vs ${expQ.leaderName} ${expQ.leader}</em></div>
         </div>
-        <div class="chips">${chips}</div>
-        <div class="pw"><div class="ptitle">Why</div><ul>${p.why.map(w => `<li>${w}</li>`).join("")}</ul></div>
-        <div class="pr2"><div class="ptitle">Risks</div><ul>${p.risks.map(w => `<li>${w}</li>`).join("")}</ul></div>
+        <div class="chips">${chips || '<span class="chip">No changes</span>'}</div>
+        <p class="p1">${(p.why[0] || "").replace(/<[^>]+>/g, "")}</p>
+        <details class="pmore"><summary>Why &amp; risks</summary><ul>${p.why.slice(1).map(w => `<li>${w}</li>`).join("")}</ul><ul class="risk">${p.risks.map(w => `<li>${w}</li>`).join("")}</ul></details>
         <button class="${p.badge === "Recommended" ? "primary" : "ghost"} wide" data-plan="${p.id}">Load Plan ${p.id} →</button>
       </div>`;
     }).join("");
@@ -666,6 +666,113 @@
     });
   }
   // Hover tooltip: confidence, what it changes, hypothesis (untested), long-term call + live effect of your setting vs last round
+
+  // ---------- Ask assistant (local: parses the question, runs our model, answers in plain English) ----------
+  const ASK_LEVERS = [
+    ["privateBrandQ", ["private brand quality", "own label quality", "own-label quality"], ["pbQuality"]],
+    ["nationalBrandQ", ["national brand quality"], ["nbQuality"]],
+    ["quality", ["quality"], ["pbQuality", "nbQuality"]],
+    ["pb", ["private brand", "own label", "own-label"], ["pbLow", "pbHigh"]],
+    ["exp", ["shopping experience", "store experience", "experience"], ["experience"]],
+    ["svc", ["customer service", "service"], ["service"]],
+    ["online", ["online", "website", "digital", "e-commerce"], ["online"]],
+    ["vendor", ["vendor", "supplier"], ["vendor"]],
+    ["analytics", ["analytics"], ["analytics"]],
+    ["mkHigh", ["higher-cost markup", "higher cost markup", "premium markup", "markup higher", "markup on higher"], ["markupHigh"]],
+    ["mkLow", ["lower-cost markup", "lower cost markup", "everyday markup", "markup lower", "markup on lower"], ["markupLow"]],
+    ["mk", ["markup", "price"], ["markupLow", "markupHigh"]],
+    ["brHigh", ["higher-cost breadth", "higher cost breadth", "premium breadth", "breadth higher"], ["breadthHigh"]],
+    ["br", ["breadth", "assortment", "more products"], ["breadthLow"]],
+    ["dp", ["depth", "inventory", "stock"], ["depthLow", "depthHigh"]],
+    ["st", ["store", "retail coverage"], ["stores"]]
+  ];
+  const STEP = { experience: 2, service: 2, online: 2, vendor: 3, analytics: 1, markupLow: 2, markupHigh: 2, pbQuality: 1, nbQuality: 1, pbLow: 5, pbHigh: 5, breadthLow: 5, breadthHigh: 5, depthLow: 5, depthHigh: 5, stores: 10 };
+  function askParse(q) {
+    const t = " " + q.toLowerCase().replace(/[?!]/g, " ") + " ";
+    let hit = null;
+    for (const [id, words, keys] of ASK_LEVERS) { if (words.some(w => t.includes(w))) { hit = keys; break; } }
+    if (!hit) return null;
+    const up = /\b(raise|increase|more|add|higher|up|boost|grow|open|expand|spend more)\b/.test(t);
+    const down = /\b(lower|cut|decrease|reduce|less|down|drop|trim|close|shrink|spend less|remove)\b/.test(t);
+    const num = (t.match(/\$?\s*(\d+(?:\.\d+)?)\s*(m|%|pts?|points?)?/) || [])[1];
+    const to = /\bto\s+\$?\s*\d/.test(t), by = /\bby\s+\$?\s*\d/.test(t);
+    return { keys: hit, dir: down && !up ? -1 : up && !down ? 1 : (down ? -1 : 0), num: num == null ? null : +num, to, by };
+  }
+  function askAnswer(q) {
+    const rec = (S.plans || []).find(p => p.badge === "Recommended") || {};
+    const base = Object.assign({}, S.defaults, rec.levers || {});
+    let P = askParse(q);
+    const tl = q.toLowerCase(), faqHit = (S.faq || []).find(x => x.keys.some(k => tl.includes(k)));
+    if (P && faqHit && P.dir === 0 && P.num == null && /\b(mean|what is|what's|explain|why|how does|how do|score)\b/.test(tl)) P = null;
+    if (!P) {
+      const t = q.toLowerCase();
+      const f = (S.faq || []).find(x => x.keys.some(k => t.includes(k)));
+      if (!f) return `<p>I can answer two kinds of questions:</p><ul><li><b>What-ifs</b>: “What if we lower online to $8M?”, “Raise markup by 2 points?”, “Cut vendor management?”</li><li><b>How things work</b>: debt, P/E, budget, analytics score, segments, fair value, final round, beating $1.5B.</li></ul>`;
+      return `${f.a}<div class="ask-rec"><b>What I'd do:</b> ${f.rec}</div>${confPill(f.conf)}`;
+    }
+    const d = Object.assign({}, base), changes = [];
+    P.keys.forEach(k => {
+      const L = LEVERS.find(x => x.key === k); if (!L) return;
+      const was = base[k]; let v;
+      if (P.num != null && P.to) v = P.num;
+      else if (P.num != null) v = was + (P.dir || 1) * P.num;
+      else v = was + (P.dir || 1) * STEP[k];
+      if (P.num != null && !P.to && !P.by && P.dir === 0) v = P.num;
+      v = Math.max(L.min, Math.min(L.max, Math.round(v * 10) / 10));
+      d[k] = v; changes.push([L, was, v]);
+    });
+    const r0 = model(base), r1 = model(d);
+    const fmt = (L, v) => L.unit === "$M" ? "$" + v + "M" : v + (L.unit === "%" ? "%" : "");
+    const m = (x, dp = 1) => (x >= 0 ? "+" : "−") + "$" + Math.abs(x).toFixed(dp) + "M";
+    const gm0 = r0.gross / r0.revenue * 100, gm1 = r1.gross / r1.revenue * 100;
+    const dSpend = (d.online + d.service + d.experience + d.vendor + d.analytics) - (base.online + base.service + base.experience + base.vendor + base.analytics);
+    const qd = r1.sc.map((v, i) => [Q[i], v - r0.sc[i]]).filter(x => Math.abs(x[1]) >= 0.01);
+    const dMV = r1.mv - r0.mv, dNI = r1.niProj - r0.niProj, dRev = r1.revenue - r0.revenue, dDebt = r1.debt - r0.debt;
+    const k0 = changes[0][0].key, I = (S.leverInfo || {})[k0] || {}, G = (S.leverGroups || []).find(g => g.keys.includes(k0));
+    const what = changes.map(([L, a, b]) => `${L.label} ${fmt(L, a)} → <b>${fmt(L, b)}</b>`).join(", ");
+    // plain-English chain
+    const chain = [];
+    if (Math.abs(dSpend) >= 0.05) chain.push(`We ${dSpend > 0 ? "spend" : "save"} <b>$${Math.abs(dSpend).toFixed(1)}M</b> a year${["online", "experience"].includes(k0) ? ` (only part of it hits this year's costs: ${k0 === "online" ? "40%" : "80%"})` : ""}.`);
+    if (Math.abs(dRev) >= 0.5) chain.push(`Revenue ${dRev > 0 ? "rises" : "falls"} ≈${m(dRev, 0)}${Math.abs(gm1 - gm0) >= 0.05 ? ` and gross margin moves ${gm0.toFixed(1)}% → ${gm1.toFixed(1)}%` : ""}.`);
+    else if (Math.abs(gm1 - gm0) >= 0.05) chain.push(`Gross margin moves ${gm0.toFixed(1)}% → ${gm1.toFixed(1)}%.`);
+    if (qd.length) chain.push(`Quadrant scores: ${qd.map(([n, v]) => `${n} ${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`).join(", ")}.`);
+    chain.push(`Net income ${dNI >= 0 ? "rises" : "falls"} <b>${m(dNI)}</b>${Math.abs(dDebt) >= 0.5 ? `, debt ${dDebt > 0 ? "up" : "down"} ${m(Math.abs(dDebt), 1).replace("+", "")}` : ""}.`);
+    chain.push(`Market value (P/E × profit) moves <b>${m(dMV, 0)}</b>: ${fmtM(r0.mv)} → ${fmtM(r1.mv)}.`);
+    // recommendation
+    const lostLead = r0.leads > r1.leads, gainLead = r1.leads > r0.leads;
+    let verdict, vcls;
+    if (lostLead) { verdict = "Don't do it: we'd lose a quadrant lead, which costs P/E over time even if this round's number looks fine."; vcls = "no"; }
+    else if (dMV > 5) { verdict = `Worth doing: about ${m(dMV, 0)} of value${gainLead ? " and it adds a quadrant lead" : ""}.`; vcls = "yes"; }
+    else if (dMV < -5) { verdict = `Not recommended: it costs about ${m(dMV, 0).replace("−", "")} of value.`; vcls = "no"; }
+    else { verdict = "Roughly neutral this round (within the model's error). Decide on the long-term reason below."; vcls = "meh"; }
+    if (k0 === "vendor" && changes[0][2] < changes[0][1] && !lostLead) { verdict = `This round looks like ${m(dMV, 0)}, but the higher-cost penalty builds up over the following rounds (our costs are already 1.8% above rivals). Best saved for the final round.`; vcls = "meh"; }
+    const data = (I.data || []).slice(0, 2).map(x => `<li>${x}</li>`).join("");
+    return `<div class="ask-what">${what} <span class="mut">(vs Plan ${rec.id || "A"})</span></div>
+      <ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}</ul>
+      <div class="ask-verdict ${vcls}">${verdict}</div>
+      ${data ? `<div class="ask-data"><b>From the game data</b><ul>${data}</ul></div>` : ""}
+      ${I.hypothesis ? `<div class="ask-hyp"><b>Untested:</b> ${I.hypothesis}</div>` : ""}
+      <div class="ask-rec"><b>Long term:</b> ${I.longTerm || ""}. ${I.why || ""}${G ? ` <span class="mut">(${G.why})</span>` : ""}</div>
+      ${confPill(I.conf || "Medium")}`;
+  }
+  function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
+  function initAsk() {
+    if (document.getElementById("askBtn")) return;
+    document.body.insertAdjacentHTML("beforeend", `<button id="askBtn">Ask ✦</button>
+      <div id="askPanel"><div class="ask-head"><b>Ask the copilot</b><button id="askClose" aria-label="Close">×</button></div>
+      <div id="askLog"><div class="ask-msg bot">Ask a what-if or how-it-works question. I run our model (vs Plan A) and answer in plain English with our confidence.</div></div>
+      <div class="ask-sugg">${["What if we lower online to $8M?", "Raise markup by 2 points?", "Should we cut vendor management?", "What if breadth goes to 60?", "What does the analytics score mean?", "Should we pay down debt?", "How do we beat $1.5B?"].map(x => `<button class="ask-s">${x}</button>`).join("")}</div>
+      <form id="askForm"><input id="askIn" placeholder="e.g. What if we raise shopping experience by $3M?" autocomplete="off"><button class="primary">Ask</button></form></div>`);
+    const open = v => document.getElementById("askPanel").classList.toggle("open", v);
+    document.getElementById("askBtn").onclick = () => { open(true); document.getElementById("askIn").focus(); };
+    document.getElementById("askClose").onclick = () => open(false);
+    const ask = q => { if (!q.trim()) return; const log = document.getElementById("askLog");
+      log.insertAdjacentHTML("beforeend", `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q)}</div>`);
+      log.scrollTop = log.scrollHeight; };
+    document.getElementById("askForm").onsubmit = e => { e.preventDefault(); const i = document.getElementById("askIn"); ask(i.value); i.value = ""; };
+    document.querySelectorAll(".ask-s").forEach(b => b.onclick = () => ask(b.textContent));
+  }
+
   // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
   let lvFilter = "all";
   function renderLearn() {
@@ -919,7 +1026,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
@@ -931,5 +1038,5 @@
     $("#manualBtn").onclick = () => { state.team = $("#teamName").value.trim() || "Team 4"; state.d = Object.assign({}, S.defaults); openCockpit(false); };
   });
 
-  window.__copilot = { calibrate, model, optimize, targetQuads, get scale() { return SCALE; } };
+  window.__copilot = { askAnswer, calibrate, model, optimize, targetQuads, get scale() { return SCALE; } };
 })();

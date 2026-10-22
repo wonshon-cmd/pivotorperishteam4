@@ -293,7 +293,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 
 /* Top 3 plans */
 .sub { color: var(--muted); margin: -12px 0 18px; }
-.plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .plan { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
 .plan.best { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 .ph { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: start; }
@@ -315,7 +315,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 .pw ul, .pr2 ul { margin: 0 0 12px; padding-left: 18px; font-size: 15px; line-height: 1.45; }
 .pw li { margin-bottom: 6px; }
 .pr2 li { color: var(--bad); margin-bottom: 4px; } .pr2 li::marker { color: var(--bad); }
-@media (max-width: 1250px) { .plans { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .plans { grid-template-columns: 1fr; } }
 
 /* Impact guide */
 .impacts { width: 100%; border-collapse: collapse; font-size: 15px; }
@@ -441,3 +441,38 @@ details.fold[open] summary { margin-bottom: 12px; }
 .lv-ul li { margin: 2px 0; }
 
 .tl-older { margin: 10px 0 14px; } .tl-older summary { cursor: pointer; font-weight: 800; color: var(--muted); }
+
+/* Ask assistant */
+#askBtn { position: fixed; right: 24px; bottom: 24px; z-index: 40; background: #2E5BFF; color: #fff; border-radius: 999px; padding: 14px 22px; font-weight: 800; font-size: 16px; box-shadow: 0 8px 24px rgba(46,91,255,.35); }
+#askPanel { position: fixed; right: 24px; bottom: 24px; z-index: 60; width: 460px; max-width: calc(100vw - 32px); height: min(720px, calc(100vh - 48px)); background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 48px rgba(0,0,0,.18); display: none; flex-direction: column; overflow: hidden; }
+#askPanel.open { display: flex; }
+.ask-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 17px; }
+#askClose { background: transparent; font-size: 24px; line-height: 1; color: var(--muted); }
+#askLog { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ask-msg { border-radius: 14px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; }
+.ask-msg.me { align-self: flex-end; background: #2E5BFF; color: #fff; max-width: 85%; }
+.ask-msg.bot { background: #f6f7f9; }
+.ask-msg ul { margin: 6px 0 0 18px; padding: 0; } .ask-msg li { margin: 3px 0; }
+.ask-what { font-weight: 700; } .ask-msg .mut { color: var(--muted); font-weight: 400; }
+.ask-verdict { margin: 8px 0; padding: 8px 10px; border-radius: 10px; font-weight: 700; }
+.ask-verdict.yes { background: #e6f4ea; color: #1a7f37; } .ask-verdict.no { background: #fde8e6; color: #b42318; } .ask-verdict.meh { background: #fdf3dc; color: #7a5200; }
+.ask-data { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; margin: 6px 0; font-size: 13.5px; }
+.ask-hyp { color: #8a1c13; font-size: 13.5px; margin: 4px 0; }
+.ask-rec { margin: 6px 0; }
+.ask-conf { display: inline-block; border: 1.5px solid; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 700; margin-top: 4px; }
+.ask-sugg { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 14px; border-top: 1px solid var(--line); }
+.ask-s { background: #eef2ff; color: #1f3fb8; border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 700; }
+#askForm { display: flex; gap: 8px; padding: 10px 14px 14px; }
+#askForm input { flex: 1; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+#askForm button { padding: 10px 16px; border-radius: 12px; }
+
+.plan { display: flex; flex-direction: column; gap: 12px; }
+.plan .ph { display: flex; align-items: center; gap: 10px; } .plan .ph .pn { flex: 1; font-weight: 800; font-size: 19px; line-height: 1.25; }
+.pm3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pm3 > div { background: var(--bg); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; }
+.pm3 small { color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.pm3 b { font-size: 19px; } .pm3 em { font-style: normal; font-size: 12px; color: var(--muted); } .pm3 em.up { color: #2E5BFF; font-weight: 700; } .pm3 em.dn { color: #b42318; }
+.plan .p1 { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.45; }
+.pmore summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
+.pmore ul { margin: 6px 0 0 18px; padding: 0; font-size: 14px; line-height: 1.45; } .pmore ul.risk li { color: #b42318; }
+.plan > button.wide { margin-top: auto; }

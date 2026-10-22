@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-tidy-v25",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-ask-v28",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -202,6 +202,21 @@ window.SIM = {
     depthHigh: { data: ["Industry: average 20; we're at 30 (above average)."], plain: "How many units of each premium product we keep in stock.", rule: "Same as lower-cost depth.", conf: "High", status: "Cut 50 → 30 in R1", effect: "Same as lower-cost depth; we're above the industry average (20).", longTerm: "Hold 30", why: "Same reason." },
     stores: { data: ["Industry: average 233 stores (0–500); we run 185.", "Scorecard: sales per store keep growing (+10.8% last round).", "Balance sheet: buildings and equipment are our biggest asset ($275M); each new store adds ≈$1.75M."], plain: "How many stores we run.", rule: "Revisit only if store shoppers (S2, S4, S6) stop growing.", conf: "Medium", status: "Cut 200 → 185 in R1", effect: "Each store = $1.75M of debt/assets. Closing 15 barely hurt revenue (sales/store +11–20%/yr).", hypothesis: "Each +5 stores ≈ +0.5% revenue but +$8.75M debt.", longTerm: "Hold 185", why: "Store shoppers (S2, S4, S6) matter, but new stores are a value trap per the slides." }
   },
+
+
+  // ---- "Ask" assistant: answers to general questions (local, no outside AI). keys = words that trigger the answer ----
+  faq: [
+    { keys: ["analytics score", "vendor score", "100%", "score mean"], conf: "Low", a: "The Analytics and Vendor Management scores started at <b>100% in Round 0</b> and crept up to 100.5% and 100.4%, even while we <b>cut</b> spending ($10M → $6M and $30M → $20M). So 100% is a starting baseline, not 'maxed out'. It looks like a slowly building capability that doesn't drop right away when we spend less. The effect is tiny, so don't chase the score.", rec: "Hold analytics at $5–6M; cut it only in the final round." },
+    { keys: ["debt", "pay down", "repay", "loan", "interest"], conf: "Medium", a: "There's no 'repay debt' box. Debt falls by the cash we generate each round (≈$45–55M), so we'll be debt-free around Round 7. Each $10M less debt ≈ +$0.5M profit ≈ +$7M value.", rec: "Speed it up only by leaving budget unspent and keeping depth at 30. Don't close stores or cut depth just to repay debt." },
+    { keys: ["p/e", "pe ", "market value", "valuation", "how is value", "wacc"], conf: "High", a: "In every round so far, <b>market value = P/E × net income</b> (e.g. 15.2 × $50.7M ≈ $772M). P/E has slipped 16.6 → 15.2 as WACC rose; leading two quadrants seems to add ≈10% to P/E per point of Brand + Experience.", rec: "Grow profit (keep spending flat) and hold two clear leads to protect P/E." },
+    { keys: ["budget", "spend all", "unspent", "spend the whole"], conf: "High", a: "This round's budget is $77.48M. We don't have to spend it: each $1M we don't spend is ≈ +$0.65M profit ≈ +$10M of market value.", rec: "Spend only where it buys a quadrant lead (shopping experience) or proven growth." },
+    { keys: ["segment", "target", "customer group", "who do we"], conf: "Medium", a: "Target <b>S5 Experience Seekers, S2 Breadth Shoppers and S4 Omni Mix</b> (the professor's '2, 4, 5 = in-store experience'), grow S6 Store Bargain, defend S3 Brand Lovers, and skip S1 Online Bargain (Cadabra's turf). Growth is in S4 (+17%), S6 (+14%), S1 (+13%).", rec: "Spend on shopping experience and breadth; keep 185 stores; don't chase online." },
+    { keys: ["1.5", "beat", "better than", "end value", "final value", "how high"], conf: "Medium", a: "On the current path we reach ≈$1.5B by Round 8 (profit ≈$106M × P/E ≈14). Realistic upside ≈$1.7–1.9B: hold two clear leads (stops the P/E slide), make breadth work (+2–3% revenue), and cut vendor/online/analytics hard in the final round.", rec: "Take Experience #1 now, run the breadth test, plan the final-round cuts." },
+    { keys: ["fair value", "frictionless gap", "frictionless"], conf: "Medium", a: "Fair value = 75% of the leader. We pass in Low Price (4.8 vs 4.1) but not Frictionless (3.9 vs 5.5). Closing it would cost ≈$15M a year ≈ −$150M of value, and our target customers care least about online.", rec: "Accept the small Frictionless gap; nudge it with service, not online." },
+    { keys: ["win", "strategy", "thesis", "plan", "how do we"], conf: "Medium", a: "Be the <b>premium, wide-assortment department store</b>: lead Brand and Experience, stay fair in Low Price, accept a small Frictionless gap, and keep spending flat so profit (and value) grows.", rec: "This round: shopping experience → $20.5M, online → $10.5M, service → $17M, lower-cost breadth → 55." },
+    { keys: ["final round", "last round", "endgame", "round 8"], conf: "Medium", a: "In the final round, effects that build up slowly (vendor cost savings) can't come back to hurt us. Cutting vendor to ≈$15M and online/analytics to minimum boosts final-year profit, which sets final value.", rec: "Keep service + shopping experience so both leads hold; cut the rest." },
+    { keys: ["zephara", "competitor", "rival", "bestco", "cadabra"], conf: "High", a: "Zephara leads Experience (6.5 vs our 6.4) with the best service position; its Brand is falling (4.6). BestCo's Brand is rising (4.4). Cadabra owns Frictionless (7.3) but is sliding.", rec: "Watch Zephara Experience > 6.6 and BestCo Brand > 4.8 every round." }
+  ],
 
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
   impacts: [
