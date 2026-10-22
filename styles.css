@@ -573,3 +573,9 @@ details.fold[open] summary { margin-bottom: 12px; }
 .minor .mn { font-weight: 600; } .minor b { font-size: 14px; } .minor b.pos { color: #1a7f37; } .minor b.neg { color: #b42318; }
 .minor small { grid-column: 1 / 2; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .minor .xtry { grid-column: 2; grid-row: 2; justify-self: end; background: #eef2ff; color: #1f3fb8; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+
+/* Confidence legend */
+.conf-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; margin: 0 0 16px; font-size: 13.5px; color: var(--muted); }
+.conf-legend .cl-t { font-weight: 800; color: var(--ink); }
+.conf-legend .cl { display: inline-flex; align-items: center; gap: 6px; } .conf-legend .cl b { color: var(--ink); }
+.conf-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
