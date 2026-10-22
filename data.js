@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-build-v48",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-minor-v49",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -169,6 +169,24 @@ window.SIM = {
 
 
   // ---- Hover help on Build plan sliders: confidence, effect, hypothesis (untested levers), long-term call + why ----
+  // Build plan value panel: smaller "hold" calls + ideas worth exploring (update each round)
+  minorCalls: [
+    ["stores", "Hold 185", "Store shoppers matter, but new stores add debt; sales/store already +11%/yr."],
+    ["depthLow", "Hold 30 / 30", "Cash win banked; customers value depth more each round."],
+    ["markupLow", "Hold 54% / 66%", "Low Price is above fair; cutting price costs ≈$4M profit per point."],
+    ["pbQuality", "Hold 6 / 6", "Brand lead 0.5; go to 7 only if BestCo or Zephara gets within 0.3."],
+    ["pbLow", "Hold 60%", "Test 55% later, on its own."],
+    ["vendor", "Hold $20M", "Cut to ≈$15M only in the final round."],
+    ["analytics", "Hold $6M", "Small effect; cut only in the final round."]
+  ],
+  explore: [
+    { label: "Brand quality 6 → 7", change: { pbQuality: 7, nbQuality: 7 }, when: "If Brand lead < 0.3", conf: "High" },
+    { label: "Breadth (lower) → 60", change: { breadthLow: 60 }, when: "If lower-cost sales grow > 11% after 55", conf: "Low" },
+    { label: "Private brand → 55%", change: { pbLow: 55, pbHigh: 55 }, when: "Round 6 test, on its own", conf: "Low" },
+    { label: "Online +$1M", change: { online: 13.5 }, when: "If online share < 48%", conf: "Medium" },
+    { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low" }
+  ],
+
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
   vsZephara: {
     title: "How we beat Zephara",

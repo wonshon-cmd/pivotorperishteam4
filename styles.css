@@ -565,3 +565,11 @@ details.fold[open] summary { margin-bottom: 12px; }
 .bu-up { background: #e6f4ea; color: #145c2c; } .bu-slow { background: #fdf3dc; color: #7a5200; } .bu-no { background: #fde8e6; color: #8a1c13; }
 .bu-now { background: #f1f2f4; color: #3f3e44; } .bu-asset { background: #eef2ff; color: #1f3fb8; }
 #levTip.compact .lt-build { display: block; }
+
+/* Smaller calls + worth exploring */
+.minor { list-style: none; margin: 0; padding: 0; }
+.minor li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 14px; cursor: help; align-items: center; }
+.minor li:hover { background: #f3f5fa; border-radius: 8px; }
+.minor .mn { font-weight: 600; } .minor b { font-size: 14px; } .minor b.pos { color: #1a7f37; } .minor b.neg { color: #b42318; }
+.minor small { grid-column: 1 / 2; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.minor .xtry { grid-column: 2; grid-row: 2; justify-self: end; background: #eef2ff; color: #1f3fb8; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }

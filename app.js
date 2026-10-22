@@ -980,6 +980,8 @@
     const on = (sel, fn) => { const el = document.querySelector(sel); if (!el || el.dataset.tipOn) return; el.dataset.tipOn = 1;
       el.addEventListener("mouseover", e => fn(e)); el.addEventListener("mouseleave", hideLeverTip); };
     on("#checks", e => { const li = e.target.closest("li[data-tip]"); if (li) showInfoTip(li, li.dataset.tip); });
+    on("#minor", e => { const li = e.target.closest("li[data-k]"); if (!li) return; const L = LEVERS.find(x => x.key === li.dataset.k); if (L) { showLeverTip(li, L); placeTip(document.getElementById("levTip"), li); } });
+    on("#explore", e => { const li = e.target.closest("li[data-k]"); if (!li) return; const L = LEVERS.find(x => x.key === li.dataset.k); if (L) { showLeverTip(li, L); placeTip(document.getElementById("levTip"), li); } });
     on("#moves", e => { const li = e.target.closest("li[data-k]"); if (!li) return; const L = LEVERS.find(x => x.key === li.dataset.k); if (L) { showLeverTip(li, L); placeTip(document.getElementById("levTip"), li); } });
     const mvBox = document.getElementById("mv"); if (mvBox && !mvBox.dataset.tipOn) { mvBox.dataset.tipOn = 1;
       [mvBox, document.getElementById("mvDelta"), document.getElementById("mvMethod")].forEach(x => { x.addEventListener("mouseenter", () => showInfoTip(mvBox, "mv")); x.addEventListener("mouseleave", hideLeverTip); }); }
@@ -1094,6 +1096,18 @@
     $("#moves").innerHTML = moves.length ? moves.map(m => `<li data-k="${m.L.key}" class="${m.dv > 0 ? "upm" : "dnm"}"><span class="ar">${m.dv > 0 ? "▲" : "▼"}</span>
       <span>${m.L.label}</span><b>${fmtV(m.L, S.defaults[m.L.key])} → ${fmtV(m.L, d[m.L.key])}</b></li>`).join("")
       : `<li><span></span><span style="color:var(--muted)">Same as last round</span></li>`;
+    // smaller calls: levers we keep (skip any the user has changed)
+    if ($("#minor") && S.minorCalls) $("#minor").innerHTML = S.minorCalls.filter(([k]) => Math.abs(d[k] - S.defaults[k]) < 1e-6)
+      .map(([k, call, why]) => `<li data-k="${k}"><span class="mn">${k === "pbQuality" ? "Brand quality" : (LEVERS.find(x => x.key === k) || {}).label.split(" · ")[0]}</span><b>${call.replace(/^Quality: /, "")}</b><small>${why}</small></li>`).join("");
+    // ideas worth exploring: live model effect vs the current sliders
+    if ($("#explore") && S.explore) {
+      const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
+      $("#explore").innerHTML = S.explore.map((x, i) => {
+        const dd = Object.assign({}, d, x.change), dv = model(dd).mv - r.mv;
+        return `<li data-k="${Object.keys(x.change)[0]}" data-x="${i}"><span class="mn">${x.label}</span><b class="${dv >= 0 ? "pos" : "neg"}">${dv >= 0 ? "+" : "−"}$${Math.abs(dv).toFixed(0)}M</b>
+          <small>${x.when} · <span style="color:${CC[x.conf]}">${x.conf}</span></small><button class="xtry" data-x="${i}">Try</button></li>`; }).join("");
+      document.querySelectorAll(".xtry").forEach(b => b.onclick = e => { e.stopPropagation(); Object.assign(state.d, S.explore[+b.dataset.x].change); syncLevers(); update(); });
+    }
   }
 
   let mvAnim;
