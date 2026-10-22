@@ -300,7 +300,8 @@
 
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
-    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", guide: "guide", learn: "learn" }[id];
+    if (id === "team" && $("#tcCards")) renderTeamCmp();
+    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", guide: "guide", learn: "learn" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
   }
@@ -915,8 +916,8 @@
     const tt = teamLoad(), ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || ""; tt[me] = { d: Object.assign({}, state.d), ts: Date.now(), title: ti }; teamSave(tt);
     if ($("#tcTitle")) { $("#tcTitle").dataset.typed = ""; autoFillTitle(); } openTD();
   }
-  function openTD() { renderTeamCmp(); const o = $("#tdOverlay"); if (o) { o.classList.add("open"); o.scrollTop = 0; document.body.style.overflow = "hidden"; } }
-  function closeTD() { const o = $("#tdOverlay"); if (o) o.classList.remove("open"); document.body.style.overflow = ""; }
+  function openTD() { renderTeamCmp(); show("team"); }
+  function closeTD() { show("cockpit"); }
   function renderTeamCmp() {
     if (!$("#tcCards")) return;
     const t = teamLoad(), me = meLoad(), recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
