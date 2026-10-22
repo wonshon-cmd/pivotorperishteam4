@@ -1044,7 +1044,7 @@
     // who's here
     $("#tcWho").innerHTML = `<div class="tr-who ${me ? "" : "ask"}"><span class="tr-q">${me ? "You're" : "👋 Who's here? Pick your name"}</span>${(S.team || []).map(n => `<button class="tr-nm ${n === me ? "me" : ""}" data-me="${n}" style="--c:${avColor(n)}"><i>${n[0]}</i>${n}</button>`).join("")}<span id="trLive" class="tr-live ${liveOn ? "on" : "off"}">${liveOn ? "● Live" : "○ Connecting…"}</span></div>`;
     // ===== CENTER SCREEN =====
-    const c = centerLoad() || { src: "Recommended", d: rec, ts: 0, by: "" }, cd = Object.assign({}, S.defaults, c.d), canEdit = me === SUB;
+    const c = centerLoad() || { src: "Recommended", d: rec, ts: 0, by: "" }, cd = Object.assign({}, S.defaults, c.d), canEdit = !!me;
     const o = outlook(cd), r = o.r, pc = prosCons(cd, S.defaults), ok = okLoad().m;
     const groups = [...new Set(LEVERS.map(L => L.group))];
     const mini = groups.map(g => `<div class="cs-g">${g}</div>` + LEVERS.filter(L => L.group === g).map(L => { const v = cd[L.key], was = S.defaults[L.key], ch = Math.abs(v - was) > 1e-9;
@@ -1056,7 +1056,7 @@
     const over = r.spend > S.base.budget + 1e-6, left = S.base.budget - r.spend;
     const srcTxt = c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea";
     const center = `<div class="tr-sub cs">
-      <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}${c.ts ? ` (${new Date(c.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })})` : ""}. Click any idea below to put it here.${canEdit ? " You can edit it." : ` Only ${SUB} edits; you'll see changes live.`}</small></div>
+      <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}${c.ts ? ` (${new Date(c.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })})` : ""}. Click any idea below to bring it here; anyone can edit it and everyone sees the changes live.${canEdit ? "" : " Pick your name above to edit."}</small></div>
         <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
       <div class="cs-grid">
         <div class="cs-mini"><div class="tr-lab">Mini build plan ${canEdit ? "· edit here" : ""}</div>
