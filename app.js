@@ -816,22 +816,39 @@
       ${qd.length ? `<div class="hp-q">Quadrants: ${qd.map(([n, v]) => `${n} ${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`).join(" · ")}</div>` : ""}
       ${confPill("Medium")}`;
   }
+  // Suggested questions that follow the current plan and the last question (refresh after every answer and slider change)
+  const askSeen = new Set(); let askLast = "", askRun = null;
+  const ASK_NAME = { vendor: "vendor management", online: "online", experience: "shopping experience", service: "customer service", analytics: "analytics", markupLow: "lower-cost markup", markupHigh: "higher-cost markup", pbQuality: "private brand quality", nbQuality: "national brand quality", pbLow: "private brand", pbHigh: "private brand", breadthLow: "breadth", breadthHigh: "higher-cost breadth", depthLow: "depth", depthHigh: "depth", stores: "stores" };
+  function askSuggest(d) {
+    const r = model(d), exp = r.cls[1], left = S.base.budget - r.spend, out = [], add = q => { if (q && !askSeen.has(q) && !out.includes(q)) out.push(q); };
+    const amt = v => "$" + (+(+v).toFixed(1)) + "M";
+    const P = askLast ? askParse(askLast) : null;
+    if (P && P.keys && P.keys[0]) { const k = P.keys[0], L = LEVERS.find(x => x.key === k), nm = ASK_NAME[k] || L.label.toLowerCase(), st = STEP[k] || 1, unit = L.unit === "$M" ? "$" + st + "M" : st + (L.unit === "%" ? " points" : "");
+      add(`${P.dir < 0 ? "Raise" : "Cut"} ${nm} by ${unit} instead?`); add(`${P.dir < 0 ? "Cut" : "Raise"} ${nm} by ${L.unit === "$M" ? "$" + st * 2 + "M" : st * 2 + (L.unit === "%" ? " points" : "")}?`); }
+    if (left < -1e-6) add(`Cut vendor management by ${amt(Math.ceil(-left * 2) / 2)}?`);
+    else if (left >= 0.5) add(`Raise shopping experience by ${amt(Math.floor(left * 2) / 2)}?`);
+    if (r.sc[1] < exp.leader) add("Raise shopping experience by $2M?"); else add("Cut customer service by $1M?");
+    if (Math.abs(d.online - S.defaults.online) > 1e-9) add(`Online back to ${amt(S.defaults.online)}?`); else add("Cut online by $2M?");
+    if (d.breadthLow < 55) add("Breadth to 55?"); else if (d.breadthLow < 60) add("Breadth to 60?");
+    if (d.pbQuality < 7) add("Raise quality to 7?");
+    add("Raise markup by 2 points?");
+    const faq = ["How do we pay down debt?", "How is market value calculated?", "What does the analytics score mean?", "Do we get more budget if we make more?", "How do we beat $1.5B?"].filter(q => !askSeen.has(q));
+    const picks = out.slice(0, 3); if (faq.length) picks.push(faq[askSeen.size % faq.length]);
+    return picks;
+  }
+  function renderAskSugg() {
+    const box = document.querySelector(".qa-sugg"); if (!box || !askRun) return;
+    box.innerHTML = `<span class="qa-try">Try:</span>` + askSuggest(state.d).map(x => `<button type="button" class="ask-s">${x}</button>`).join("");
+    box.querySelectorAll(".ask-s").forEach(b => b.onclick = () => askRun(b.textContent));
+  }
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
     if ($("#qaForm") && !$("#qaForm").dataset.on) {
       $("#qaForm").dataset.on = 1;
-      const sugg = ["Experience to $24M and vendor to $18M", "Breadth to 60", "Raise markup by 2 points", "What does the analytics score mean?"];
-      document.querySelector(".qa-sugg").innerHTML = sugg.map(x => `<button type="button" class="ask-s">${x}</button>`).join("");
-      const qa = q => { if (!q.trim()) return;
-        const before = Object.assign({}, state.d), hp = askPlan(q, before), esc = q.replace(/</g, "&lt;");
-        if (!hp.changes.length) { $("#qaOut").innerHTML = `<div class="ask-msg me">${esc}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; return; }
-        state.d = hp.d; syncLevers(); update();
-        $("#qaOut").innerHTML = `<div class="ask-msg me">${esc}</div><div class="ask-msg bot"><div class="hp-top"><b>✓ Sliders changed to your plan</b><button type="button" class="hp-undo" id="qaUndo">↶ Undo</button></div>${planSummary(before, hp.d, hp.changes)}
-          <details class="hp-why"><summary>Why, in plain English</summary>${askAnswer(q.split(/,|;|\band\b/i)[0], before)}</details></div>`;
-        $("#qaUndo").onclick = () => { state.d = before; syncLevers(); update(); $("#qaOut").innerHTML = `<div class="ask-msg bot">Undone: sliders are back where they were.</div>`; };
-      };
+      const qa = q => { if (!q.trim()) return; askSeen.add(q); askLast = q; $("#qaOut").innerHTML = `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; renderAskSugg(); };
+      askRun = qa;
       $("#qaForm").onsubmit = e => { e.preventDefault(); qa($("#qaIn").value); $("#qaIn").value = ""; };
-      document.querySelectorAll(".qa-sugg .ask-s").forEach(b => b.onclick = () => qa(b.textContent));
+      renderAskSugg();
     }
     if (document.getElementById("askBtn")) return;
     const top = document.querySelector(".top") || document.body;
@@ -848,7 +865,7 @@
       log.insertAdjacentHTML("beforeend", `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q)}</div>`);
       log.scrollTop = log.scrollHeight; };
     document.getElementById("askForm").onsubmit = e => { e.preventDefault(); const i = document.getElementById("askIn"); ask(i.value); i.value = ""; };
-    document.querySelectorAll(".ask-s").forEach(b => b.onclick = () => ask(b.textContent));
+    document.querySelectorAll("#askPanel .ask-s").forEach(b => b.onclick = () => ask(b.textContent));
   }
 
   // ---------- How we beat Zephara card (rendered into every .zeph-slot) ----------
@@ -1023,9 +1040,30 @@
     const pc = prosCons(d, S.defaults), build = d.experience + d.online;
     let v = pc.lt.pro.length - pc.lt.con.length + (leads.length >= 2 ? 1 : -1) + (build >= S.defaults.experience + S.defaults.online ? 1 : -1);
     if (r.spend > S.base.budget + 1e-6) v -= 3;
+    v -= LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9 && ((S.leverInfo || {})[L.key] || {}).conf === "Low").length;
     const via = v >= 2 ? ["Strong", "#1a7f37"] : v >= 0 ? ["Okay", "#9a6700"] : ["Fragile", "#b42318"];
     const why = r.spend > S.base.budget + 1e-6 ? "Over budget: the game won't accept it" : (v >= 0 ? (pc.lt.pro[0] || "Keeps building the levers that carry to Round 8") : (pc.lt.con[0] || "Builds less of what carries to Round 8")).replace(/^[^:]+: /, "");
     return { r, lo: r.mv * 0.92, hi: r.mv * 1.08, posTxt, posTag, via, why: why.length > 90 ? why.slice(0, 88) + "…" : why };
+  }
+  // Rank of a quadrant score vs rivals' latest scores: "#1 · 0.50 ahead of Zephara" / "#2 · 0.10 behind Zephara"
+  function rankOf(v, k) {
+    const others = Object.entries(S.rivals).filter(([n]) => n !== S.company).map(([n, sc]) => [n, sc[k]]).sort((a, b) => b[1] - a[1]);
+    const rank = 1 + others.filter(o => o[1] > v + 1e-9).length;
+    return rank === 1 ? { rank, gap: v - others[0][1], who: others[0][0], txt: `#1 · ${(v - others[0][1]).toFixed(2)} ahead of ${others[0][0]}`, short: `#1 ▲${(v - others[0][1]).toFixed(1)}` }
+      : { rank, gap: others[0][1] - v, who: others[0][0], txt: `#${rank} · ${(others[0][1] - v).toFixed(2)} behind ${others[0][0]}`, short: `#${rank} ▼${(others[0][1] - v).toFixed(1)}` };
+  }
+  // Changes worth a second look before submitting: big jumps, untested (Low-confidence) levers, over budget, a lost lead
+  function riskFlags(d) {
+    const out = [], LI = S.leverInfo || {};
+    LEVERS.forEach(L => { const was = S.defaults[L.key], v = d[L.key]; if (Math.abs(v - was) < 1e-9) return;
+      const conf = (LI[L.key] || {}).conf || "Medium", pct = was ? (v - was) / was * 100 : 100, big = Math.abs(v - was) / (L.max - L.min) >= 0.08 || Math.abs(pct) >= 20;
+      if (!big && conf !== "Low") return;
+      const why = [big ? `big jump (${pct > 0 ? "+" : ""}${pct.toFixed(0)}%)` : "", conf === "Low" ? "untested: the effect is a guess" + ((LI[L.key] || {}).hypothesis ? " (" + LI[L.key].hypothesis.split(/\. /)[0].replace(/\.$/, "") + ")" : "") : ""].filter(Boolean).join(" · ");
+      out.push({ key: L.key, label: L.label, from: was, to: v, conf, big, why, sev: (conf === "Low" ? 2 : 0) + (big ? 1 : 0) }); });
+    const r = model(d), r0 = model(S.defaults);
+    if (r.spend > S.base.budget + 1e-6) out.push({ key: "_budget", label: "Budget", conf: "High", why: `over by ${fmtM(r.spend - S.base.budget)}: the game will reject it`, sev: 3 });
+    if (r.leads < r0.leads) out.push({ key: "_lead", label: "Quadrant lead", conf: "High", why: "this plan loses a lead we have now", sev: 3 });
+    return out.sort((a, b) => b.sev - a.sev);
   }
   function openTD() { show("team"); }
   function closeTD() { show("cockpit"); }
@@ -1046,13 +1084,16 @@
     // ===== CENTER SCREEN =====
     const c = centerLoad() || { src: "Recommended", d: rec, ts: 0, by: "" }, cd = Object.assign({}, S.defaults, c.d), canEdit = !!me;
     const o = outlook(cd), r = o.r, pc = prosCons(cd, S.defaults), ok = okLoad().m;
-    const groups = [...new Set(LEVERS.map(L => L.group))];
+    const groups = [...new Set(LEVERS.map(L => L.group))], flagged = new Set(riskFlags(cd).map(f => f.key));
     const mini = groups.map(g => `<div class="cs-g">${g}</div>` + LEVERS.filter(L => L.group === g).map(L => { const v = cd[L.key], was = S.defaults[L.key], ch = Math.abs(v - was) > 1e-9;
-      return `<div class="cs-row ${ch ? "chg" : ""}"><span class="cs-l">${short(L)}</span><span class="cs-was">${ch ? "was " + fmt(L, was) : ""}</span>
+      return `<div class="cs-row ${ch ? "chg" : ""} ${flagged.has(L.key) ? "flag" : ""}"><span class="cs-l">${short(L)}</span><span class="cs-was">${ch ? "was " + fmt(L, was) : ""}</span>
         ${canEdit ? `<span class="cs-ed"><button data-cs="${L.key}" data-dir="-1">−</button><input data-csin="${L.key}" value="${+(+v).toFixed(2)}" inputmode="decimal"><button data-cs="${L.key}" data-dir="1">+</button></span>` : `<b class="cs-v">${fmt(L, v)}</b>`}</div>`; }).join("")).join("");
     const chL = LEVERS.filter(L => Math.abs(cd[L.key] - S.defaults[L.key]) > 1e-9);
     const quads = ["Brand", "Experience", "Low Price", "Frictionless"];
-    const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader; return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
+    const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader, rk = rankOf(s, k); return `<div class="tr-q4 cs-q"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}</b><small class="${rk.rank === 1 ? "up" : "dn"}">${rk.txt}</small></div>`; }).join("");
+    const flags = riskFlags(cd), CCf = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
+    const flagBox = flags.length ? `<div class="cs-flags"><div class="cs-ft">⚠ Double-check before we submit</div>${flags.map(f => `<div class="cs-f ${f.conf === "Low" ? "low" : ""}"><b>${f.label}</b>${f.from != null ? ` ${fmt(LEVERS.find(L => L.key === f.key), f.from)} → ${fmt(LEVERS.find(L => L.key === f.key), f.to)}` : ""}<span>${f.why}</span>${badge(f.conf)}</div>`).join("")}</div>` : `<div class="cs-flags ok">✓ No big jumps or untested levers in this plan</div>`;
+    const flagKeys = new Set(flags.map(f => f.key));
     const over = r.spend > S.base.budget + 1e-6, left = S.base.budget - r.spend;
     const srcTxt = c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea";
     const center = `<div class="tr-sub cs">
@@ -1069,7 +1110,7 @@
           <div class="tr-bars" style="margin-top:8px">${qb}</div>
           <div class="tr-sp" style="margin-top:8px"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)} · ${over ? `<b style="color:#b42318">⚠ ${fmtM(-left)} over: the game will reject it</b>` : left > 0.005 ? fmtM(left) + " unspent" : "exactly on budget"}</span><div><div style="width:${Math.min(100, r.spend / S.base.budget * 100)}%;${over ? "background:#b42318" : ""}"></div></div></div></div>
         <div class="cs-right"><div class="tr-lab">Type into the game (changes from last round)</div>
-          ${chL.length ? `<ol class="cs-list">${chL.map(L => `<li><span>${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, cd[L.key])}</em></b></li>`).join("")}</ol>` : `<div class="tc-mut">No changes from last round</div>`}
+          ${flagBox}${chL.length ? `<ol class="cs-list">${chL.map(L => `<li class="${flagKeys.has(L.key) ? "flag" : ""}"><span>${flagKeys.has(L.key) ? "⚠ " : ""}${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, cd[L.key])}</em></b></li>`).join("")}</ol>` : `<div class="tc-mut">No changes from last round</div>`}
           <div class="cs-foot">Every other box: same as last round.</div>
           <div class="tr-lab" style="margin-top:12px">👍 What it does well</div>${pc.now.pro.concat(pc.lt.pro).slice(0, 3).map(x => `<div class="pp">${x}</div>`).join("") || '<div class="tc-mut">Same as last round</div>'}
           <div class="tr-lab" style="margin-top:10px">👀 Worth keeping an eye on</div>${pc.now.con.concat(pc.lt.con).slice(0, 3).map(x => `<div class="cc">${x}</div>`).join("") || '<div class="tc-mut">Nothing notable</div>'}</div>
@@ -1079,14 +1120,15 @@
       const oo = outlook(d), rr = oo.r, col = avColor(who), inC = c.src === who;
       const ch = LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9).map(L => ({ L, w: Math.abs(d[L.key] - S.defaults[L.key]) / (L.max - L.min) })).sort((x, y) => y.w - x.w);
       const chips = ch.length ? ch.slice(0, 4).map(x => `<span class="tdf-chip">${short(x.L)} ${d[x.L.key] > S.defaults[x.L.key] ? "↑" : "↓"} ${fmt(x.L, d[x.L.key])}</span>`).join("") + (ch.length > 4 ? `<span class="tdf-more">+${ch.length - 4}</span>` : "") : `<span class="tdf-chip base">Same as last round</span>`;
-      const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader; return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
+      const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader, rk = rankOf(s, k); return `<div class="tr-q4 tr-q5"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}</b><small class="${rk.rank === 1 ? "up" : "dn"}" title="${rk.txt}">${rk.short}</small></div>`; }).join("");
+      const fl = riskFlags(d), flLine = fl.length ? `<div class="tr-flag">⚠ ${fl.length} to double-check: ${fl.slice(0, 2).map(f => f.label.replace("Shopping experience", "Experience").replace(" · ", " ")).join(", ")}${fl.length > 2 ? "…" : ""}</div>` : "";
       return `<div class="tr-scr ${isRec ? "rec" : ""} ${who === me ? "mine" : ""} ${inC ? "inc" : ""}" style="--c:${col}">
         <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "submitted " + new Date(it.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</small></div></div>
         <div class="tdf-title">“${isRec ? (recP ? recP.name : "Recommended plan") : (it.title || autoTitle(d, rec))}”</div>
         <div class="tdf-mv">${fmtM(rr.mv)}</div><div class="tr-rng">likely ${fmtR(oo.lo)}–${fmtR(oo.hi)} ${badge("Medium")}</div>
         <div class="tr-ol"><div><span>Positioning</span><b style="color:${oo.posTag[1]}">${oo.posTag[0]}</b>${badge("High")}</div><div><span>Long term</span><b style="color:${oo.via[1]}">${oo.via[0]}</b>${badge("Low")}<p>${oo.why}</p></div></div>
         <div class="tr-bars">${bars}</div>
-        <div class="tdf-chips">${chips}</div>
+        ${flLine}<div class="tdf-chips">${chips}</div>
         <div class="tc-act">${inC ? `<span class="cs-on">● On the center screen</span>` : `<button class="cs-put" data-center="${who}">↑ Put on center screen</button>`}${!isRec ? `<button data-tcload="${who}">Try on my sliders</button>` : ""}${who === me ? `<button data-tcdel="${who}">Remove</button>` : ""}</div></div>`;
     };
     const waiting = (S.team || []).filter(n => !t[n]).map(n => `<div class="tr-scr wait" style="--c:${avColor(n)}"><div class="tr-h"><i>${n[0]}</i><div><b>${n}${n === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${n === me ? "Set the Build plan sliders, then “Add my idea”" : "No idea added yet"}</small></div></div></div>`).join("");
@@ -1358,7 +1400,7 @@
   }
 
   function update() {
-    autoFillTitle();
+    autoFillTitle(); renderAskSugg();
     const d = state.d, r = model(d);
     const base = S.rivals[S.company];
     renderQuads(r, base);
