@@ -389,3 +389,48 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 
 details.fold summary { cursor: pointer; font-weight: 800; font-size: 16px; color: var(--ink); }
 details.fold[open] summary { margin-bottom: 12px; }
+
+/* Levers page */
+.lv-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
+.lv-h1 { font-size: 44px; margin: 0 0 8px; letter-spacing: -.02em; }
+.lv-sub { font-size: 18px; color: var(--muted); margin: 0 0 18px; line-height: 1.45; }
+.lv-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.lv-chip { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 14px; color: var(--muted); }
+.lv-chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.lv-group { margin-top: 28px; }
+.lv-q { font-size: 22px; font-weight: 800; }
+.lv-why { color: var(--muted); font-size: 16px; margin: 4px 0 12px; }
+.lv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.lv-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.lv-card.chg { border: 2px solid #2E5BFF; }
+.lv-top { display: flex; justify-content: space-between; gap: 14px; }
+.lv-name { font-weight: 800; font-size: 19px; }
+.lv-plain { color: var(--muted); font-size: 15px; margin-top: 2px; }
+.lv-val { text-align: right; white-space: nowrap; font-size: 14px; color: var(--muted); }
+.lv-now b { color: var(--ink); font-size: 18px; }
+.lv-next { color: #2E5BFF; font-weight: 700; } .lv-next b { font-size: 18px; }
+.lv-hold { font-weight: 700; color: var(--muted); }
+.lv-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; font-size: 15px; line-height: 1.45; margin-top: 8px; }
+.lv-k { color: var(--muted); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+.lv-hyp span:last-child { color: #8a1c13; }
+.lv-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lv-conf { border: 1.5px solid; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+.lv-status { color: var(--muted); font-size: 13px; flex: 1; }
+.lv-try { background: transparent; color: #2E5BFF; font-weight: 700; font-size: 14px; padding: 4px 0; }
+.lever.flash { background: #eef2ff; box-shadow: 0 0 0 2px #2E5BFF; border-radius: 10px; transition: box-shadow .3s; }
+@media (max-width: 900px) { .lv-grid { grid-template-columns: 1fr; } .lv-row { grid-template-columns: 1fr; gap: 2px; } }
+
+.lv-label { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 800; margin: 22px 0 10px; }
+.lv-learn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.lk { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.lk-h { font-weight: 800; font-size: 17px; } .lk-n { color: var(--muted); font-size: 13px; margin: 2px 0 10px; }
+.lk-chips { display: flex; flex-wrap: wrap; gap: 6px; } .lk-chips span { border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; }
+.lk-proven .lk-chips span { background: #e6f4ea; color: #1a7f37; } .lk-partly .lk-chips span { background: #fdf3dc; color: #9a6700; } .lk-unknown .lk-chips span { background: #fde8e6; color: #b42318; }
+.lk-tests { background: #eef2ff; border-color: #d6e0ff; } .lk-tests ol { margin: 0 0 0 18px; padding: 0; font-size: 14px; line-height: 1.5; }
+.lv-note { background: #eef2ff; border-radius: 12px; padding: 12px 14px; font-size: 15px; line-height: 1.5; margin-bottom: 12px; }
+.lv-call { font-size: 15.5px; line-height: 1.45; }
+.lv-tag { background: #fde8e6; color: #b42318; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+.lv-foot { flex: 0 0 auto; } .lv-try { margin-left: auto; }
+.lv-more summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
+.lv-more[open] summary { margin-bottom: 4px; }
+@media (max-width: 900px) { .lv-learn { grid-template-columns: 1fr 1fr; } }

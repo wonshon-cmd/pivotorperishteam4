@@ -296,7 +296,7 @@
 
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
-    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", guide: "guide" }[id];
+    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", guide: "guide", learn: "learn" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
   }
@@ -662,6 +662,50 @@
     });
   }
   // Hover tooltip: confidence, what it changes, hypothesis (untested), long-term call + live effect of your setting vs last round
+  // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
+  let lvFilter = "all";
+  function renderLearn() {
+    if (!$("#lvBody") || !S.leverGroups) return;
+    const rec = (S.plans || []).find(p => p.badge === "Recommended") || {};
+    const plan = Object.assign({}, S.defaults, rec.levers || {});
+    const fmt = (L, v) => L.unit === "$M" ? "$" + v + "M" : v + (L.unit === "%" ? "%" : "");
+    const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
+    const filters = [["all", "All levers"], ["change", "Changing this round"], ["untested", "Untested ideas"], ["high", "Proven (high confidence)"]];
+    const Lr = S.learning;
+    if (Lr && $("#lvLearn")) $("#lvLearn").innerHTML = ["proven", "partly", "unknown"].map(t => `<div class="lk lk-${t}"><div class="lk-h">${Lr[t].label}</div><div class="lk-n">${Lr[t].note}</div>
+        <div class="lk-chips">${Lr[t].keys.map(k => `<span>${(LEVERS.find(x => x.key === k) || {}).label || k}</span>`).join("")}</div></div>`).join("") +
+      `<div class="lk lk-tests"><div class="lk-h">How we keep learning</div><div class="lk-n">one untested lever per round, so we can tell what caused what</div><ol>${Lr.tests.map(t => `<li>${t}</li>`).join("")}</ol></div>`;
+    $("#lvFilters").innerHTML = filters.map(([k, l]) => `<button class="lv-chip ${lvFilter === k ? "on" : ""}" data-lvf="${k}">${l}</button>`).join("");
+    document.querySelectorAll("[data-lvf]").forEach(b => b.onclick = () => { lvFilter = b.dataset.lvf; renderLearn(); });
+    const keep = (k, I) => lvFilter === "all" || (lvFilter === "change" && plan[k] !== S.defaults[k]) ||
+      (lvFilter === "untested" && (I.hypothesis || I.conf === "Low")) || (lvFilter === "high" && I.conf === "High");
+    $("#lvBody").innerHTML = S.leverGroups.map(g => {
+      const cards = g.keys.filter(k => S.leverInfo[k] && keep(k, S.leverInfo[k])).map(k => {
+        const I = S.leverInfo[k], L = LEVERS.find(x => x.key === k); if (!L) return "";
+        const now = S.defaults[k], nxt = plan[k], chg = now !== nxt;
+        return `<div class="lv-card ${chg ? "chg" : ""}">
+          <div class="lv-top"><div><div class="lv-name">${L.label}</div><div class="lv-plain">${I.plain}</div></div>
+            <div class="lv-val"><div class="lv-now">Now <b>${fmt(L, now)}</b></div>${chg ? `<div class="lv-next">${rec.id ? "Plan " + rec.id : "Plan"}: <b>${fmt(L, nxt)}</b></div>` : `<div class="lv-hold">Keep</div>`}</div></div>
+          <div class="lv-call"><b>${I.longTerm}.</b> ${I.why}</div>
+          <div class="lv-foot"><span class="lv-conf" style="color:${CC[I.conf]};border-color:${CC[I.conf]}">${I.conf} confidence</span>${I.hypothesis ? `<span class="lv-tag">Untested idea</span>` : ""}
+            <button class="lv-try" data-try="${k}">Try it →</button></div>
+          <details class="lv-more"><summary>How it works</summary>
+            <div class="lv-row"><span class="lv-k">What it changes</span><span>${I.effect}</span></div>
+            ${I.hypothesis ? `<div class="lv-row lv-hyp"><span class="lv-k">Our hypothesis</span><span>${I.hypothesis}</span></div>` : ""}
+            <div class="lv-row"><span class="lv-k">Watch next round</span><span>${I.rule}</span></div>
+            <div class="lv-row"><span class="lv-k">History</span><span>${I.status}</span></div></details></div>`;
+      }).join("");
+      return cards ? `<div class="lv-group"><div class="lv-q">${g.q}</div><div class="lv-why">${g.why}</div>${g.note && lvFilter === "all" ? `<div class="lv-note">${g.note}</div>` : ""}<div class="lv-grid">${cards}</div></div>` : "";
+    }).join("") || `<p class="lv-sub">No levers match this filter.</p>`;
+    document.querySelectorAll("[data-try]").forEach(b => b.onclick = () => {
+      const k = b.dataset.try;
+      if (rec.levers) { state.plan = rec; state.segs = rec.segs.slice(); state.d = Object.assign({}, S.defaults, rec.levers); }
+      openCockpit(true);
+      setTimeout(() => { const row = document.querySelector('.lever[data-k="' + k + '"]'); if (!row) return;
+        row.scrollIntoView({ behavior: "smooth", block: "center" }); row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 2200); }, 150);
+    });
+  }
+
   function showLeverTip(row, L) {
     const I = (S.leverInfo || {})[L.key]; if (!I) return;
     let tip = document.getElementById("levTip");
@@ -868,7 +912,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
