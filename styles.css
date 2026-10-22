@@ -520,3 +520,7 @@ details.fold[open] summary { margin-bottom: 12px; }
 .lt-call { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.4; }
 .cb { flex: 0 0 auto; border-radius: 6px; padding: 2px 8px; font-weight: 800; font-size: 12px; color: #fff; }
 .cb.raise { background: #2E5BFF; } .cb.hold { background: #6B6A70; } .cb.trim { background: #d9822b; } .cb.test { background: #7c3aed; }
+
+#checks li[data-tip], #moves li[data-k], #mv, #mvDelta { cursor: help; }
+#checks li[data-tip]:hover, #moves li[data-k]:hover { background: #f3f5fa; border-radius: 8px; }
+.qrow { display: flex; align-items: center; margin-top: 6px; font-size: 12.5px; } .qn2 { width: 78px; font-weight: 700; }

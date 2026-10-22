@@ -883,6 +883,73 @@
       tip.style.top = (below + tip.offsetHeight < window.innerHeight || above < 10 ? below : above) + "px";
     }
   }
+  function placeTip(tip, el) {
+    const r = el.getBoundingClientRect(); tip.style.display = "block";
+    const left = r.left - 14 - 370 >= 10 ? r.left - 14 - 370 : Math.max(10, Math.min(r.right + 14, window.innerWidth - 380));
+    tip.style.left = left + "px";
+    tip.style.top = Math.max(10, Math.min(r.top, window.innerHeight - tip.offsetHeight - 10)) + "px";
+  }
+  // Hover cards for the value panel (market value, checks) — same standardized look as lever cards
+  function showInfoTip(el, key) {
+    const r = state.last; if (!r) return;
+    let tip = document.getElementById("levTip");
+    if (!tip) { tip = document.createElement("div"); tip.id = "levTip"; document.body.appendChild(tip); }
+    const chip = (t, x) => `<span class="ec ${x > 0 ? "p" : x < 0 ? "n" : "z"}">${t}</span>`;
+    const call = (cls, verb, txt) => `<div class="lt-call"><span class="cb ${cls}">${verb}</span><span>${txt}</span></div>`;
+    const bar = (v, max, mark, lab) => `<div class="rb"><div class="rb-line"></div>${mark != null ? `<div class="rb-avg" style="left:${Math.min(100, mark / max * 100)}%"></div>` : ""}<div class="rb-us" style="left:${Math.min(100, v / max * 100)}%"></div></div><div class="rb-lab"><span>0</span><span>${lab}</span><span>${max}</span></div>`;
+    let h = "";
+    if (key === "mv") {
+      const pe = r.mv / Math.max(r.niProj, 0.1), base = model(S.defaults);
+      const drivers = LEVERS.filter(L => Math.abs(state.d[L.key] - S.defaults[L.key]) > 1e-6).map(L => {
+        const one = Object.assign({}, S.defaults, { [L.key]: state.d[L.key] }); return [L.label, model(one).mv - base.mv]; })
+        .sort((x, y) => Math.abs(y[1]) - Math.abs(x[1])).slice(0, 5);
+      h = `<div class="lt-h">Projected market value <span style="color:#9a6700;border-color:#9a6700">Medium</span></div>
+        <div class="lt-plain">Market value = <b>P/E × net income</b>. True in every round so far.</div>
+        <div class="lt-sec">The math</div><div class="ecs">${chip("Net income " + fmtM(r.niProj), 1)}${chip("× P/E " + pe.toFixed(1), 0)}${chip("= " + fmtM(r.mv), 1)}</div>
+        <div class="lt-sec">vs changing nothing (${fmtM(base.mv)})</div><div class="ecs">${drivers.length ? drivers.map(([n, v]) => chip(`${v >= 0 ? "▲" : "▼"} ${n} <b>${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(0)}M</b>`, v)).join("") : chip("No changes", 0)}</div>
+        <div class="lt-sec">Why it grows anyway</div><div class="lt-plain">Revenue grows ≈10% a year while spending stays flat, so profit rises; debt keeps falling, cutting interest.</div>
+        ${call("hold", "Goal", "Protect profit and hold two quadrant leads (keeps P/E up). Path to ≈$1.5B+ by Round 8.")}`;
+    } else if (key === "lead" || key === "fair") {
+      const rows = r.cls.map(c => { const pctL = c.score / c.leader * 100;
+        return `<div class="qrow"><span class="qn2">${c.q}</span><div class="rb" style="flex:1;margin:0 8px"><div class="rb-line"></div><div class="rb-avg" style="left:75%"></div><div class="rb-us" style="left:${Math.min(100, pctL).toFixed(0)}%"></div></div><span class="ec ${c.status === "LEAD" ? "p" : c.status === "GAP" ? "n" : "z"}">${c.status === "LEAD" ? "Lead" : c.status === "GAP" ? "Gap" : "Fair"} ${pctL.toFixed(0)}%</span></div>`; }).join("");
+      h = key === "lead" ? `<div class="lt-h">Lead 2 quadrants <span style="color:#1a7f37;border-color:#1a7f37">High</span></div>
+          <div class="lt-plain">The professor: value rises most when we lead (or are within ≈5% of the leader in) <b>two</b> quadrants.</div>
+          <div class="lt-sec">Our score as % of the leader (tick = 75% fair value)</div>${rows}
+          ${call("raise", "Do", "Keep Brand quality at 6 and push shopping experience so Experience passes Zephara.")}`
+        : `<div class="lt-h">Fair value everywhere <span style="color:#9a6700;border-color:#9a6700">Medium</span></div>
+          <div class="lt-plain">The other two quadrants should be at least <b>75% of the leader</b>.</div>
+          <div class="lt-sec">Our score as % of the leader (tick = 75%)</div>${rows}
+          ${call("hold", "Accept", "Frictionless is below fair, but closing the gap costs ≈$15M a year (≈ −$150M of value). Nudge it with service, not online.")}`;
+    } else if (key === "roic") {
+      h = `<div class="lt-h">ROIC beats WACC <span style="color:#1a7f37;border-color:#1a7f37">High</span></div>
+        <div class="lt-plain">ROIC = what we earn on each $ invested; WACC = what that money costs us. Earning more than it costs = <b>creating value</b>.</div>
+        <div class="lt-sec">This plan</div><div class="ecs">${chip("ROIC " + r.roic.toFixed(1) + "%", 1)}${chip("WACC " + r.wacc.toFixed(1) + "%", 0)}${chip("Spread " + (r.roic - r.wacc >= 0 ? "+" : "") + (r.roic - r.wacc).toFixed(1) + " pts", r.roic - r.wacc)}</div>
+        <div class="lt-plain" style="margin-top:6px">Game data: WACC rose 7.8% → 11.6% as our value grew (more of our capital is now equity, which costs more), so P/E slipped 16.6 → 15.2.</div>
+        ${call("hold", "Keep", "Profits growing faster than invested capital. Avoid new stores (more capital, little return).")}`;
+    } else if (key === "budget") {
+      const pct = r.spend / S.base.budget;
+      h = `<div class="lt-h">Within budget <span style="color:#1a7f37;border-color:#1a7f37">High</span></div>
+        <div class="lt-plain">Budget this round: <b>${fmtM(S.base.budget)}</b>. We don't have to spend it all.</div>
+        <div class="lt-sec">Spend vs budget</div>${bar(+(r.spend).toFixed(1), +(S.base.budget).toFixed(1), null, fmtM(r.spend) + " (" + (pct * 100).toFixed(0) + "%)")}
+        <div class="ecs" style="margin-top:6px">${chip("Unspent " + fmtM(Math.max(0, S.base.budget - r.spend)), 1)}${chip("≈ +$" + (Math.max(0, S.base.budget - r.spend) * 10).toFixed(0) + "M of value", 1)}</div>
+        ${call("hold", "Rule", "Each $1M not spent ≈ +$0.65M profit ≈ +$10M value. Spend only where it buys a lead or proven growth.")}`;
+    } else if (key === "credit") {
+      h = `<div class="lt-h">Credit rating <span style="color:#9a6700;border-color:#9a6700">Medium</span></div>
+        <div class="lt-plain">A 0–9 score from three ratios. Better rating = cheaper borrowing.</div>
+        <div class="lt-sec">This plan · rating ${r.rating} / 9</div><div class="ecs">${chip("Current ratio " + r.cr.toFixed(2), r.cr >= 1 ? 1 : -1)}${chip("Interest cover " + r.cov.toFixed(1) + "×", r.cov >= 3 ? 1 : -1)}${chip("Debt/equity " + r.DE.toFixed(2), r.DE <= 1 ? 1 : -1)}</div>
+        <div class="lt-plain" style="margin-top:6px">Game data: our interest rate fell 9.5% → 7.2% as debt dropped from $287M to $167M.</div>
+        ${call("hold", "Keep", "Let profit keep paying debt down; no new stores (they add debt).")}`;
+    }
+    tip.innerHTML = h; placeTip(tip, el);
+  }
+  function bindValueTips() {
+    const on = (sel, fn) => { const el = document.querySelector(sel); if (!el || el.dataset.tipOn) return; el.dataset.tipOn = 1;
+      el.addEventListener("mouseover", e => fn(e)); el.addEventListener("mouseleave", hideLeverTip); };
+    on("#checks", e => { const li = e.target.closest("li[data-tip]"); if (li) showInfoTip(li, li.dataset.tip); });
+    on("#moves", e => { const li = e.target.closest("li[data-k]"); if (!li) return; const L = LEVERS.find(x => x.key === li.dataset.k); if (L) { showLeverTip(li, L); placeTip(document.getElementById("levTip"), li); } });
+    const mvBox = document.getElementById("mv"); if (mvBox && !mvBox.dataset.tipOn) { mvBox.dataset.tipOn = 1;
+      [mvBox, document.getElementById("mvDelta"), document.getElementById("mvMethod")].forEach(x => { x.addEventListener("mouseenter", () => showInfoTip(mvBox, "mv")); x.addEventListener("mouseleave", hideLeverTip); }); }
+  }
   function hideLeverTip() { const t = document.getElementById("levTip"); if (t) t.style.display = "none"; }
 
   function syncLevers(except) {
@@ -962,7 +1029,8 @@
       [pct <= 1.0001, `Within budget`, pct > 1 ? fmtM(r.spend - S.base.budget) + " over" : fmtM(S.base.budget - r.spend) + " left"],
       [r.rating >= 6, `Credit rating healthy`, r.rating + " / 9"]
     ];
-    $("#checks").innerHTML = checks.map(([ok, t, s]) => `<li class="${ok ? "ok" : "no"}"><span class="ic">${ok ? "✓" : "!"}</span><span class="ct">${t}</span><span class="cs">${s}</span></li>`).join("");
+    const tipKeys = ["lead", "fair", "roic", "budget", "credit"];
+    $("#checks").innerHTML = checks.map(([ok, t, s], i) => `<li data-tip="${tipKeys[i]}" class="${ok ? "ok" : "no"}"><span class="ic">${ok ? "✓" : "!"}</span><span class="ct">${t}</span><span class="cs">${s}</span></li>`).join("");
     renderStory(r);
     state.last = r;
   }
@@ -989,7 +1057,7 @@
       .filter(m => Math.abs(m.dv) > 1e-6)
       .sort((a, b) => Math.abs(b.dv) / (b.L.max - b.L.min) - Math.abs(a.dv) / (a.L.max - a.L.min)).slice(0, 5);
     const fmtV = (L, v) => L.unit === "$M" ? "$" + (+v.toFixed(1)) + "M" : (+v.toFixed(1)) + (L.unit || "");
-    $("#moves").innerHTML = moves.length ? moves.map(m => `<li class="${m.dv > 0 ? "upm" : "dnm"}"><span class="ar">${m.dv > 0 ? "▲" : "▼"}</span>
+    $("#moves").innerHTML = moves.length ? moves.map(m => `<li data-k="${m.L.key}" class="${m.dv > 0 ? "upm" : "dnm"}"><span class="ar">${m.dv > 0 ? "▲" : "▼"}</span>
       <span>${m.L.label}</span><b>${fmtV(m.L, S.defaults[m.L.key])} → ${fmtV(m.L, d[m.L.key])}</b></li>`).join("")
       : `<li><span></span><span style="color:var(--muted)">Same as last round</span></li>`;
   }
@@ -1059,7 +1127,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
