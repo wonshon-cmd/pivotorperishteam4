@@ -1037,9 +1037,9 @@
     const short = L => L.label.replace("Shopping experience", "Experience").replace("Vendor management", "Vendor").replace("Customer service", "Service").replace("Customer analytics", "Analytics");
     const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }, badge = (c, x) => `<em class="tr-b" style="color:${CC[c]};border-color:${CC[c]}">${c}${x ? " " + x : ""}</em>`;
     // Build plan section
-    if ($("#tcMe")) $("#tcMe").innerHTML = me ? `as <b style="color:${avColor(me)}">${me}</b> · <button class="tc-link" id="tcChangeMe">change</button>` : `<span class="tc-mut">pick your name in the room</span>`;
-    if ($("#tcAdd")) { $("#tcAdd").textContent = me && t[me] ? "Update my idea" : "Add my idea"; $("#tcAdd").onclick = addMyIdea; }
-    if ($("#tcChangeMe")) $("#tcChangeMe").onclick = () => { localStorage.removeItem(ME_KEY); openTD(); };
+    if ($("#tcMe")) $("#tcMe").innerHTML = (S.team || []).map(n => `<button class="tr-nm ${n === me ? "me" : ""}" data-pick="${n}" style="--c:${avColor(n)}"><i>${n[0]}</i>${n}${t[n] ? " ✓" : ""}</button>`).join("");
+    document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { localStorage.setItem(ME_KEY, b.dataset.pick); renderTeamCmp(); });
+    if ($("#tcAdd")) { $("#tcAdd").textContent = me ? (t[me] ? `💾 Update ${me}'s idea` : `💾 Save as ${me}`) : "💾 Save"; $("#tcAdd").onclick = () => { if (!meLoad()) { const x = $("#tcMe"); x.classList.add("tc-nudge"); setTimeout(() => x.classList.remove("tc-nudge"), 1200); $("#tcAdd").textContent = "Click your name first →"; return; } addMyIdea(); }; }
     if ($("#tcOpen")) { $("#tcOpen").textContent = `Open team room · ${names.length} idea${names.length === 1 ? "" : "s"}`; $("#tcOpen").onclick = openTD; }
     // who's here
     $("#tcWho").innerHTML = `<div class="tr-who ${me ? "" : "ask"}"><span class="tr-q">${me ? "You're" : "👋 Who's here? Pick your name"}</span>${(S.team || []).map(n => `<button class="tr-nm ${n === me ? "me" : ""}" data-me="${n}" style="--c:${avColor(n)}"><i>${n[0]}</i>${n}</button>`).join("")}<span id="trLive" class="tr-live ${liveOn ? "on" : "off"}">${liveOn ? "● Live" : "○ Connecting…"}</span></div>`;
