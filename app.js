@@ -647,6 +647,10 @@
       row.innerHTML = `<div class="lrow"><label>${L.label}</label><span class="tag">${L.q}</span>
         <div class="num">${L.unit === "$M" ? "<i>$</i>" : ""}<input type="number" step="${L.step}" min="${L.min}" max="${L.max}" data-k="${L.key}">${L.unit === "%" ? "<i>%</i>" : L.unit === "$M" ? "<i>M</i>" : ""}</div></div>
         <input type="range" min="${L.min}" max="${L.max}" step="${L.step}" data-k="${L.key}">`;
+      row.dataset.k = L.key;
+      row.querySelector("label").insertAdjacentHTML("beforeend", ' <span class="linfo">i</span>');
+      row.addEventListener("mouseenter", () => showLeverTip(row, L));
+      row.addEventListener("mouseleave", hideLeverTip);
       wrap.appendChild(row);
     });
     wrap.querySelectorAll("input").forEach(inp => {
@@ -657,6 +661,39 @@
       });
     });
   }
+  // Hover tooltip: confidence, what it changes, hypothesis (untested), long-term call + live effect of your setting vs last round
+  function showLeverTip(row, L) {
+    const I = (S.leverInfo || {})[L.key]; if (!I) return;
+    let tip = document.getElementById("levTip");
+    if (!tip) { tip = document.createElement("div"); tip.id = "levTip"; document.body.appendChild(tip); }
+    const d0 = S.defaults, now = state.d[L.key], was = d0[L.key];
+    let live = "";
+    if (now !== was) {
+      const one = Object.assign({}, d0, { [L.key]: now }), r1 = model(one), r0 = model(d0);
+      const dq = r1.sc.map((v, i) => v - r0.sc[i]);
+      const parts = dq.map((v, i) => Math.abs(v) >= 0.01 ? `${Q[i]} ${v > 0 ? "+" : ""}${v.toFixed(2)}` : "").filter(Boolean);
+      live = `<div class="lt-live"><b>Your change:</b> ${was} → ${now}. Model: ${parts.length ? parts.join(", ") + "; " : ""}market value ${r1.mv - r0.mv >= 0 ? "+" : "−"}$${Math.abs(r1.mv - r0.mv).toFixed(0)}M, net income ${r1.niProj - r0.niProj >= 0 ? "+" : "−"}$${Math.abs(r1.niProj - r0.niProj).toFixed(1)}M</div>`;
+    }
+    const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[I.conf];
+    tip.innerHTML = `<div class="lt-h">${L.label} <span style="color:${col};border-color:${col}">${I.conf} confidence</span></div>
+      <div class="lt-s">${I.status}</div>
+      <div><b>What it changes:</b> ${I.effect}</div>
+      ${I.hypothesis ? `<div><b>Hypothesis:</b> ${I.hypothesis}</div>` : ""}
+      ${live}
+      <div class="lt-lt"><b>Long-term call:</b> ${I.longTerm}<br><span>${I.why}</span></div>`;
+    const r = row.getBoundingClientRect();
+    tip.style.display = "block";
+    if (r.right + 14 + 390 <= window.innerWidth) {          // room on the right: sit beside the slider
+      tip.style.left = (r.right + 14) + "px";
+      tip.style.top = Math.max(10, Math.min(r.top, window.innerHeight - tip.offsetHeight - 10)) + "px";
+    } else {                                                 // narrow screen: sit below (or above) so it never covers the slider
+      tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 390)) + "px";
+      const below = r.bottom + 8, above = r.top - tip.offsetHeight - 8;
+      tip.style.top = (below + tip.offsetHeight < window.innerHeight || above < 10 ? below : above) + "px";
+    }
+  }
+  function hideLeverTip() { const t = document.getElementById("levTip"); if (t) t.style.display = "none"; }
+
   function syncLevers(except) {
     document.querySelectorAll("#levers input").forEach(inp => {
       if (inp === except) return;
