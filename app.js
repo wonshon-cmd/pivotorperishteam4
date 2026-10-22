@@ -301,6 +301,7 @@
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
     if (id === "team" && $("#tcCards")) renderTeamCmp();
+    if (id === "recap") { document.querySelectorAll(".rc-grow").forEach(b => { b.style.transition = "none"; b.style.width = "0"; }); requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".rc-grow").forEach(b => { b.style.transition = ""; b.style.width = b.dataset.w + "%"; }))); }
     const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", recap: "recap", guide: "guide", learn: "learn" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
@@ -876,7 +877,7 @@
     const m = v => "$" + (+v).toFixed(1).replace(/\.0$/, "") + "M";
     const kp = R.kpis.map(k => { const d = k.to - k.from, mx = Math.max(k.to, k.proj, k.from) * 1.05;
       return `<div class="card rc-k"><div class="rc-kl">${k.k}</div><div class="rc-kv">${m(k.to)}<span class="${(k.k === "Debt" ? -d : d) >= 0 ? "up" : "dn"}">${d >= 0 ? "▲" : "▼"} ${m(Math.abs(d))}</span></div><div class="rc-kf">was ${m(k.from)}</div>
-        <div class="rc-pa"><div><span>Forecast</span><i><b style="width:${k.proj / mx * 100}%;background:#D9822B"></b></i><em>${m(k.proj)}</em></div><div><span>Actual</span><i><b style="width:${k.to / mx * 100}%;background:#2E5BFF"></b></i><em>${m(k.to)}</em></div></div>
+        <div class="rc-pa"><div><span>Forecast</span><i><b class="rc-grow" data-w="${k.proj / mx * 100}" style="width:0;background:#D9822B"></b></i><em>${m(k.proj)}</em></div><div><span>Actual</span><i><b class="rc-grow late" data-w="${k.to / mx * 100}" style="width:0;background:#2E5BFF"></b></i><em>${m(k.to)}</em></div></div>
         <div class="rc-kn">${k.note}</div></div>`; }).join("");
     const qs = R.quads.map(q => { const d = q.to - q.from;
       return `<div class="rc-q"><b>${q.q}</b><div class="rc-qv">${q.from} → <strong>${q.to}</strong> <span class="${d > 0 ? "up" : d < 0 ? "dn" : "fl"}">${d > 0 ? "▲ +" + d.toFixed(1) : d < 0 ? "▼ " + d.toFixed(1) : "= flat"}</span></div><small>${q.rank} · forecast ${q.proj} · ${q.note}</small></div>`; }).join("");
@@ -1046,7 +1047,7 @@
     return { r, lo: r.mv * 0.92, hi: r.mv * 1.08, posTxt, posTag, via, why: why.length > 90 ? why.slice(0, 88) + "…" : why };
   }
   // Rank of a quadrant score vs rivals' latest scores: "#1 · 0.50 ahead of Zephara" / "#2 · 0.10 behind Zephara"
-  function rankOf(v, k) {
+  function quadRank(v, k) {
     const others = Object.entries(S.rivals).filter(([n]) => n !== S.company).map(([n, sc]) => [n, sc[k]]).sort((a, b) => b[1] - a[1]);
     const rank = 1 + others.filter(o => o[1] > v + 1e-9).length;
     return rank === 1 ? { rank, gap: v - others[0][1], who: others[0][0], txt: `#1 · ${(v - others[0][1]).toFixed(2)} ahead of ${others[0][0]}`, short: `#1 ▲${(v - others[0][1]).toFixed(1)}` }
@@ -1087,7 +1088,7 @@
     const groups = [...new Set(LEVERS.map(L => L.group))], flagged = new Set(riskFlags(cd).map(f => f.key));
     const chL = LEVERS.filter(L => Math.abs(cd[L.key] - S.defaults[L.key]) > 1e-9);
     const quads = ["Brand", "Experience", "Low Price", "Frictionless"];
-    const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader, rk = rankOf(s, k); return `<div class="tr-q4 cs-q"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}</b><small class="${rk.rank === 1 ? "up" : "dn"}">${rk.txt}</small></div>`; }).join("");
+    const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader, rk = quadRank(s, k); return `<div class="tr-q4 cs-q"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}</b><small class="${rk.rank === 1 ? "up" : "dn"}">${rk.txt}</small></div>`; }).join("");
     const flags = riskFlags(cd), CCf = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
     const flagBox = flags.length ? `<div class="cs-flags"><div class="cs-ft">⚠ Double-check before we submit</div>${flags.map(f => `<div class="cs-f ${f.conf === "Low" ? "low" : ""}"><b>${f.label}</b>${f.from != null ? ` ${fmt(LEVERS.find(L => L.key === f.key), f.from)} → ${fmt(LEVERS.find(L => L.key === f.key), f.to)}` : ""}<span>${f.why}</span>${badge(f.conf)}</div>`).join("")}</div>` : `<div class="cs-flags ok">✓ No big jumps or untested levers in this plan</div>`;
     const flagKeys = new Set(flags.map(f => f.key));
@@ -1118,7 +1119,7 @@
       const oo = outlook(d), rr = oo.r, col = avColor(who), inC = c.src === who;
       const ch = LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9).map(L => ({ L, w: Math.abs(d[L.key] - S.defaults[L.key]) / (L.max - L.min) })).sort((x, y) => y.w - x.w);
       const chips = ch.length ? ch.slice(0, 4).map(x => `<span class="tdf-chip">${short(x.L)} ${d[x.L.key] > S.defaults[x.L.key] ? "↑" : "↓"} ${fmt(x.L, d[x.L.key])}</span>`).join("") + (ch.length > 4 ? `<span class="tdf-more">+${ch.length - 4}</span>` : "") : `<span class="tdf-chip base">Same as last round</span>`;
-      const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader, rk = rankOf(s, k); return `<div class="tr-q4 tr-q5"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}</b><small class="${rk.rank === 1 ? "up" : "dn"}" title="${rk.txt}">${rk.short}</small></div>`; }).join("");
+      const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader, rk = quadRank(s, k); return `<div class="tr-q4 tr-q5"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}</b><small class="${rk.rank === 1 ? "up" : "dn"}" title="${rk.txt}">${rk.short}</small></div>`; }).join("");
       const fl = riskFlags(d), flLine = fl.length ? `<div class="tr-flag">⚠ ${fl.length} to double-check: ${fl.slice(0, 2).map(f => f.label.replace("Shopping experience", "Experience").replace(" · ", " ")).join(", ")}${fl.length > 2 ? "…" : ""}</div>` : "";
       return `<div class="tr-scr ${isRec ? "rec" : ""} ${who === me ? "mine" : ""} ${inC ? "inc" : ""}" style="--c:${col}">
         <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "submitted " + new Date(it.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</small></div></div>
