@@ -366,7 +366,7 @@
     const tabs = [];
     for (let k = 0; k <= 8; k++) {
       const idx = R.findIndex(r => r.round === k);
-      const lbl = k === 0 ? "Start" : "R" + k;
+      const lbl = k === 8 ? "Final" : "R" + (k + 1); // status tab: data round k = status entering game Round k+1 (team convention)
       tabs.push(idx >= 0
         ? `<button class="rtab ${idx === standIdx ? "on" : ""}" data-i="${idx}">${lbl}</button>`
         : `<span class="rtab off">${lbl}</span>`);
@@ -404,7 +404,7 @@
       ["Retail coverage", d0.stores, "stores"], ["Online investment", f$(d0.online), "online"], ["Customer service", f$(d0.service), "service"],
       ["Shopping experience", f$(d0.experience), "experience"], ["Vendor management", f$(d0.vendor), "vendor"], ["Customer analytics", f$(d0.analytics), "analytics"]
     ];
-    $("#curTitle").innerHTML = `Round ${S.round} · current game inputs <span class="mut">(carried over from Round ${S.round - 1})</span>`;
+    $("#curTitle").innerHTML = `Round ${S.round} input screen · submit to reach Round ${S.round + 1} <span class="mut">(boxes pre-filled with what we submitted in Round ${S.round - 1})</span>`;
     $("#curInputs").innerHTML = rows.map(([n, v, k]) => {
       const nv = rec && k ? rec.levers[k] : undefined, chg = nv !== undefined && nv !== d0[k];
       return `<div class="cur"><span>${n}</span><b>${v}</b>${chg ? `<em>Plan ${rec.id}: ${["online","service","experience","vendor","analytics"].includes(k) ? f$(nv) : nv}</em>` : ""}</div>`;
@@ -604,7 +604,7 @@
     log.innerHTML = ""; bar.style.width = "0%";
     const { who } = rivalLeaders();
     const lines = [
-      `Reading Round ${S.round - 1} scorecard · market value ${fmtM(S.base.marketValue)} · WACC ${S.base.wacc}%`,
+      `Reading Round ${S.round} status (game CSV "Round-${S.round - 1}") · market value ${fmtM(S.base.marketValue)} · WACC ${S.base.wacc}%`,
       `Scoring 6 segments by size × CLV × fit with Getchells`,
       `Target: segments ${state.segs.join(" + ")} → lead ${Q[target[0]]} (vs ${who[target[0]]}) + ${Q[target[1]]} (vs ${who[target[1]]})`,
       `Simulating 2,400 budget mixes within ${fmtM(S.base.budget)}`,

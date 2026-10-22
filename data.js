@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R3-results-v12",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R4-status-v13",  // bump whenever data is updated (clears stale browser saves)
   round: 4,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -211,7 +211,7 @@ window.SIM = {
   // ---- Round-by-round snapshots (real game data). Add one per round. ----
   rounds: [
     {
-      round: 0, label: "Before Round 1",
+      round: 0, label: "Round 1 status (start)",
       kpi: { marketValue: 93.2, mvChange: 9.0, revenue: 372.8, ebit: 23.8, interest: 30.1, netIncome: -6.3,
              debt: 286.9, equity: 89.5, currentRatio: 0.56, roic: 6.8, wacc: 7.8, onlineSales: 51.3,
              grossMargin: 36.2, daysInventory: 90, budget: 69.8, clv: 818.5 },
@@ -253,7 +253,7 @@ window.SIM = {
       ]
     },
     {
-      round: 1, label: "After Round 1 (final)",
+      round: 1, label: "Round 2 status (after R1 submit)",
       kpi: { marketValue: 184.1, mvChange: 97.5, revenue: 426.7, ebit: 42.5, interest: 25.4, netIncome: 11.1,
              debt: 250.0, equity: 100.6, currentRatio: 0.62, roic: 12.2, wacc: 7.9, onlineSales: 50.5,
              grossMargin: 36.2, daysInventory: 72, budget: 71.4, clv: 943.7 },
@@ -289,7 +289,7 @@ window.SIM = {
       ]
     },
     {
-      round: 2, label: "After Round 2",
+      round: 2, label: "Round 3 status (after R2 submit)",
       kpi: { marketValue: 361.9, mvChange: 96.6, revenue: 488.7, ebit: 58.6, interest: 23.5, netIncome: 22.8,
              debt: 241.4, equity: 123.4, currentRatio: 0.74, roic: 16.4, wacc: 9.4, onlineSales: 50.0,
              grossMargin: 36.3, daysInventory: 72, budget: 74.6, clv: 1075.0 },
@@ -328,7 +328,7 @@ window.SIM = {
       ]
     },
     {
-      round: 3, label: "After Round 3",
+      round: 3, label: "Round 4 status (after R3 submit)",
       kpi: { marketValue: 533.8, mvChange: 47.5, revenue: 549.2, ebit: 73.3, interest: 20.5, netIncome: 34.4,
              debt: 212.5, equity: 157.8, currentRatio: 0.99, roic: 19.8, wacc: 11.8, onlineSales: 49.7,
              grossMargin: 36.3, daysInventory: 72, budget: 76.9, clv: 1201.1 },
@@ -358,7 +358,7 @@ window.SIM = {
         { name: "Vendor management", ours: 23, avg: 36.12, min: 15.58, max: 69.26, unit: "$M" },
         { name: "Customer analytics", ours: 6, avg: 7.07, min: 3.12, max: 12.47, unit: "$M" }
       ],
-      headline: "MV +47.5% to $534M. <span class=\"hl\">Profit +50%, but WACC jumped to 11.8%.</span>",
+      headline: "Round 4 status: MV +47.5% to $534M. <span class=\"hl\">Profit +50%, but WACC jumped to 11.8%.</span>",
       moves: [
         "<b>Net income $34.4M</b> (model said $35.3M) but P/E slipped to 15.5 as WACC rose 9.4% → 11.8%: value grew 47.5%, not 60%.",
         "<b>Experience 6.3, 0.1 behind Zephara</b>: service is saturating (+$2M ≈ +0.12); shopping experience is now the better $ lever.",
