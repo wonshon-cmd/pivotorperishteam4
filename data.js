@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-team-v65",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-team-v67",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -187,7 +187,7 @@ window.SIM = {
     { label: "Premium markup +2 pts", change: { markupHigh: 68 }, when: "Untested; premium sales growing +14%", conf: "Low", why: "Premium sales grow fast at 66%, so customers may accept a bit more. Raises profit per item but may cost some premium shoppers." }
   ],
 
-  team: ["Brian", "Patrick", "Abhishek", "Joe", "Michael"],
+  team: ["Brian", "Patrick", "Abhishek", "Joe", "Michael"], submitter: "Brian",
 
   // How we beat Zephara (differentiate, don't out-spend). Shown on Build plan + Game plan. Update each round.
   vsZephara: {

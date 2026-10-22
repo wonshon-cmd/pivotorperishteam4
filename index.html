@@ -7,7 +7,7 @@
   <title>Getchells Strategy Copilot · Team 4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=R5-audit-v46">
+  <link rel="stylesheet" href="styles.css?v=R5-team-v67">
 </head>
 <body>
 
@@ -239,13 +239,13 @@
       </aside>
     </div>
     <section class="team-cmp" id="teamCmp">
-      <div class="tc-head"><div><div class="tc-t">Team discussion · before we submit</div><div class="tc-s">Set the sliders, give your idea a title, and add it under your name. The comparison opens so we can talk through the trade-offs and agree on one plan.</div></div>
-        <div class="tc-save"><input id="tcTitle" class="tc-title-in" placeholder="Idea title (optional), e.g. Invest for the Experience lead" maxlength="60"><span><b>Add my idea</b> as:</span><span id="tcNames"></span><button id="tcOpen" class="tc-ref">Open discussion</button></div></div>
+      <div class="tc-head"><div><div class="tc-t">👥 Team room</div><div class="tc-s">Share your slider idea and see everyone's side by side before we submit. No votes, just a shared view.</div></div>
+        <div class="tc-save"><input id="tcTitle" class="tc-title-in" placeholder="Give your idea a title (optional)" maxlength="60"><button id="tcAdd" class="tc-ref">Add my idea</button><span id="tcMe"></span><button id="tcOpen" class="tc-clr">Open team room</button></div></div>
     </section>
     <div id="tdOverlay" class="td-ov"><div class="td-panel">
-      <div class="td-top"><div><div class="tc-t">Team discussion</div><div class="tc-s">Compare ideas side by side, talk through the trade-offs, then make one our final.</div></div>
-        <div class="td-btns"><button id="tcRefresh" class="tc-ref">↻ Refresh compare</button><button id="tcClear" class="tc-clr">Clear all</button><button id="tdClose" class="tc-clr">← Back to sliders</button></div></div>
-      <div id="tcFinal"></div>
+      <div class="td-top"><div><div class="tc-t">👥 Team room · Round 5 → 6</div><div class="tc-s">Everyone's idea as its own mini screen. ★ = leads that quadrant · thin line = current leader.</div></div>
+        <div class="td-btns"><button id="tcRefresh" class="tc-clr">↻ Refresh</button><button id="tdClose" class="tc-ref">← Back to sliders</button></div></div>
+      <div id="tcWho"></div>
       <div id="tcCards" class="tc-cards"></div>
     </div></div>
     <div class="foot">Directional model back-tested on every real round through Round 5 status (incl. the mulligan). Use it to compare options, not as an exact forecast.</div>
@@ -273,7 +273,7 @@
     </div>
   </div>
 
-  <script src="data.js?v=R5-audit-v46"></script>
-  <script src="app.js?v=R5-audit-v46"></script>
+  <script src="data.js?v=R5-team-v67"></script>
+  <script src="app.js?v=R5-team-v67"></script>
 </body>
 </html>
