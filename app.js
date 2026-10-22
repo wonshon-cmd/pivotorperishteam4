@@ -766,7 +766,7 @@
       <div class="ask-sugg">${["What if we lower online to $8M?", "Raise markup by 2 points?", "Should we cut vendor management?", "What if breadth goes to 60?", "What does the analytics score mean?", "Should we pay down debt?", "How do we beat $1.5B?"].map(x => `<button class="ask-s">${x}</button>`).join("")}</div>
       <form id="askForm"><input id="askIn" placeholder="e.g. What if we raise shopping experience by $3M?" autocomplete="off"><button class="primary">Ask</button></form></div>`);
     const open = v => document.getElementById("askPanel").classList.toggle("open", v);
-    document.getElementById("askBtn").onclick = () => { open(true); document.getElementById("askIn").focus(); };
+    document.getElementById("askBtn").onclick = () => { document.getElementById("askBtn").classList.add("used"); open(true); document.getElementById("askIn").focus(); };
     document.getElementById("askClose").onclick = () => open(false);
     const ask = q => { if (!q.trim()) return; const log = document.getElementById("askLog");
       log.insertAdjacentHTML("beforeend", `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q)}</div>`);

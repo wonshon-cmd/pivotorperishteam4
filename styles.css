@@ -476,3 +476,10 @@ details.fold[open] summary { margin-bottom: 12px; }
 .pmore summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
 .pmore ul { margin: 6px 0 0 18px; padding: 0; font-size: 14px; line-height: 1.45; } .pmore ul.risk li { color: #b42318; }
 .plan > button.wide { margin-top: auto; }
+
+/* Ask button: gentle "breathing" pulse so it's easy to spot; stops once used; respects reduced-motion */
+@keyframes askPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46,91,255,.45); } 50% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(46,91,255,0); } }
+#askBtn { animation: askPulse 2.2s ease-in-out infinite; font-size: 16px; padding: 10px 20px; }
+#askBtn:hover { animation-play-state: paused; transform: scale(1.06); }
+#askBtn.used { animation: none; }
+@media (prefers-reduced-motion: reduce) { #askBtn { animation: none; } }
