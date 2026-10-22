@@ -937,14 +937,23 @@
   let liveOn = false, pubTimer = null;
   function setLive(on) { liveOn = on; const el = $("#trLive"); if (el) { el.className = "tr-live " + (on ? "on" : "off"); el.textContent = on ? "● Live" : "○ Offline: changes stay on this computer"; } }
   function livePub(o) { if (!LIVE) return; o.v = 1; fetch(LIVE, { method: "POST", body: JSON.stringify(o) }).then(r => setLive(r.ok)).catch(() => setLive(false)); }
+  // tombstones so a deleted/cleared idea never comes back from an older copy
+  const TOMB_KEY = TEAM_KEY + "-tomb", tombLoad = () => jl(TOMB_KEY) || { clear: 0, del: {} }, tombSave = x => localStorage.setItem(TOMB_KEY, JSON.stringify(x));
   function liveApply(o) {
     if (!o || o.v !== 1) return false;
-    const tt = teamLoad();
-    if (o.k === "idea") { if (tt[o.n] && tt[o.n].ts >= o.ts) return false; tt[o.n] = { d: Object.assign({}, S.defaults, o.d), ts: o.ts, title: o.t || "" }; teamSave(tt); return true; }
-    if (o.k === "del") { if (!tt[o.n] || tt[o.n].ts > o.ts) return false; delete tt[o.n]; teamSave(tt); return true; }
+    const tt = teamLoad(), tb = tombLoad();
+    if (o.k === "snap") { let ch = false;
+      if (o.tomb) { const m = { clear: Math.max(tb.clear, o.tomb.clear || 0), del: Object.assign({}, tb.del) }; Object.entries(o.tomb.del || {}).forEach(([n, x]) => { if (!(m.del[n] >= x)) m.del[n] = x; }); tombSave(m); }
+      Object.entries(o.ideas || {}).forEach(([n, it]) => { if (liveApply({ v: 1, k: "idea", n, t: it.t, ts: it.ts, d: it.d })) ch = true; });
+      if (o.center && liveApply(Object.assign({ v: 1, k: "center" }, o.center))) ch = true;
+      if (o.ok && liveApply({ v: 1, k: "ok", m: o.ok.m, ts: o.ok.ts })) ch = true;
+      Object.entries((o.tomb || {}).del || {}).forEach(([n, x]) => { const t2 = teamLoad(); if (t2[n] && t2[n].ts <= x) { delete t2[n]; teamSave(t2); ch = true; } });
+      return ch; }
+    if (o.k === "idea") { if ((tt[o.n] && tt[o.n].ts >= o.ts) || tb.clear >= o.ts || (tb.del[o.n] || 0) >= o.ts) return false; tt[o.n] = { d: Object.assign({}, S.defaults, o.d), ts: o.ts, title: o.t || "" }; teamSave(tt); return true; }
+    if (o.k === "del") { tb.del[o.n] = Math.max(tb.del[o.n] || 0, o.ts); tombSave(tb); if (!tt[o.n] || tt[o.n].ts > o.ts) return false; delete tt[o.n]; teamSave(tt); return true; }
     if (o.k === "center") { const c = centerLoad(); if (c && c.ts >= o.ts) return false; centerSave({ src: o.src, d: Object.assign({}, S.defaults, o.d), ts: o.ts, by: o.by || "" }); return true; }
     if (o.k === "ok") { if (okLoad().ts >= o.ts) return false; okSave({ ts: o.ts, m: o.m || {} }); return true; }
-    if (o.k === "clear") { let ch = false; Object.keys(tt).forEach(n => { if (tt[n].ts <= o.ts) { delete tt[n]; ch = true; } }); teamSave(tt);
+    if (o.k === "clear") { tb.clear = Math.max(tb.clear, o.ts); tombSave(tb); let ch = false; Object.keys(tt).forEach(n => { if (tt[n].ts <= o.ts) { delete tt[n]; ch = true; } }); teamSave(tt);
       const c = centerLoad(); if (c && c.ts <= o.ts) { localStorage.removeItem(CENTER_KEY); ch = true; } if (okLoad().ts <= o.ts) { localStorage.removeItem(OK_KEY); ch = true; } return ch; }
     return false;
   }
@@ -953,10 +962,18 @@
     if (!LIVE || !window.EventSource) return;
     fetch(LIVE + "/json?poll=1&since=12h").then(r => r.text()).then(txt => { let ch = false;
       txt.split("\n").forEach(l => { try { const m = JSON.parse(l); if (m.event === "message" && liveApply(JSON.parse(m.message))) ch = true; } catch (e) {} });
-      setLive(true); if (ch) liveRedraw(); }).catch(() => setLive(false));
+      setLive(true); if (ch) liveRedraw(); pubSnap(); }).catch(() => setLive(false));
+    setInterval(pubSnap, 3 * 3600 * 1000);
     const es = new EventSource(LIVE + "/sse");
     es.onopen = () => setLive(true); es.onerror = () => setLive(false);
     es.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "message" && liveApply(JSON.parse(m.message))) liveRedraw(); } catch (x) {} };
+  }
+  // the relay keeps messages ~12h, so every open copy re-shares what it knows (newest timestamp still wins)
+  function pubSnap() {
+    const tt = teamLoad(), ideas = {}; Object.keys(tt).forEach(n => ideas[n] = { t: tt[n].title || "", ts: tt[n].ts, d: diffOf(Object.assign({}, S.defaults, tt[n].d)) });
+    const c = centerLoad(), ok = okLoad(), tb = tombLoad();
+    if (!Object.keys(ideas).length && !c && !ok.ts && !tb.clear) return;
+    livePub({ k: "snap", ideas, center: c ? { src: c.src, d: diffOf(c.d), ts: c.ts, by: c.by } : null, ok: ok.ts ? ok : null, tomb: tb });
   }
   function pubCenter(c) { clearTimeout(pubTimer); pubTimer = setTimeout(() => livePub({ k: "center", src: c.src, d: diffOf(c.d), ts: c.ts, by: c.by }), 900); }
 
@@ -1016,7 +1033,7 @@
     const over = r.spend > S.base.budget + 1e-6, left = S.base.budget - r.spend;
     const srcTxt = c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea";
     const center = `<div class="tr-sub cs">
-      <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}. Click any idea below to put it here.${canEdit ? " You can edit it." : ` Only ${SUB} edits; you'll see changes live.`}</small></div>
+      <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}${c.ts ? ` (${new Date(c.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })})` : ""}. Click any idea below to put it here.${canEdit ? " You can edit it." : ` Only ${SUB} edits; you'll see changes live.`}</small></div>
         <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
       <div class="cs-grid">
         <div class="cs-mini"><div class="tr-lab">Mini build plan ${canEdit ? "· edit here" : ""}</div>
@@ -1041,7 +1058,7 @@
       const chips = ch.length ? ch.slice(0, 4).map(x => `<span class="tdf-chip">${short(x.L)} ${d[x.L.key] > S.defaults[x.L.key] ? "↑" : "↓"} ${fmt(x.L, d[x.L.key])}</span>`).join("") + (ch.length > 4 ? `<span class="tdf-more">+${ch.length - 4}</span>` : "") : `<span class="tdf-chip base">Same as last round</span>`;
       const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader; return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
       return `<div class="tr-scr ${isRec ? "rec" : ""} ${who === me ? "mine" : ""} ${inC ? "inc" : ""}" style="--c:${col}">
-        <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "added " + new Date(it.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</small></div></div>
+        <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "submitted " + new Date(it.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</small></div></div>
         <div class="tdf-title">“${isRec ? (recP ? recP.name : "Recommended plan") : (it.title || autoTitle(d, rec))}”</div>
         <div class="tdf-mv">${fmtM(rr.mv)}</div><div class="tr-rng">likely ${fmtR(oo.lo)}–${fmtR(oo.hi)} ${badge("Medium")}</div>
         <div class="tr-ol"><div><span>Positioning</span><b style="color:${oo.posTag[1]}">${oo.posTag[0]}</b>${badge("High")}</div><div><span>Long term</span><b style="color:${oo.via[1]}">${oo.via[0]}</b>${badge("Low")}<p>${oo.why}</p></div></div>
@@ -1052,7 +1069,7 @@
     const waiting = (S.team || []).filter(n => !t[n]).map(n => `<div class="tr-scr wait" style="--c:${avColor(n)}"><div class="tr-h"><i>${n[0]}</i><div><b>${n}${n === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${n === me ? "Set the Build plan sliders, then “Add my idea”" : "No idea added yet"}</small></div></div></div>`).join("");
     const screens = `<div class="tr-grid">${screen("Recommended", rec, null, true)}${names.map(n => screen(n, Object.assign({}, S.defaults, t[n].d), t[n], false)).join("")}${waiting}</div>`;
     $("#tcCards").innerHTML = center + `<div class="tr-sec">Everyone's ideas <small>click “Put on center screen” to look at one together</small></div>` + screens +
-      `<div class="tr-foot"><span>Model numbers are estimates. Ideas sync live through a free relay (only names and slider numbers are sent).</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
+      `<div class="tr-foot"><span>Ideas save automatically and stay all day: add yours anytime before we meet, then we just talk it through and Brian submits. Model numbers are estimates.</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
     // events
     const plans = { Recommended: rec }; names.forEach(n => plans[n] = Object.assign({}, S.defaults, t[n].d));
     const setCenter = nc => { centerSave(nc); pubCenter(nc); renderTeamCmp(); };
@@ -1069,9 +1086,9 @@
     document.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { const oo = okLoad(); oo.m[b.dataset.ok] = !oo.m[b.dataset.ok]; oo.ts = Date.now(); okSave(oo); livePub({ k: "ok", m: oo.m, ts: oo.ts }); renderTeamCmp(); });
     if ($("#tdClose")) $("#tdClose").onclick = closeTD;
     if ($("#tcRefresh")) $("#tcRefresh").onclick = () => { renderTeamCmp(); $("#tcRefresh").textContent = "↻ Updated"; setTimeout(() => { const x = $("#tcRefresh"); if (x) x.textContent = "↻ Refresh"; }, 1200); };
-    if ($("#tcClear")) $("#tcClear").onclick = () => { if (!confirm("Clear everyone's ideas and the center screen for this round (for the whole team)?")) return; const ts = Date.now(); [TEAM_KEY, CENTER_KEY, OK_KEY].forEach(k => localStorage.removeItem(k)); livePub({ k: "clear", ts }); renderTeamCmp(); };
+    if ($("#tcClear")) $("#tcClear").onclick = () => { if (!confirm("Clear everyone's ideas and the center screen for this round (for the whole team)?")) return; const ts = Date.now(); [TEAM_KEY, CENTER_KEY, OK_KEY].forEach(k => localStorage.removeItem(k)); const tb = tombLoad(); tb.clear = ts; tombSave(tb); livePub({ k: "clear", ts }); renderTeamCmp(); };
     document.querySelectorAll("[data-tcload]").forEach(b => b.onclick = () => { state.d = Object.assign({}, plans[b.dataset.tcload]); syncLevers(); update(); closeTD(); });
-    document.querySelectorAll("[data-tcdel]").forEach(b => b.onclick = () => { const tt = teamLoad(), ts = Date.now(); delete tt[b.dataset.tcdel]; teamSave(tt); livePub({ k: "del", n: b.dataset.tcdel, ts }); renderTeamCmp(); });
+    document.querySelectorAll("[data-tcdel]").forEach(b => b.onclick = () => { const tt = teamLoad(), ts = Date.now(); delete tt[b.dataset.tcdel]; teamSave(tt); const tb = tombLoad(); tb.del[b.dataset.tcdel] = ts; tombSave(tb); livePub({ k: "del", n: b.dataset.tcdel, ts }); renderTeamCmp(); });
   }
 
   // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
