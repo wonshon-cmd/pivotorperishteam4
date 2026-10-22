@@ -746,9 +746,13 @@
     else if (dMV > 5) { verdict = `Worth doing: about ${m(dMV, 0)} of value${gainLead ? " and it adds a quadrant lead" : ""}.`; vcls = "yes"; }
     else if (dMV < -5) { verdict = `Not recommended: it costs about ${m(dMV, 0).replace("−", "")} of value.`; vcls = "no"; }
     else { verdict = "Roughly neutral this round (within the model's error). Decide on the long-term reason below."; vcls = "meh"; }
+    if (vcls === "yes" && I.conf === "Low") { verdict = `Looks worth it in our model (${m(dMV, 0)}), but this lever is untested, so the number is a guess. Take a small step first and check the result next round.`; vcls = "meh"; }
     if (k0 === "vendor" && changes[0][2] < changes[0][1] && !lostLead) { verdict = `This round looks like ${m(dMV, 0)}, but the higher-cost penalty builds up over the following rounds (our costs are already 1.8% above rivals). Best saved for the final round.`; vcls = "meh"; }
     const data = (I.data || []).slice(0, 2).map(x => `<li>${x}</li>`).join("");
-    return `<div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>
+    const goingUp = changes[0][2] > changes[0][1];
+    const plain = I.what ? `<div class="ask-plain"><b>In plain English:</b> ${I.what}<br>${goingUp ? (I.up || "") : (I.down || "")}</div>` : "";
+    return `<div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>${plain}
+      <div class="ask-sub">What our model says, in numbers:</div>
       <ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}</ul>
       <div class="ask-verdict ${vcls}">${verdict}</div>
       ${data ? `<div class="ask-data"><b>From the game data</b><ul>${data}</ul></div>` : ""}
@@ -829,34 +833,52 @@
     });
   }
 
+  // Hover card: standardized + visual (what it is · industry range · effect chips · our call)
+  const IND_NAME = { online: "Online", service: "Customer service", experience: "Shopping experience", vendor: "Vendor management", analytics: "Customer analytics",
+    markupLow: "Markup · lower-cost", markupHigh: "Markup · higher-cost", breadthLow: "Breadth · lower-cost", breadthHigh: "Breadth · higher-cost",
+    depthLow: "Depth · lower-cost", depthHigh: "Depth · higher-cost", pbLow: "Private brand · lower", pbHigh: "Private brand · higher",
+    pbQuality: "Private brand quality", nbQuality: "National brand quality", stores: "Stores" };
+  function effectChips(base, d) {
+    const r0 = model(base), r1 = model(d), out = [];
+    r1.sc.forEach((v, i) => { const x = v - r0.sc[i]; if (Math.abs(x) >= 0.01) out.push([Q[i], x, (x > 0 ? "+" : "−") + Math.abs(x).toFixed(2)]); });
+    const ni = r1.niProj - r0.niProj, mv = r1.mv - r0.mv;
+    out.push(["Profit", ni, (ni >= 0 ? "+" : "−") + "$" + Math.abs(ni).toFixed(1) + "M"]);
+    out.push(["Value", mv, (mv >= 0 ? "+" : "−") + "$" + Math.abs(mv).toFixed(0) + "M"]);
+    return out.map(([n, x, t]) => `<span class="ec ${Math.abs(x) < 0.005 ? "z" : x > 0 ? "p" : "n"}">${x > 0.005 ? "▲" : x < -0.005 ? "▼" : "•"} ${n} <b>${t}</b></span>`).join("");
+  }
   function showLeverTip(row, L) {
     const I = (S.leverInfo || {})[L.key]; if (!I) return;
     let tip = document.getElementById("levTip");
     if (!tip) { tip = document.createElement("div"); tip.id = "levTip"; document.body.appendChild(tip); }
-    const d0 = S.defaults, now = state.d[L.key], was = d0[L.key];
-    let live = "";
-    if (now !== was) {
-      const one = Object.assign({}, d0, { [L.key]: now }), r1 = model(one), r0 = model(d0);
-      const dq = r1.sc.map((v, i) => v - r0.sc[i]);
-      const parts = dq.map((v, i) => Math.abs(v) >= 0.01 ? `${Q[i]} ${v > 0 ? "+" : ""}${v.toFixed(2)}` : "").filter(Boolean);
-      live = `<div class="lt-live"><b>Your change:</b> ${was} → ${now}. Model: ${parts.length ? parts.join(", ") + "; " : ""}market value ${r1.mv - r0.mv >= 0 ? "+" : "−"}$${Math.abs(r1.mv - r0.mv).toFixed(0)}M, net income ${r1.niProj - r0.niProj >= 0 ? "+" : "−"}$${Math.abs(r1.niProj - r0.niProj).toFixed(1)}M</div>`;
+    const base = Object.assign({}, state.d), now = base[L.key], was = S.defaults[L.key];
+    const fmt = v => L.unit === "$M" ? "$" + v + "M" : v + (L.unit === "%" ? "%" : "");
+    // industry range bar from the latest round's industry table
+    const R = S.rounds[S.rounds.length - 1], ind = (R.industry || []).find(x => x.name === IND_NAME[L.key]);
+    let range = "";
+    if (ind) {
+      const lo = Math.min(ind.min, now), hi = Math.max(ind.max, now), pos = v => ((v - lo) / Math.max(hi - lo, 1e-6) * 100).toFixed(1);
+      range = `<div class="lt-sec">Vs the industry</div><div class="rb"><div class="rb-line"></div><div class="rb-avg" style="left:${pos(ind.avg)}%"></div><div class="rb-us" style="left:${pos(now)}%"></div></div>
+        <div class="rb-lab"><span>min ${fmt(+(+ind.min).toFixed(1))}</span><span>avg ${fmt(+(+ind.avg).toFixed(1))}</span><span>max ${fmt(+(+ind.max).toFixed(1))}</span></div>`;
     }
+    const step = STEP[L.key] || 1, up = Object.assign({}, base, { [L.key]: Math.min(L.max, now + step) });
+    const yours = now !== was ? `<div class="lt-sec">Your change ${fmt(was)} → ${fmt(now)}</div><div class="ecs">${effectChips(Object.assign({}, base, { [L.key]: was }), base)}</div>` : "";
+    const verb = (I.longTerm || "").split(/[ ;,]/)[0].toLowerCase();
+    const cls = { raise: "raise", test: "test", trim: "trim", cut: "trim", hold: "hold", keep: "hold" }[verb] || "hold";
+    const why = (I.why || "").split(/(?<=[.;])\s/)[0].replace(/;$/, ".");
     const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[I.conf];
-    tip.innerHTML = `<div class="lt-h">${L.label} <span style="color:${col};border-color:${col}">${I.conf} confidence</span></div>
-      <div class="lt-s">${I.status}</div>
-      <div class="lt-plain">${I.plain || ""}</div>
-      <div><b>What it changes:</b> ${I.effect}</div>
-      ${I.data ? `<div class="lt-data"><b>From the game data</b><ul>${I.data.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul></div>` : ""}
-      ${I.hypothesis ? `<div><b>Our hypothesis:</b> ${I.hypothesis}</div>` : ""}
-      ${live}
-      <div class="lt-lt"><b>Our recommendation:</b> ${I.longTerm}.<br><span><b>Why:</b> ${I.why}</span></div>`;
+    tip.innerHTML = `<div class="lt-h">${L.label} <span style="color:${col};border-color:${col}">${I.conf}</span></div>
+      <div class="lt-plain">${(I.what || I.plain || "").replace(/\s*\(e\.g\.[^)]*\)/, "")}</div>
+      ${range}
+      <div class="lt-sec">If we raise it by ${fmt(step)}</div><div class="ecs">${effectChips(base, up)}</div>
+      ${yours}
+      <div class="lt-call"><span class="cb ${cls}">${verb ? verb[0].toUpperCase() + verb.slice(1) : "Hold"}</span><span>${(I.longTerm || "").replace(/^\w+\s*/, "")}${why ? " · " + why : ""}</span></div>`;
     const r = row.getBoundingClientRect();
     tip.style.display = "block";
-    if (r.right + 14 + 430 <= window.innerWidth) {          // room on the right: sit beside the slider
+    if (r.right + 14 + 390 <= window.innerWidth) {
       tip.style.left = (r.right + 14) + "px";
       tip.style.top = Math.max(10, Math.min(r.top, window.innerHeight - tip.offsetHeight - 10)) + "px";
-    } else {                                                 // narrow screen: sit below (or above) so it never covers the slider
-      tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 430)) + "px";
+    } else {
+      tip.style.left = Math.max(10, Math.min(r.left, window.innerWidth - 390)) + "px";
       const below = r.bottom + 8, above = r.top - tip.offsetHeight - 8;
       tip.style.top = (below + tip.offsetHeight < window.innerHeight || above < 10 ? below : above) + "px";
     }

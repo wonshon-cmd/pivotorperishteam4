@@ -378,7 +378,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
 /* Lever hover help */
 .linfo { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--line); color: var(--muted); font-size: 11px; font-weight: 800; font-style: normal; margin-left: 4px; vertical-align: 1px; }
 .lever:hover { background: #f3f5fa; border-radius: 10px; }
-#levTip { display: none; position: fixed; z-index: 50; width: 420px; max-height: 92vh; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 14px 16px; font-size: 14px; line-height: 1.45; pointer-events: none; }
+#levTip { display: none; position: fixed; z-index: 50; width: 370px; max-height: 92vh; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 14px 16px; font-size: 14px; line-height: 1.45; pointer-events: none; }
 #levTip > div { margin-top: 6px; }
 #levTip .lt-h { font-weight: 800; font-size: 16px; margin-top: 0; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 #levTip .lt-h span { border: 1.5px solid; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
@@ -501,3 +501,22 @@ details.fold[open] summary { margin-bottom: 12px; }
 #qaForm button { padding: 10px 16px; border-radius: 12px; }
 .qa-sugg { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .qa-out { display: flex; flex-direction: column; gap: 8px; }
+
+.ask-plain { background: #eef2ff; border-radius: 10px; padding: 8px 10px; margin: 6px 0; line-height: 1.5; }
+.ask-sub { color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: 8px; }
+
+/* Standardized hover card */
+#levTip .lt-h span { font-size: 11px; }
+#levTip .lt-plain { color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+#levTip .lt-sec { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 10px; }
+.rb { position: relative; height: 14px; margin: 6px 4px 0; }
+.rb-line { position: absolute; top: 6px; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #e3e5ea, #c9ccd3); }
+.rb-avg { position: absolute; top: 1px; width: 2px; height: 13px; background: #6B6A70; transform: translateX(-1px); }
+.rb-us { position: absolute; top: 1px; width: 13px; height: 13px; border-radius: 50%; background: #2E5BFF; border: 2px solid #fff; box-shadow: 0 0 0 1px #2E5BFF; transform: translateX(-6px); }
+.rb-lab { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ecs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.ec { font-size: 12px; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.ec.p { background: #e6f4ea; color: #1a7f37; } .ec.n { background: #fde8e6; color: #b42318; } .ec.z { background: #f1f2f4; color: #6B6A70; }
+.lt-call { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.4; }
+.cb { flex: 0 0 auto; border-radius: 6px; padding: 2px 8px; font-weight: 800; font-size: 12px; color: #fff; }
+.cb.raise { background: #2E5BFF; } .cb.hold { background: #6B6A70; } .cb.trim { background: #d9822b; } .cb.test { background: #7c3aed; }
