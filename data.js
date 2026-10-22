@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-status-v15",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-status-v16",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -11,9 +11,9 @@ window.SIM = {
     revenue: 610.84, cogs: 388.58, depreciation: 34.00, otherSGA: 30.54,
     interest: 13.68, cash: 35.98, debt: 166.67, stLoans: 47.20, equity: 208.46, ap: 37.36,
     inventory: 76.34, receivables: 25.10, netPPE: 275.07,
-    wacc: 11.6, marketValue: 772.4, budget: 74.152, stores: 185, clv: 1349.1,
+    wacc: 11.6, marketValue: 772.4, budget: 77.48, stores: 185, clv: 1349.1,
     netIncome: 50.69, pe: 15.2, peDrift: 0.98, growth: 0.10, debtPrev: 212.52
-    // END OF ROUND 4 = our Round 5 status (CSV "Round-4", exact). budget = R4's 74.152 as PLACEHOLDER until the Round 5 input screen shows the real one.
+    // END OF ROUND 4 = our Round 5 status (CSV "Round-4", exact). budget 77.48 = REAL (Round 5 input screen) = R4 budget 74.152 × 1.045.
     // growth: revenue +14.5%, +14.5%, +12.4%, +11.2% → 10% next. Interest 7.2% of avg debt in R4 (was 9.0–9.5%): credit improving.
   },
 
@@ -189,7 +189,7 @@ window.SIM = {
   plans: [
     {
       id: "A", name: "Take Experience #1 + breadth test", badge: "Recommended", segs: [5, 2],
-      tag: "Move $3M from online + service into shopping experience; lower-cost breadth 55 · $74.0M (same as last round)",
+      tag: "Move $3M from online + service into shopping experience; lower-cost breadth 55 · $74.0M of $77.48M ($3.48M unspent)",
       levers: { vendor: 20, online: 10.5, experience: 20.5, service: 17, analytics: 6, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
       why: [
         "<b>Experience 6.4 → ≈6.54</b> vs Zephara 6.5: shopping experience is our #1 position (3.6) and the best $ lever; service is saturated.",
@@ -201,7 +201,7 @@ window.SIM = {
     },
     {
       id: "B", name: "Bank profit, breadth test", badge: "Lean", segs: [5, 2],
-      tag: "Trim online, service, analytics; breadth 55 · $70.5M (≈$3.6M unspent)",
+      tag: "Trim online, service, analytics; breadth 55 · $70.5M of $77.48M ($7M unspent)",
       levers: { vendor: 20, online: 10.5, experience: 18, service: 17, analytics: 5, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
       why: ["<b>Highest net income (≈$65.2M)</b>; model value ≈$964M.", "Experience ≈6.33 = 97% of Zephara: still 'close to leader'."],
       risks: ["Stays #2 in Experience; if Zephara climbs we slip below 95%."]
