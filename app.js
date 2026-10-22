@@ -69,7 +69,7 @@
     const f = (dd, m) => [
       // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4. R0→R1 (both runs): PB 50→60% + depth 50→30 cost Brand −1.6 (split 50/50, low confidence)
       0.2 * dd.pbQuality + 0.2 * dd.nbQuality - 0.08 * mix(dd, "pb") + 0.04 * mix(dd, "depth"),
-      m * 2.35 * sq(dd.experience, 10) + 4.4 * sq(dd.service, 15), // refit on R0→R1 try 1 + final + R2 (all within 0.05); service $7M vs $15M ≈ −1.4
+      m * 2.34 * sq(dd.experience, 10) + 6.85 * (1 - Math.exp(-dd.service / 5.2)), // v6: service SATURATES (R3: +$2M → only ≈+0.12); fits try 1, R1 final, R2, R3 exactly
       1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
       m * 0.08 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // R0→R2: online $2M→$10.5M moved Frictionless only +0.1
     ];
@@ -206,7 +206,7 @@
     const mvK = Math.exp(0.10 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
     // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
     const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
-    const mv = S.base.pe ? Math.max(S.base.pe * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
+    const mv = S.base.pe ? Math.max(S.base.pe * (S.base.peDrift || 1) * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
     const method = S.base.pe ? "P/E × net income" : mv === dcf ? "DCF" : mv === clvVal ? "CLV / brand" : "Liquidation";
 
     const spend = d.online + d.service + d.experience + d.vendor + d.analytics + Math.max(0, newStores) * 1.75;
@@ -338,7 +338,17 @@
     }).join("");
   }
 
+  function renderPositions() {
+    const P = S.positions; if (!P || !$("#positions")) return;
+    $("#positions").innerHTML = `<tr><th></th>${P.cols.map(c => `<th>${c}</th>`).join("")}</tr>` + P.rows.map(r => {
+      const vals = r.slice(1), mx = Math.max(...vals);
+      return `<tr><td>${r[0]}</td>${vals.map((v, i) => `<td style="${v === mx ? "font-weight:800;" : ""}${P.cols[i] === S.company ? "color:#2E5BFF;" : ""}">${v}</td>`).join("")}</tr>`;
+    }).join("");
+    $("#posNote").textContent = P.note || "";
+  }
+
   function renderEdges() {
+    renderPositions();
     $("#edges").innerHTML = (S.edges || []).map(e => `<div class="edge ${e.us ? "us" : ""}"><div class="eh"><b>${e.n}</b><span class="er">= ${e.real}</span><span class="eq">${e.q}</span></div>
       <div class="ee"><i>+</i>${e.edge}</div><div class="ew"><i>−</i>${e.weak}</div></div>`).join("");
   }
@@ -442,7 +452,7 @@
   }
 
   // ---------- Page 4: Timeline ----------
-  let tlPlan = "B";
+  let tlPlan = "A";
   function renderTimeline() {
     if (!S.decisionLog || !$("#tlCharts")) return;
     const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];

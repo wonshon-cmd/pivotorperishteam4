@@ -3,37 +3,38 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R2-split-v9",  // bump whenever data is updated (clears stale browser saves)
-  round: 3,
+  dataVersion: "R3-results-v12",  // bump whenever data is updated (clears stale browser saves)
+  round: 4,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
   base: {
-    revenue: 488.7, cogs: 311.3, depreciation: 29.86, otherSGA: 24.43,
-    interest: 23.45, cash: 27.47, debt: 241.45, stLoans: 117.40, equity: 123.41, ap: 30.50,
-    inventory: 61.31, receivables: 20.08, netPPE: 286.50,
-    wacc: 9.4, marketValue: 361.9, budget: 74.616, stores: 185, clv: 1075.0,
-    netIncome: 22.84, pe: 15.8, growth: 0.14, debtPrev: 250.02
-    // budget 74.616 = REAL (game screen, Round 3). growth = revenue growth with no changes (R1 final +14.5%, R2 +14.5%); debtPrev = debt a round earlier (for average-debt interest)
+    revenue: 549.19, cogs: 349.57, depreciation: 31.88, otherSGA: 27.46,
+    interest: 20.47, cash: 31.81, debt: 212.52, stLoans: 90.60, equity: 157.77, ap: 34.00,
+    inventory: 68.73, receivables: 22.57, netPPE: 281.17,
+    wacc: 11.8, marketValue: 533.8, budget: 76.886, stores: 185, clv: 1201.1,
+    netIncome: 34.37, pe: 15.5, peDrift: 0.98, growth: 0.11, debtPrev: 241.45
+    // END OF ROUND 3 (exported CSVs, exact). budget 76.886 = 14% × $549.19M (ESTIMATE until the R4 input screen confirms).
+    // growth: our revenue +14.5%, +14.5%, +12.4% (market +11%, +12%, +9%) → 11% next. peDrift: P/E 16.6 → 15.8 → 15.5 as WACC rises.
   },
 
-  // Last submitted decisions = Round 2
+  // Last submitted decisions = Round 3
   defaults: {
-    online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8,
+    online: 11.5, service: 17, experience: 17, vendor: 23, analytics: 6,
     markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6,
     pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50
   },
 
   quadrants: ["Brand", "Experience", "Low Price", "Frictionless"],
 
-  // Matrix scores 0–10: [Brand, Experience, Low Price, Frictionless] — END OF ROUND 2 (kahn-round2.csv, exact)
+  // Matrix scores 0–10: [Brand, Experience, Low Price, Frictionless] — END OF ROUND 3 (kahn-round3.csv, exact)
   rivals: {
-    "Getchells": [5.1, 6.1, 4.8, 3.5],
-    "Cadabra":   [4.1, 2.5, 5.1, 7.5],
+    "Getchells": [5.1, 6.3, 4.8, 3.8],
+    "Cadabra":   [4.0, 2.4, 5.1, 7.4],
     "PriceMart": [1.9, 3.9, 5.2, 3.1],
-    "AIM":       [3.5, 1.0, 5.5, 1.4],
-    "KT Benny":  [3.0, 4.4, 4.8, 1.9],
-    "Zephara":   [4.8, 6.4, 4.9, 3.9],
-    "BestCo":    [4.2, 3.5, 4.9, 5.9]
+    "AIM":       [3.4, 0.9, 5.5, 1.4],
+    "KT Benny":  [3.2, 4.5, 4.8, 2.0],
+    "Zephara":   [4.7, 6.4, 4.9, 3.9],
+    "BestCo":    [4.4, 3.5, 4.9, 5.9]
   },
   // Drift per round if we change nothing (R2: inputs flat except online → Experience −0.1 as rivals spent more)
   drift: [0, -0.1, 0, 0],
@@ -42,67 +43,68 @@ window.SIM = {
   fairRatio: 0.75,
 
   // History from kahn-round2.csv (exact): rounds −2..2. Game's white line = 2/3 of leader.
-  trendRounds: [-2, -1, 0, 1, 2],
+  trendRounds: [-2, -1, 0, 1, 2, 3],
   trend: [
-    { "Getchells": [6.3, 6.3, 6.3, 5.1, 5.1], "Zephara": [5.2, 5.0, 4.9, 5.0, 4.8], "Cadabra": [4.5, 4.2, 4.1, 4.3, 4.1], "BestCo": [3.2, 3.5, 3.6, 4.0, 4.2], "AIM": [3.9, 3.6, 3.5, 3.7, 3.5], "KT Benny": [2.2, 2.4, 2.5, 2.8, 3.0], "PriceMart": [1.8, 1.8, 1.8, 1.9, 1.9], "Fair value": [4.2, 4.2, 4.2, 3.4, 3.4] },
-    { "Zephara": [5.9, 6.4, 6.5, 6.3, 6.4], "Getchells": [5.2, 5.7, 5.8, 6.2, 6.1], "KT Benny": [2.5, 3.2, 3.8, 4.1, 4.4], "PriceMart": [2.5, 3.1, 3.5, 3.7, 3.9], "BestCo": [2.4, 2.9, 3.3, 3.4, 3.5], "Cadabra": [6.7, 4.2, 3.1, 2.6, 2.5], "AIM": [2.2, 1.7, 1.4, 1.1, 1.0], "Fair value": [4.4, 4.2, 4.3, 4.2, 4.3] },
-    { "AIM": [5.5, 5.5, 5.4, 5.5, 5.5], "PriceMart": [5.2, 5.1, 5.1, 5.1, 5.2], "Cadabra": [4.8, 5.0, 5.0, 5.1, 5.1], "BestCo": [5.2, 5.0, 4.9, 4.9, 4.9], "Zephara": [4.9, 4.8, 4.8, 4.9, 4.9], "Getchells": [4.9, 4.9, 4.9, 4.8, 4.8], "KT Benny": [5.2, 5.1, 5.0, 4.9, 4.8], "Fair value": [3.7, 3.6, 3.6, 3.6, 3.7] },
-    { "Cadabra": [9.7, 8.4, 7.8, 7.6, 7.5], "BestCo": [3.7, 4.5, 5.2, 5.6, 5.9], "Zephara": [2.7, 3.3, 3.6, 3.7, 3.9], "Getchells": [3.3, 3.5, 3.4, 3.5, 3.5], "PriceMart": [1.9, 2.4, 2.8, 3.0, 3.1], "KT Benny": [0.9, 1.2, 1.5, 1.8, 1.9], "AIM": [2.3, 2.0, 1.8, 1.5, 1.4], "Fair value": [6.5, 5.6, 5.2, 5.1, 5.0] }
+    { "Getchells": [6.3, 6.3, 6.3, 5.1, 5.1, 5.1], "Zephara": [5.2, 5.0, 4.9, 5.0, 4.8, 4.7], "Cadabra": [4.5, 4.2, 4.1, 4.3, 4.1, 4.0], "BestCo": [3.2, 3.5, 3.6, 4.0, 4.2, 4.4], "AIM": [3.9, 3.6, 3.5, 3.7, 3.5, 3.4], "KT Benny": [2.2, 2.4, 2.5, 2.8, 3.0, 3.2], "PriceMart": [1.8, 1.8, 1.8, 1.9, 1.9, 1.9], "Fair value": [4.2, 4.2, 4.2, 3.4, 3.4, 3.4] },
+    { "Zephara": [5.9, 6.4, 6.5, 6.3, 6.4, 6.4], "Getchells": [5.2, 5.7, 5.8, 6.2, 6.1, 6.3], "KT Benny": [2.5, 3.2, 3.8, 4.1, 4.4, 4.5], "PriceMart": [2.5, 3.1, 3.5, 3.7, 3.9, 3.9], "BestCo": [2.4, 2.9, 3.3, 3.4, 3.5, 3.5], "Cadabra": [6.7, 4.2, 3.1, 2.6, 2.5, 2.4], "AIM": [2.2, 1.7, 1.4, 1.1, 1.0, 0.9], "Fair value": [4.4, 4.2, 4.3, 4.2, 4.3, 4.3] },
+    { "AIM": [5.5, 5.5, 5.4, 5.5, 5.5, 5.5], "PriceMart": [5.2, 5.1, 5.1, 5.1, 5.2, 5.2], "Cadabra": [4.8, 5.0, 5.0, 5.1, 5.1, 5.1], "BestCo": [5.2, 5.0, 4.9, 4.9, 4.9, 4.9], "Zephara": [4.9, 4.8, 4.8, 4.9, 4.9, 4.9], "Getchells": [4.9, 4.9, 4.9, 4.8, 4.8, 4.8], "KT Benny": [5.2, 5.1, 5.0, 4.9, 4.8, 4.8], "Fair value": [3.7, 3.6, 3.6, 3.6, 3.7, 3.7] },
+    { "Cadabra": [9.7, 8.4, 7.8, 7.6, 7.5, 7.4], "BestCo": [3.7, 4.5, 5.2, 5.6, 5.9, 5.9], "Zephara": [2.7, 3.3, 3.6, 3.7, 3.9, 3.9], "Getchells": [3.3, 3.5, 3.4, 3.5, 3.5, 3.8], "PriceMart": [1.9, 2.4, 2.8, 3.0, 3.1, 3.1], "KT Benny": [0.9, 1.2, 1.5, 1.8, 1.9, 2.0], "AIM": [2.3, 2.0, 1.8, 1.5, 1.4, 1.4], "Fair value": [6.5, 5.6, 5.2, 5.1, 5.0, 5.0] }
   ],
 
   // Why each retailer lands where it does (from the game's company profiles)
   why: {
-    "Getchells": ["#1 (5.1), lead widened to 0.3: PB + NB quality 6", "#2 (6.1), 0.3 behind Zephara: slipped 0.1 with flat spend", "4.8: flat tie, vendor $25M (avg $34.6M)", "3.5: flat 4 rounds; online +$1.5M moved nothing; fair line 5.0"],
-    "Cadabra":   ["Drifting down (4.1)", "Collapsed: 6.7 → 2.5", "5.1, mid-tie", "Still #1 (7.5) but sliding"],
-    "PriceMart": ["Last (1.9)", "Rising: 2.5 → 3.9", "#2 (5.2)", "Rising: 1.9 → 3.1"],
-    "AIM":       ["3.5, flat", "Last (1.0)", "#1 (5.5) for 5 rounds", "Falling (1.4)"],
-    "KT Benny":  ["Rising slowly (3.0)", "Rising fast: 2.5 → 4.4", "Slipping (4.8)", "Low (1.9)"],
-    "Zephara":   ["#2 (4.8), fading", "#1 (6.4), steady", "4.9, mid-tie", "Rising: 2.7 → 3.9"],
-    "BestCo":    ["Rising every round (4.2)", "Rising (3.5)", "4.9, mid-tie", "Rising fastest: 3.7 → 5.9"]
+    "Getchells": ["#1 (5.1) for 3 rounds; lead 0.4 as Zephara fades. Quality 6/6", "#2 (6.3), 0.1 behind Zephara: service + experience $17M (+0.2)", "4.8, flat tie; vendor $23M vs avg $36.1M", "3.8, up 0.3 (service +$2M, online +$1M) but fair line 5.0"],
+    "Cadabra":   ["Drifting down (4.0)", "Collapsed: 6.7 → 2.4", "5.1, mid-tie", "#1 (7.4) but sliding every round"],
+    "PriceMart": ["Last (1.9)", "Flat at 3.9", "#2 (5.2)", "Flat (3.1)"],
+    "AIM":       ["3.4, slipping", "Last (0.9)", "#1 (5.5) for 6 rounds", "1.4"],
+    "KT Benny":  ["Rising slowly (3.2)", "Rising: 2.5 → 4.5", "4.8", "2.0"],
+    "Zephara":   ["#2 (4.7), falling 3 rounds", "#1 (6.4), flat; service position 3.2 > ours 2.8", "4.9", "3.9"],
+    "BestCo":    ["Rising every round (4.4): watch it", "3.5", "4.9", "#2 (5.9), flat"]
   },
 
   // One-minute read: each rival's competitive edge
   edges: [
-    { n: "Getchells", real: "Macy's",   q: "Brand #1 + Experience #2", edge: "MV +97.5% to $184M; CLV $944M; net income $11.1M", weak: "Frictionless below fair; debt $250M" , us: true },
-    { n: "Cadabra",   real: "Amazon",    q: "Frictionless #1", edge: "Few-click buying + massive customer data", weak: "Slowest growth (+5.5%); Experience collapsed" },
-    { n: "PriceMart", real: "Walmart",   q: "Low Price (tie)",    edge: "Biggest revenue ($718M, +13%); owns higher-cost share", weak: "Poor brand (1.9)" },
-    { n: "BestCo",    real: "Costco",    q: "Frictionless #2 ↑",    edge: "Fastest growth (+18%); Frictionless 6.0 and rising", weak: "Austere stores" },
-    { n: "Zephara",   real: "Sephora",   q: "Brand + Experience rival",   edge: "Our direct rival in BOTH target quadrants", weak: "Depends on foot traffic" },
-    { n: "AIM",       real: "Target",    q: "Low Price #1",     edge: "Cheap-but-chic, narrowly leads on price", weak: "Experience last (1.2)" },
-    { n: "KT Benny",  real: "JCPenney",  q: "Rising",         edge: "+15.6% revenue; Experience 2.4 → 4.2", weak: "Still smallest" }
+    { n: "Getchells", real: "Macy's",   q: "Brand #1 + Experience #2", edge: "MV $534M (+47.5%); net income $34.4M; fastest growth (+12.4%)", weak: "Frictionless below fair; WACC 11.8%", us: true },
+    { n: "Cadabra",   real: "Amazon",    q: "Frictionless #1", edge: "100% online ($520M); online position 5.0", weak: "Frictionless sliding 9.7 → 7.4; Experience 2.4" },
+    { n: "PriceMart", real: "Walmart",   q: "Low Price #2",    edge: "Biggest revenue ($882M, +9%); most stores; breadth leader", weak: "Brand last (1.9)" },
+    { n: "BestCo",    real: "Costco",    q: "Frictionless #2",    edge: "$639M (+10%); Brand rising every round (4.4)", weak: "Experience 3.5; austere stores" },
+    { n: "Zephara",   real: "Sephora",   q: "Experience #1",   edge: "Experience 6.4; best service position (3.2); cheapest costs", weak: "Brand falling 3 rounds (4.7); slow growth (+7%)" },
+    { n: "AIM",       real: "Target",    q: "Low Price #1",     edge: "Low Price leader 6 rounds (5.5)", weak: "Experience last (0.9); +7.5%" },
+    { n: "KT Benny",  real: "JCPenney",  q: "Rising",         edge: "Experience 2.5 → 4.5; +9.5% revenue", weak: "Still smallest ($356M); priciest" }
   ],
 
   // What each quadrant means for Getchells
   quadNotes: [
-    { sub: "Branded performance superiority", note: "#1 by 0.3 over Zephara (4.8). DEFEND: keep PB + NB quality 6." },
-    { sub: "Enhanced customer experience",    note: "#2, 0.3 behind Zephara (6.4); slipped 0.1 with flat spend. WIN: service + experience up." },
-    { sub: "Operational excellence, lowest cost", note: "Flat tie; we're 4.8 vs fair 3.7. HOLD: safe even at vendor $23M." },
-    { sub: "Customer understanding, convenience", note: "Our gap: 3.5 vs fair line 5.0; online +$1.5M did nothing. Service/analytics are the levers." }
+    { sub: "Branded performance superiority", note: "#1 by 0.4 (Zephara 4.7 ↓, BestCo 4.4 ↑). DEFEND: keep PB + NB quality 6." },
+    { sub: "Enhanced customer experience",    note: "#2, 0.1 behind Zephara (6.4). Service is saturating; shopping experience now the better $ lever." },
+    { sub: "Operational excellence, lowest cost", note: "Flat tie; 4.8 vs fair 3.7. HOLD: safe even at vendor $22–23M." },
+    { sub: "Customer understanding, convenience", note: "3.8 vs fair line 5.0 (+0.3 this round). Gap persists; expensive to close." }
   ],
 
   // REAL segment data (Round 0 Preferences chart, read by bar length).
   // weights → [Brand, Experience, Low Price, Frictionless]: Experience = shopping exp + ½ service; Frictionless = online + ½ service.
-  // clvShare / rev = share of OUR revenue by segment, R2 (marketRevenue-round2.csv, exact; CLV split assumed same).
-  // Our R2 revenue $M: S5 108.5, S2 100.5, S6 87.3, S1 85.1, S3 64.8, S4 42.5. Growth R1→R2: S4 +19%, S6 +18%, S3 +15%, S1 +15%, S5 +12%, S2 +11%.
+  // R3 exact (preference / marketRevenue / marketCLV CSVs). weights = [brand, shopping exp + ½ service, low price, online + ½ service], normalized.
+  // Our R3 revenue $M: S5 118.4, S2 111.1, S6 100.7, S1 95.8, S3 72.4, S4 50.8. CLV $M: S2 240.3, S5 235.9, S1 231.9, S6 225.9, S3 148.5, S4 118.5.
+  // Segment sizes (customers, R3): S1 3.47M ↑, S6 3.03M ↑, S2 2.99M, S5 2.32M (flat), S4 1.67M ↑, S3 1.59M. Growth is in S1/S4/S6, NOT our Experience segments.
   segments: [
-    { id: 1, name: "Online Bargain",     wants: "Online + low price + service · never in stores", clvShare: 0.174, rev: 0.174, weights: [0.05, 0.15, 0.33, 0.47], rival: "Cadabra" },
-    { id: 2, name: "Breadth Shoppers",   wants: "Huge selection + stores + price",              clvShare: 0.206, rev: 0.206, weights: [0.14, 0.32, 0.24, 0.30], rival: "PriceMart / AIM" },
-    { id: 3, name: "Brand Lovers",       wants: "Brand + shopping experience",                  clvShare: 0.133, rev: 0.133, weights: [0.29, 0.42, 0.13, 0.16], rival: "Zephara" },
-    { id: 4, name: "Omni Mix",           wants: "Online + stores + price",                      clvShare: 0.087, rev: 0.087, weights: [0.12, 0.30, 0.23, 0.35], rival: "AIM / KT Benny" },
-    { id: 5, name: "Experience Seekers", wants: "Shopping experience above all + stores",       clvShare: 0.222, rev: 0.222, weights: [0.13, 0.53, 0.12, 0.22], rival: "Zephara" },
-    { id: 6, name: "Store Bargain",      wants: "Stores + price + breadth · zero depth",        clvShare: 0.179, rev: 0.179, weights: [0.13, 0.40, 0.26, 0.21], rival: "BestCo" }
+    { id: 1, name: "Online Bargain",     wants: "Online + low price + service · never in stores", clvShare: 0.193, rev: 0.174, weights: [0.06, 0.16, 0.3, 0.48], rival: "Cadabra" },
+    { id: 2, name: "Breadth Shoppers",   wants: "Huge selection + stores + price",              clvShare: 0.2, rev: 0.202, weights: [0.14, 0.32, 0.26, 0.28], rival: "PriceMart / AIM" },
+    { id: 3, name: "Brand Lovers",       wants: "Brand + shopping experience",                  clvShare: 0.124, rev: 0.132, weights: [0.28, 0.42, 0.13, 0.17], rival: "Zephara" },
+    { id: 4, name: "Omni Mix",           wants: "Online + stores + price",                      clvShare: 0.099, rev: 0.092, weights: [0.13, 0.3, 0.23, 0.34], rival: "AIM / KT Benny" },
+    { id: 5, name: "Experience Seekers", wants: "Shopping experience above all + stores",       clvShare: 0.196, rev: 0.216, weights: [0.13, 0.53, 0.12, 0.22], rival: "Zephara" },
+    { id: 6, name: "Store Bargain",      wants: "Stores + price + breadth · zero depth",        clvShare: 0.188, rev: 0.183, weights: [0.13, 0.39, 0.27, 0.21], rival: "BestCo" }
   ],
 
-  // Market-wide preference intensity (sum of 6 segments), Round 0
+  // Market-wide preference intensity (sum of 6 segments), Round 3 (depth rising, breadth/service slowly falling)
   prefs: [
-    { n: "Shopping experience", v: 1.44, q: "Experience" }, { n: "Breadth", v: 1.41, q: "Assortment" },
-    { n: "Retail stores", v: 1.16, q: "Stores" }, { n: "Low price", v: 1.12, q: "Low Price" },
-    { n: "Online", v: 1.02, q: "Frictionless" }, { n: "Customer service", v: 0.96, q: "Frict. / Exp." },
-    { n: "Depth", v: 0.96, q: "Assortment" }, { n: "Brand", v: 0.80, q: "Brand" }
+    { n: "Shopping experience", v: 1.44, q: "Experience" }, { n: "Breadth", v: 1.39, q: "Assortment" },
+    { n: "Retail stores", v: 1.18, q: "Stores" }, { n: "Low price", v: 1.12, q: "Low Price" },
+    { n: "Online", v: 1.02, q: "Frictionless" }, { n: "Depth", v: 0.99, q: "Assortment" },
+    { n: "Customer service", v: 0.94, q: "Frict. / Exp." }, { n: "Brand", v: 0.80, q: "Brand" }
   ],
 
   // Our history (Data → Market CLV / Market Revenue for your company)
-  ourTrend: { rounds: [-2, -1, 0, 1, 2], clv: [680.1, 738.0, 818.5, 943.7, 1075.0], revenue: [314.7, 342.0, 372.8, 426.7, 488.7] },
+  ourTrend: { rounds: [-2, -1, 0, 1, 2, 3], clv: [680.1, 738.0, 818.5, 943.7, 1075.0, 1201.1], revenue: [314.7, 342.0, 372.8, 426.7, 488.7, 549.2] },
 
   // ---- Decision log: what we submitted each round (for the Timeline page) ----
   decisionLog: [
@@ -110,6 +112,8 @@ window.SIM = {
     { round: 1, label: "R1 try 1 (undone)", d: { online: 9, service: 7, experience: 15, vendor: 30, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 5, nbQuality: 5, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } },
     { round: 1, label: "R1 final", d: { online: 9, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } },
     { round: 2, label: "R2", d: { online: 10.5, service: 15, experience: 15, vendor: 25, analytics: 5.8, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
+,
+    { round: 3, label: "R3", d: { online: 11.5, service: 17, experience: 17, vendor: 23, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -125,21 +129,41 @@ window.SIM = {
     { round: 2, title: "Round 2 (online $9M → $10.5M only)",
       changes: ["Online $9M → $10.5M", "Everything else unchanged", "$0.12M of budget unspent"],
       results: ["MV $361.9M (+96.6%); model forecast was $185M", "Net income $11.1M → $22.8M (revenue +14.5%, opex flat)", "Debt $250.0M → $241.4M; ROE 18.5%", "WACC 7.9% → 9.4%; P/E 15.8", "Matrix: Brand 5.1 (#1), Experience 6.2 → 6.1 (Zephara 6.4), Low Price 4.8, Frictionless 3.5 (flat)"],
-      lesson: "Market value = P/E × net income in every round so far. Holding spending flat while revenue grows ~12–15% doubles profit, so value doubles. But the matrix drifts: Experience −0.1 with flat spend, and online +$1.5M moved Frictionless 0.0. Model now has drift and a much weaker online coefficient." }
+      lesson: "Market value = P/E × net income in every round so far. Holding spending flat while revenue grows ~12–15% doubles profit, so value doubles. But the matrix drifts: Experience −0.1 with flat spend, and online +$1.5M moved Frictionless 0.0. Model now has drift and a much weaker online coefficient." },
+    { round: 3, title: "Round 3 (service + experience $17M, vendor $23M, online $11.5M)",
+      changes: ["Service $15M → $17M", "Shopping experience $15M → $17M", "Vendor $25M → $23M", "Online $10.5M → $11.5M, analytics $5.8M → $6M", "$0.12M of budget unspent"],
+      results: ["MV $533.8M (+47.5%); model $579M", "Net income $34.4M (model $35.3M ✓); revenue $549M (model $562M)", "Experience 6.1 → 6.3 (model 6.46); Frictionless 3.5 → 3.8 (model 3.67)", "WACC 9.4% → 11.8%; P/E 15.8 → 15.5; debt $212.5M"],
+      lesson: "Profit forecast was right; the miss was P/E (WACC jumped). Service saturates: +$2M gave far less Experience than the first $8M did, because the game scores us RELATIVE to rivals (our service position fell 3.4 → 2.8 as rivals raised spending to $18.5M max). Model v6: service curve saturates, P/E drifts down ~2%/round." }
   ],
 
   // ---- Model back-test (scratchpad bt.js): each run replayed from the real state it started in. predicted / actual ----
   backtest: [
     { run: "R1 try 1 (mulligan)", cells: ["4.7 / 4.7", "4.8 / 4.8", "4.9 / 4.9", "2.7 / 2.7", "$403M / $404M", "$6.6M / $8.2M", "P/E-driven"] },
     { run: "R1 final",            cells: ["5.1 / 5.1", "6.2 / 6.2", "4.8 / 4.8", "3.5 / 3.5", "$421M / $427M", "$6.7M / $11.1M", "P/E-driven"] },
+    { run: "R3 (forecast on file, v5)", cells: ["5.1 / 5.1", "6.46 / 6.3", "4.76 / 4.8", "3.67 / 3.8", "$562M / $549M", "$35.3M / $34.4M", "$579M / $534M"] },
+    { run: "R3 (refit v6)",       cells: ["5.1 / 5.1", "6.3 / 6.3", "4.76 / 4.8", "3.67 / 3.8", "", "", ""] },
     { run: "R2",                  cells: ["5.1 / 5.1", "6.1 / 6.1", "4.8 / 4.8", "3.5 / 3.5", "$486M / $489M", "$22.9M / $22.8M", "$363M / $362M"] }
   ],
   // R1 net income runs low because R0 interest (10.5% of year-end debt) is overstated without R−1 debt; R2 uses average debt.
 
+  // ---- Game's product-position map, Round 3 (productPosition CSV): how customers SEE each firm, relative to rivals ----
+  positions: {
+    cols: ["Getchells", "Cadabra", "PriceMart", "AIM", "KT Benny", "Zephara", "BestCo"],
+    rows: [
+      ["Customer service", 2.8, 2.4, 1.0, 0.4, 1.2, 3.2, 2.5], ["Online", 1.0, 5.0, 2.1, 0.9, 0.8, 0.7, 3.4],
+      ["Shopping experience", 3.5, 0, 2.9, 0.5, 3.3, 3.2, 1.0], ["Retail coverage", 1.3, 0, 5.0, 1.3, 1.2, 1.3, 4.2],
+      ["Private brand · lower", 2.4, 1.9, 1.3, 1.9, 1.3, 3.1, 1.4], ["Private brand · higher", 2.5, 1.9, 1.3, 1.9, 1.3, 3.2, 1.1],
+      ["Breadth · lower", 2.4, 1.9, 4.5, 1.6, 0.7, 1.6, 0.9], ["Breadth · higher", 4.0, 1.9, 3.1, 1.6, 0, 1.6, 1.7],
+      ["Depth · lower", 1.9, 2.1, 1.1, 1.5, 2.7, 1.5, 2.5], ["Depth · higher", 3.4, 2.1, 0.1, 1.6, 1.1, 1.6, 3.7],
+      ["Price · lower", 1.0, 0.8, 0.7, 0.8, 1.3, 1.2, 0.9], ["Price · higher", 3.2, 2.6, 2.1, 2.5, 3.4, 3.4, 2.7]
+    ],
+    note: "Our service position fell 3.4 (R0) → 2.8 (R3) while we spent $15–17M: rivals caught up. Positions are relative, so standing still loses ground."
+  },
+
   // ---- Impact guide: how much change → how much effect (guesses + confidence) ----
   impacts: [
-    { lever: "Customer service", by: "+$1M", effect: "Experience +0.15 to +0.17, Frictionless +0.08; profit −$1.0M (100% expensed + 0.5% of revenue fixed)", conf: "High", evidence: "Back-test exact on R1 try 1 (mulligan), R1 final and R2: service $7M vs $15M = −1.4 Experience, −0.8 Frictionless" },
-    { lever: "Shopping experience", by: "+$1M", effect: "Experience +0.07 to +0.09; 80% expensed, 20% capitalized", conf: "Medium", evidence: "Refit R0→R1: exp $10M → $15M = +0.5 Experience (half what we assumed); income statements show exactly 80% expensed" },
+    { lever: "Customer service", by: "+$1M", effect: "Experience ≈ +0.05 at $17M (saturating; was +0.17 at $7–15M), Frictionless ≈ +0.08; profit −$1.0M", conf: "High", evidence: "R1 mulligan: $7M vs $15M = −1.4 Experience. R3: $15M → $17M (+ exp $2M) = only +0.2 total. Rivals now spend up to $18.5M" },
+    { lever: "Shopping experience", by: "+$1M", effect: "Experience ≈ +0.08 at $17M (now beats service per $); 80% expensed, 20% capitalized", conf: "Medium", evidence: "Refit R0→R1: exp $10M → $15M = +0.5 Experience (half what we assumed); income statements show exactly 80% expensed" },
     { lever: "Online investment", by: "+$1M", effect: "Frictionless ≈ +0.01 to +0.03 (near zero); profit −$0.4M (mostly capitalized)", conf: "Medium", evidence: "R0→R2: online $2M → $10.5M moved Frictionless 3.4 → 3.5 only; R2 +$1.5M = 0.0" },
     { lever: "Vendor management", by: "+$1M", effect: "Unit cost −0.1 to −0.2%, Low Price +0.05; compounds each round", conf: "Medium", evidence: "Professor's slides: most reliable long-term lever; rivals now avg $33.5M" },
     { lever: "Customer analytics", by: "+$1M", effect: "Frictionless + Experience +0.05 each, mostly by amplifying online & experience spend", conf: "Medium", evidence: "Intro slide maps analytics to Frictionless/Experience; MV slide calls it a multiplier. R1 cut $10M → $6M likely part of the drop" },
@@ -157,30 +181,30 @@ window.SIM = {
   // ---- Top 3 plans for the next round (levers in $M / % / count). Breadth stays 50/50 in all plans. ----
   plans: [
     {
-      id: "A", name: "Win Experience with service", badge: "Recommended", segs: [5, 3],
-      tag: "Service $19M + experience $17M, funded by vendor + analytics · $73.0M of $74.6M",
-      levers: { vendor: 22, online: 10.5, experience: 17, service: 19, analytics: 4.5, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 },
+      id: "A", name: "Take Experience #1, same total spend", badge: "Recommended", segs: [5, 3],
+      tag: "Shopping experience $20M, paid for by online, analytics, vendor · $74.5M of ≈$76.9M",
+      levers: { vendor: 22, online: 10.5, experience: 20, service: 17, analytics: 5, pbLow: 60, pbHigh: 60, breadthLow: 50, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50 },
       why: [
-        "<b>Experience 6.1 → ≈6.7</b> vs Zephara 6.4 (rising ~0.1/round): a clear lead. Brand + Experience = the professor's two-quadrant sweet spot.",
-        "<b>Service is the strongest lever</b> (back-tested on all 3 runs): it lifts Experience AND Frictionless (3.5 → ≈3.8).",
-        "<b>Shopping experience is weaker than we thought</b> (refit on the mulligan): $1M of service ≈ 2× the Experience gain of $1M of shopping experience.",
-        "<b>Model value ≈$610M</b> vs ≈$566M for holding; net income ≈$36M either way, so the gain is the P/E premium of leading 2 quadrants."
+        "<b>Experience 6.3 → ≈6.43</b> vs Zephara 6.4 (flat for 2 rounds): takes #1 without raising total spend.",
+        "<b>Shopping experience is now the better $ lever</b>: service is saturating (R3 +$2M ≈ +0.12) and rivals spend up to $18.5M on it.",
+        "<b>Online and analytics barely move the matrix</b> (online +$8.5M since R0 → Frictionless only +0.4), so they fund it.",
+        "<b>Net income ≈$46.7M</b> (+36%); model value ≈$719M."
       ],
-      risks: ["Vendor $22M vs $34.6M avg: Low Price 4.8 → ≈4.74, still far above fair (3.7).", "Service $19M is above every rival ($16.8M max): we're testing the top of the curve.", "Frictionless still a gap (≈3.8 vs fair 5.0)."]
+      risks: ["Frictionless stays ≈3.8 (gap vs 5.0 fair line).", "Online sales share is slipping (51.3% → 49.7%); watch online revenue."]
     },
     {
-      id: "B", name: "Hold & bank profit", badge: "Safe", segs: [5, 3],
-      tag: "Change nothing",
-      levers: { vendor: 25, online: 10.5, experience: 15, service: 15, analytics: 5.8, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 },
-      why: ["<b>Revenue +14%/yr</b> with flat spending already lifts net income to ≈$36M.", "Lowest risk on the cash side."],
-      risks: ["Experience drifts to ≈6.0 while Zephara climbs: only 1 lead → lower P/E. Model ≈$566M."]
+      id: "B", name: "Bank profit, defend near-lead", badge: "Safe", segs: [5, 3],
+      tag: "Trim online, analytics, vendor · $70.5M (≈$6.4M unspent)",
+      levers: { vendor: 22, online: 10, experience: 17, service: 17, analytics: 4.5, pbLow: 60, pbHigh: 60, breadthLow: 50, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50 },
+      why: ["<b>Highest net income (≈$48.5M)</b>: value = P/E × net income. Model ≈$728M.", "Experience ≈6.2 = 97% of Zephara: still 'close to the leader'."],
+      risks: ["Experience drifts −0.1/round: we stay #2 and could fall further if Zephara moves.", "Unspent budget can look like no strategy (horizon/P/E)."]
     },
     {
-      id: "C", name: "Plan A + test private brand 55%", badge: "Bold test", segs: [5, 3],
-      tag: "Plan A, plus private brand 60% → 55% (lower + higher)",
-      levers: { vendor: 22, online: 10.5, experience: 17, service: 19, analytics: 4.5, pbLow: 55, pbHigh: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 },
-      why: ["<b>Tests why Brand fell 6.3 → 5.1 in Round 1</b>: private brand 50 → 60% and depth 50 → 30 moved together. If PB is the cause, Brand ≈5.5.", "Model ≈$626M (low confidence)."],
-      risks: ["If depth (not PB) caused the Brand drop, this only costs a little margin (≈−$0.5M net income)."]
+      id: "C", name: "Plan A + breadth test", badge: "Bold test", segs: [5, 2],
+      tag: "Plan A plus lower-cost breadth 50 → 55",
+      levers: { vendor: 22, online: 10.5, experience: 20, service: 17, analytics: 5, pbLow: 60, pbHigh: 60, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50 },
+      why: ["<b>Breadth is customers' #2 value (1.39)</b> and we've never changed it; our lower-cost breadth position (2.4) trails PriceMart (4.5).", "Tests it on one product line only."],
+      risks: ["Untested: model guess +$5M revenue, but more inventory and possible cost."]
     }
   ],
 
@@ -301,6 +325,44 @@ window.SIM = {
         "<b>Value = P/E × net income</b>: protect profit; every +$1M net income ≈ +$16M value. Model now back-tests R2 within 1% (NI $22.9M vs $22.8M).",
         "<b>Keep the formula</b>; rivals now spend more on service ($16.8M max) and online (avg $12.4M).",
         "<b>Experience slipped</b> 6.2 → 6.1 while Zephara rose to 6.4; standing still loses ground. Online +$1.5M left Frictionless flat at 3.5."
+      ]
+    },
+    {
+      round: 3, label: "After Round 3",
+      kpi: { marketValue: 533.8, mvChange: 47.5, revenue: 549.2, ebit: 73.3, interest: 20.5, netIncome: 34.4,
+             debt: 212.5, equity: 157.8, currentRatio: 0.99, roic: 19.8, wacc: 11.8, onlineSales: 49.7,
+             grossMargin: 36.3, daysInventory: 72, budget: 76.9, clv: 1201.1 },
+      matrix: { getchells: [5.1, 6.3, 4.8, 3.8], leader: [5.1, 6.4, 5.5, 7.4], fair: [3.4, 4.3, 3.7, 5.0] },
+      revenue: { "PriceMart": 881.6, "BestCo": 638.6, "Getchells": 549.2, "Cadabra": 520.3, "Zephara": 439.9, "AIM": 367.3, "KT Benny": 356.3 },
+      // Market share by revenue [lower-cost, higher-cost] % (revenueMarketShare CSV, exact). Market $3.75B (+9.2%)
+      share: {
+        "PriceMart": [11.8, 11.7], "BestCo": [10.5, 6.5], "Cadabra": [9.4, 4.5], "Getchells": [10.6, 4.0],
+        "Zephara": [10.3, 1.4], "AIM": [7.7, 2.1], "KT Benny": [8.8, 0.7]
+      },
+      unitCost: { "Zephara": [132.38, 264.77], "BestCo": [132.64, 269.94], "PriceMart": [136.12, 272.24], "Cadabra": [137.79, 277.25], "AIM": [138.50, 278.54], "Getchells": [138.66, 277.33], "KT Benny": [142.01, 284.03] },
+      industry: [
+        { name: "Markup · lower-cost", ours: 54, avg: 49.62, min: 26.54, max: 73.24, unit: "%" },
+        { name: "Markup · higher-cost", ours: 66, avg: 54.86, min: 26.54, max: 84.92, unit: "%" },
+        { name: "Breadth · lower-cost", ours: 50, avg: 43, min: 24, max: 75, unit: "" },
+        { name: "Breadth · higher-cost", ours: 50, avg: 30, min: 6, max: 50, unit: "" },
+        { name: "Depth · lower-cost", ours: 30, avg: 30, min: 21, max: 38, unit: "" },
+        { name: "Depth · higher-cost", ours: 30, avg: 20, min: 7, max: 32, unit: "" },
+        { name: "Private brand · lower", ours: 60, avg: 49, min: 2, max: 100, unit: "%" },
+        { name: "Private brand · higher", ours: 60, avg: 43, min: 2, max: 100, unit: "%" },
+        { name: "Private brand quality", ours: 6, avg: 5, min: 4, max: 7, unit: "" },
+        { name: "National brand quality", ours: 6, avg: 5, min: 3, max: 7, unit: "" },
+        { name: "Stores", ours: 185, avg: 233, min: 0, max: 500, unit: "" },
+        { name: "Online", ours: 11.5, avg: 13.73, min: 7.84, max: 23.64, unit: "$M" },
+        { name: "Customer service", ours: 17, avg: 12.98, min: 5.91, max: 18.51, unit: "$M" },
+        { name: "Shopping experience", ours: 17, avg: 10.36, min: 0, max: 17, unit: "$M" },
+        { name: "Vendor management", ours: 23, avg: 36.12, min: 15.58, max: 69.26, unit: "$M" },
+        { name: "Customer analytics", ours: 6, avg: 7.07, min: 3.12, max: 12.47, unit: "$M" }
+      ],
+      headline: "MV +47.5% to $534M. <span class=\"hl\">Profit +50%, but WACC jumped to 11.8%.</span>",
+      moves: [
+        "<b>Net income $34.4M</b> (model said $35.3M) but P/E slipped to 15.5 as WACC rose 9.4% → 11.8%: value grew 47.5%, not 60%.",
+        "<b>Experience 6.3, 0.1 behind Zephara</b>: service is saturating (+$2M ≈ +0.12); shopping experience is now the better $ lever.",
+        "<b>Frictionless +0.3 to 3.8</b> and Brand lead 0.4: keep quality 6/6. Growth is shifting to segments 1, 4, 6."
       ]
     }
   ]
