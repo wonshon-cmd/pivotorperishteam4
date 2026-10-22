@@ -569,7 +569,7 @@
     document.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => {
       const p = S.plans.find(x => x.id === b.dataset.plan);
       state.segs = p.segs.slice(); state.plan = p;
-      state.d = Object.assign({}, S.defaults, p.levers);
+      state.d = Object.assign({}, S.defaults, p.levers); state.baseD = Object.assign({}, state.d);
       renderStart(); openCockpit(true);
       $("#aiBadge").textContent = "✦ Plan " + p.id + ": " + p.name;
     });
@@ -660,13 +660,18 @@
       const row = document.createElement("div"); row.className = "lever";
       row.innerHTML = `<div class="lrow"><label>${L.label}</label><span class="tag">${L.q}</span>
         <div class="num">${L.unit === "$M" ? "<i>$</i>" : ""}<input type="number" step="${L.step}" min="${L.min}" max="${L.max}" data-k="${L.key}">${L.unit === "%" ? "<i>%</i>" : L.unit === "$M" ? "<i>M</i>" : ""}</div></div>
-        <input type="range" min="${L.min}" max="${L.max}" step="${L.step}" data-k="${L.key}">`;
+        <div class="rng"><input type="range" min="${L.min}" max="${L.max}" step="${L.step}" data-k="${L.key}"><span class="was-tick" style="left:${((S.defaults[L.key] - L.min) / (L.max - L.min) * 100).toFixed(2)}%"></span></div>
+        <div class="was-row"><span class="was-txt" data-was="${L.key}"></span><button class="lv-undo" data-undo="${L.key}" title="Put back to the loaded plan">↺ undo</button></div>`;
       row.dataset.k = L.key;
       row.querySelector("label").insertAdjacentHTML("beforeend", ' <span class="linfo">i</span>');
       row.addEventListener("mouseenter", () => showLeverTip(row, L));
       row.addEventListener("mouseleave", hideLeverTip);
       wrap.appendChild(row);
     });
+    wrap.addEventListener("click", e => { const sv = e.target.closest("[data-setk]");
+      if (sv) { state.d[sv.dataset.setk] = +sv.dataset.setv; syncLevers(); update(); hideLeverTip(); return; } });
+    wrap.addEventListener("click", e => { const b = e.target.closest("[data-undo]"); if (!b) return;
+      const k = b.dataset.undo; state.d[k] = (state.baseD || S.defaults)[k]; syncLevers(); update(); hideLeverTip(); });
     const ghost = on => { const t = document.getElementById("levTip"); if (t) t.classList.toggle("ghost", on); };
     wrap.querySelectorAll("input[type=range]").forEach(inp => {
       inp.addEventListener("pointerdown", () => ghost(true));
@@ -993,9 +998,22 @@
       if (inp === except) return;
       inp.value = state.d[inp.dataset.k];
     });
+    // "was" line + undo: compare with what was loaded (plan) and last round
+    const base = state.baseD || S.defaults;
+    const recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
+    LEVERS.forEach(L => {
+      const f = v => L.unit === "$M" ? "$" + v + "M" : v + (L.unit === "%" ? "%" : "");
+      const w = document.querySelector(`[data-was="${L.key}"]`), u = document.querySelector(`[data-undo="${L.key}"]`);
+      if (!w) return;
+      const last = S.defaults[L.key], rv = rec[L.key], b = base[L.key], now = state.d[L.key];
+      const chip = (lbl, v) => `<button class="set-v ${Math.abs(now - v) < 1e-9 ? "on" : ""}" data-setk="${L.key}" data-setv="${v}" title="Set to ${f(v)}">${lbl} <b>${f(v)}</b></button>`;
+      w.innerHTML = Math.abs(last - rv) < 1e-9 ? chip("Last round = recommended", last) : chip("Last round", last) + chip("Recommended", rv);
+      u.style.visibility = Math.abs(now - b) > 1e-9 && Math.abs(b - last) > 1e-9 && Math.abs(b - rv) > 1e-9 ? "visible" : "hidden";
+    });
   }
 
   function openCockpit(fromAI) {
+    if (!state.baseD) state.baseD = Object.assign({}, state.d);
     show("cockpit");
     syncLevers();
     state.shownMV = S.base.marketValue;
@@ -1178,7 +1196,7 @@
     loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph();
     $("#goBtn").onclick = runCopilot;
     
-    $("#resetBtn").onclick = () => { state.d = Object.assign({}, S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
+    $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
     document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
     $("#dataBtn").onclick = openData;
     $("#dataClose").onclick = () => $("#dataPanel").classList.remove("open");
