@@ -829,3 +829,7 @@ details.fold[open] summary { margin-bottom: 12px; }
 .tr-okb.rec { --c: #1f3fb8; border: 1.5px dashed #9fb3ff; background: #f6f8ff; color: #1f3fb8; cursor: default; } .tr-okb.rec.on { background: #1f3fb8; color: #fff; border-style: solid; }
 .rc-grow { transition: width 1s cubic-bezier(.2,.8,.2,1); } .rc-grow.late { transition-delay: .35s; } @media (prefers-reduced-motion: reduce) { .rc-grow { transition: none; } }
 .cs-edited { color: #b42318; font-weight: 700; }
+.tr-why { font-size: 12px; line-height: 1.4; color: var(--ink); background: #eef2ff; border-radius: 8px; padding: 6px 8px; } .tr-why b { color: #1f3fb8; }
+.tr-q5 { grid-template-columns: 66px 1fr 26px 62px; }
+.tr-okb[disabled] { opacity: .45; cursor: not-allowed; } .tr-okb[data-show] { cursor: pointer; }
+.fl { color: var(--muted); }
