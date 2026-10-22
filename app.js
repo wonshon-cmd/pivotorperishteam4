@@ -791,13 +791,45 @@
       <div class="ask-rec"><b>Long term:</b> ${I.longTerm || ""}. ${I.why || ""}${G ? ` <span class="mut">(${G.why})</span>` : ""}</div>
       ${confPill(I.conf || "Medium")}`;
   }
+  // Hypothesis → plan: "experience to 24 and cut vendor by 2, breadth 60" → several lever changes applied together
+  function askPlan(q, base) {
+    const d = Object.assign({}, base), changes = [];
+    String(q).split(/\s*(?:,|;|\band\b|\bthen\b|\bplus\b|&)\s*/i).filter(x => x.trim()).forEach(cl => {
+      const P = askParse(cl); if (!P) return;
+      if (P.dir === 0 && P.num == null) return;   // a question about a lever, not a change
+      P.keys.forEach(k => { const L = LEVERS.find(x => x.key === k); if (!L) return;
+        const was = d[k]; let v;
+        if (P.num != null && P.to) v = P.num; else if (P.num != null && P.dir === 0) v = P.num; else if (P.num != null) v = was + P.dir * P.num; else v = was + P.dir * STEP[k];
+        v = Math.max(L.min, Math.min(L.max, Math.round(v * 100) / 100)); if (Math.abs(v - was) < 1e-9) return;
+        d[k] = v; const i = changes.findIndex(c => c[0] === L); if (i >= 0) changes[i][2] = v; else changes.push([L, was, v]); });
+    });
+    return { d, changes };
+  }
+  function planSummary(before, after, changes) {
+    const r0 = model(before), r1 = model(after), dv = r1.mv - r0.mv, over = r1.spend > S.base.budget + 1e-6;
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+    const qd = r1.sc.map((v, i) => [Q[i], v - r0.sc[i]]).filter(x => Math.abs(x[1]) >= 0.01);
+    return `<div class="hp-ch">${changes.map(([L, a, b]) => `<span>${L.label}: ${fmt(L, a)} → <b>${fmt(L, b)}</b></span>`).join("")}</div>
+      <div class="hp-res"><div><small>Market value</small><b>${fmtM(r1.mv)}</b><i class="${dv >= 0 ? "up" : "dn"}">${dv >= 0 ? "+" : "−"}$${Math.abs(dv).toFixed(0)}M</i></div>
+        <div><small>Experience</small><b>${r1.sc[1].toFixed(2)} ${r1.sc[1] >= r1.cls[1].leader ? "#1" : "#2"}</b></div>
+        <div><small>Spend</small><b style="${over ? "color:#b42318" : ""}">${fmtM(r1.spend)}${over ? " ⚠ over" : ""}</b><i>of ${fmtM(S.base.budget)}</i></div></div>
+      ${qd.length ? `<div class="hp-q">Quadrants: ${qd.map(([n, v]) => `${n} ${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`).join(" · ")}</div>` : ""}
+      ${confPill("Medium")}`;
+  }
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
     if ($("#qaForm") && !$("#qaForm").dataset.on) {
       $("#qaForm").dataset.on = 1;
-      const sugg = ["Cut online by $2M?", "Raise shopping experience by $2M?", "Breadth to 60?", "Raise markup by 2 points?"];
+      const sugg = ["Experience to $24M and vendor to $18M", "Breadth to 60", "Raise markup by 2 points", "What does the analytics score mean?"];
       document.querySelector(".qa-sugg").innerHTML = sugg.map(x => `<button type="button" class="ask-s">${x}</button>`).join("");
-      const qa = q => { if (!q.trim()) return; $("#qaOut").innerHTML = `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; };
+      const qa = q => { if (!q.trim()) return;
+        const before = Object.assign({}, state.d), hp = askPlan(q, before), esc = q.replace(/</g, "&lt;");
+        if (!hp.changes.length) { $("#qaOut").innerHTML = `<div class="ask-msg me">${esc}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; return; }
+        state.d = hp.d; syncLevers(); update();
+        $("#qaOut").innerHTML = `<div class="ask-msg me">${esc}</div><div class="ask-msg bot"><div class="hp-top"><b>✓ Sliders changed to your plan</b><button type="button" class="hp-undo" id="qaUndo">↶ Undo</button></div>${planSummary(before, hp.d, hp.changes)}
+          <details class="hp-why"><summary>Why, in plain English</summary>${askAnswer(q.split(/,|;|\band\b/i)[0], before)}</details></div>`;
+        $("#qaUndo").onclick = () => { state.d = before; syncLevers(); update(); $("#qaOut").innerHTML = `<div class="ask-msg bot">Undone: sliders are back where they were.</div>`; };
+      };
       $("#qaForm").onsubmit = e => { e.preventDefault(); qa($("#qaIn").value); $("#qaIn").value = ""; };
       document.querySelectorAll(".qa-sugg .ask-s").forEach(b => b.onclick = () => qa(b.textContent));
     }
@@ -887,33 +919,58 @@
     if (!parts.length) return "Same as recommended";
     const s = parts.slice(0, 3).join(", "); return s[0].toUpperCase() + s.slice(1);
   }
-  // ---------- Team room: everyone picks their name; each idea shows as its own mini screen, side by side ----------
-  const ME_KEY = "getchells-me";
+  // ---------- Team room: everyone adds an idea; any card can go on the shared CENTER screen; Brian edits it there; live for everyone ----------
+  const ME_KEY = "getchells-me", SUB = S.submitter || "Brian";
   const meLoad = () => localStorage.getItem(ME_KEY) || "";
   const AV = ["#2E5BFF", "#0f766e", "#7c3aed", "#c2410c", "#be185d"];
-  const avColor = n => AV[Math.max(0, (S.team || []).indexOf(n)) % AV.length];
+  const avColor = n => n === "Recommended" ? "#1f3fb8" : AV[Math.max(0, (S.team || []).indexOf(n)) % AV.length];
+  const CENTER_KEY = TEAM_KEY + "-center", OK_KEY = TEAM_KEY + "-ok";
+  const jl = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } };
+  const centerLoad = () => jl(CENTER_KEY), centerSave = c => localStorage.setItem(CENTER_KEY, JSON.stringify(c));
+  const okLoad = () => jl(OK_KEY) || { ts: 0, m: {} }, okSave = o => localStorage.setItem(OK_KEY, JSON.stringify(o));
+  const diffOf = d => { const o = {}; LEVERS.forEach(L => { if (Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9) o[L.key] = d[L.key]; }); return o; };
+  const recPlan = () => { const p = (S.plans || []).find(x => x.badge === "Recommended"); return Object.assign({}, S.defaults, p ? p.levers : {}); };
   let pendingAdd = false;
-  // share code = compact idea (only levers that differ from last round) → base64 in a link
-  const encIdea = (n, it) => { const d = {}; LEVERS.forEach(L => { if (Math.abs(it.d[L.key] - S.defaults[L.key]) > 1e-9) d[L.key] = it.d[L.key]; });
-    return btoa(unescape(encodeURIComponent(JSON.stringify({ r: S.round, n, t: it.title || "", ts: it.ts, d })))); };
-  function importIdea(txt) {
-    try { const m = String(txt).trim().match(/idea=([^&\s]+)/), code = m ? decodeURIComponent(m[1]) : String(txt).trim();
-      const o = JSON.parse(decodeURIComponent(escape(atob(code))));
-      if (!o || !o.n || !o.d) return "";
-      const tt = teamLoad(); tt[o.n] = { d: Object.assign({}, S.defaults, o.d), ts: o.ts || Date.now(), title: o.t || "" }; teamSave(tt); return o.n;
-    } catch (e) { return ""; }
+
+  // live relay (ntfy.sh): every change is a small JSON message; newest timestamp wins
+  const LIVE = S.liveTopic ? "https://ntfy.sh/" + S.liveTopic + "-r" + S.round : "";
+  let liveOn = false, pubTimer = null;
+  function setLive(on) { liveOn = on; const el = $("#trLive"); if (el) { el.className = "tr-live " + (on ? "on" : "off"); el.textContent = on ? "● Live" : "○ Offline: changes stay on this computer"; } }
+  function livePub(o) { if (!LIVE) return; o.v = 1; fetch(LIVE, { method: "POST", body: JSON.stringify(o) }).then(r => setLive(r.ok)).catch(() => setLive(false)); }
+  function liveApply(o) {
+    if (!o || o.v !== 1) return false;
+    const tt = teamLoad();
+    if (o.k === "idea") { if (tt[o.n] && tt[o.n].ts >= o.ts) return false; tt[o.n] = { d: Object.assign({}, S.defaults, o.d), ts: o.ts, title: o.t || "" }; teamSave(tt); return true; }
+    if (o.k === "del") { if (!tt[o.n] || tt[o.n].ts > o.ts) return false; delete tt[o.n]; teamSave(tt); return true; }
+    if (o.k === "center") { const c = centerLoad(); if (c && c.ts >= o.ts) return false; centerSave({ src: o.src, d: Object.assign({}, S.defaults, o.d), ts: o.ts, by: o.by || "" }); return true; }
+    if (o.k === "ok") { if (okLoad().ts >= o.ts) return false; okSave({ ts: o.ts, m: o.m || {} }); return true; }
+    if (o.k === "clear") { let ch = false; Object.keys(tt).forEach(n => { if (tt[n].ts <= o.ts) { delete tt[n]; ch = true; } }); teamSave(tt);
+      const c = centerLoad(); if (c && c.ts <= o.ts) { localStorage.removeItem(CENTER_KEY); ch = true; } if (okLoad().ts <= o.ts) { localStorage.removeItem(OK_KEY); ch = true; } return ch; }
+    return false;
   }
+  const liveRedraw = () => { const a = document.activeElement; if (a && a.closest && a.closest("#team") && a.tagName === "INPUT") return setTimeout(liveRedraw, 800); renderTeamCmp(); };
+  function liveStart() {
+    if (!LIVE || !window.EventSource) return;
+    fetch(LIVE + "/json?poll=1&since=12h").then(r => r.text()).then(txt => { let ch = false;
+      txt.split("\n").forEach(l => { try { const m = JSON.parse(l); if (m.event === "message" && liveApply(JSON.parse(m.message))) ch = true; } catch (e) {} });
+      setLive(true); if (ch) liveRedraw(); }).catch(() => setLive(false));
+    const es = new EventSource(LIVE + "/sse");
+    es.onopen = () => setLive(true); es.onerror = () => setLive(false);
+    es.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "message" && liveApply(JSON.parse(m.message))) liveRedraw(); } catch (x) {} };
+  }
+  function pubCenter(c) { clearTimeout(pubTimer); pubTimer = setTimeout(() => livePub({ k: "center", src: c.src, d: diffOf(c.d), ts: c.ts, by: c.by }), 900); }
+
   // idea title fills itself from what the sliders do; typing your own keeps it (clear the box to go back to auto)
   function autoFillTitle() {
     const el = $("#tcTitle"); if (!el) return;
     if (!el.dataset.bound) { el.dataset.bound = "1"; el.addEventListener("input", () => { el.dataset.typed = el.value.trim() ? "1" : ""; if (!el.dataset.typed) autoFillTitle(); }); }
     if (el.dataset.typed === "1") return;
-    const recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
-    el.value = autoTitle(state.d, rec);
+    el.value = autoTitle(state.d, recPlan());
   }
   function addMyIdea() {
     const me = meLoad(); if (!me) { pendingAdd = true; openTD(); return; }
-    const tt = teamLoad(), ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || ""; tt[me] = { d: Object.assign({}, state.d), ts: Date.now(), title: ti }; teamSave(tt);
+    const tt = teamLoad(), ti = ($("#tcTitle") && $("#tcTitle").value.trim()) || "", it = { d: Object.assign({}, state.d), ts: Date.now(), title: ti };
+    tt[me] = it; teamSave(tt); livePub({ k: "idea", n: me, t: ti, ts: it.ts, d: diffOf(it.d) });
     if ($("#tcTitle")) { $("#tcTitle").dataset.typed = ""; autoFillTitle(); } openTD();
   }
   // Outlook for any plan: expected value with confidence range, positioning vs the goal (lead 2, fair in 2), long-term viability to Round 8
@@ -923,108 +980,98 @@
     const leads = q.filter((x, k) => st(k) === "LEAD"), gaps = q.filter((x, k) => st(k) === "GAP");
     const posTxt = (leads.length ? "Leads " + leads.join(" + ") : "No lead") + (gaps.length ? " · below fair in " + gaps.join(", ") : " · fair in the rest");
     const posTag = leads.length >= 2 && !gaps.length ? ["On goal", "#1a7f37"] : leads.length >= 2 ? ["2 leads ✓", "#1a7f37"] : leads.length === 1 ? ["1 lead", "#9a6700"] : ["No lead", "#b42318"];
-    const pc = prosCons(d, S.defaults), unspent = S.base.budget - r.spend, build = d.experience + d.online;
+    const pc = prosCons(d, S.defaults), build = d.experience + d.online;
     let v = pc.lt.pro.length - pc.lt.con.length + (leads.length >= 2 ? 1 : -1) + (build >= S.defaults.experience + S.defaults.online ? 1 : -1);
     if (r.spend > S.base.budget + 1e-6) v -= 3;
     const via = v >= 2 ? ["Strong", "#1a7f37"] : v >= 0 ? ["Okay", "#9a6700"] : ["Fragile", "#b42318"];
     const why = r.spend > S.base.budget + 1e-6 ? "Over budget: the game won't accept it" : (v >= 0 ? (pc.lt.pro[0] || "Keeps building the levers that carry to Round 8") : (pc.lt.con[0] || "Builds less of what carries to Round 8")).replace(/^[^:]+: /, "");
     return { r, lo: r.mv * 0.92, hi: r.mv * 1.08, posTxt, posTag, via, why: why.length > 90 ? why.slice(0, 88) + "…" : why };
   }
-  function openTD() { renderTeamCmp(); show("team"); }
+  function openTD() { show("team"); }
   function closeTD() { show("cockpit"); }
   function renderTeamCmp() {
     if (!$("#tcCards")) return;
-    const t = teamLoad(), me = meLoad(), recP = (S.plans || []).find(p => p.badge === "Recommended"), rec = Object.assign({}, S.defaults, recP ? recP.levers : {});
+    const t = teamLoad(), me = meLoad(), rec = recPlan(), recP = (S.plans || []).find(p => p.badge === "Recommended");
     const names = (S.team || []).filter(n => t[n]).concat(Object.keys(t).filter(n => !(S.team || []).includes(n)));
     const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
-    const short = L => L.label.split(" · ")[0].replace("Shopping experience", "Experience").replace("Vendor management", "Vendor").replace("Customer service", "Service").replace("Customer analytics", "Analytics");
-    // section on the Build plan screen
+    const short = L => L.label.replace("Shopping experience", "Experience").replace("Vendor management", "Vendor").replace("Customer service", "Service").replace("Customer analytics", "Analytics");
+    const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }, badge = (c, x) => `<em class="tr-b" style="color:${CC[c]};border-color:${CC[c]}">${c}${x ? " " + x : ""}</em>`;
+    // Build plan section
     if ($("#tcMe")) $("#tcMe").innerHTML = me ? `as <b style="color:${avColor(me)}">${me}</b> · <button class="tc-link" id="tcChangeMe">change</button>` : `<span class="tc-mut">pick your name in the room</span>`;
     if ($("#tcAdd")) { $("#tcAdd").textContent = me && t[me] ? "Update my idea" : "Add my idea"; $("#tcAdd").onclick = addMyIdea; }
     if ($("#tcChangeMe")) $("#tcChangeMe").onclick = () => { localStorage.removeItem(ME_KEY); openTD(); };
     if ($("#tcOpen")) { $("#tcOpen").textContent = `Open team room · ${names.length} idea${names.length === 1 ? "" : "s"}`; $("#tcOpen").onclick = openTD; }
-    // 1) who's here
-    $("#tcWho").innerHTML = `<div class="tr-who ${me ? "" : "ask"}"><span class="tr-q">${me ? "You're" : "👋 Who's here? Pick your name"}</span>${(S.team || []).map(n => `<button class="tr-nm ${n === me ? "me" : ""}" data-me="${n}" style="--c:${avColor(n)}"><i>${n[0]}</i>${n}</button>`).join("")}</div>`;
-    // 2) every person's screen
+    // who's here
+    $("#tcWho").innerHTML = `<div class="tr-who ${me ? "" : "ask"}"><span class="tr-q">${me ? "You're" : "👋 Who's here? Pick your name"}</span>${(S.team || []).map(n => `<button class="tr-nm ${n === me ? "me" : ""}" data-me="${n}" style="--c:${avColor(n)}"><i>${n[0]}</i>${n}</button>`).join("")}<span id="trLive" class="tr-live ${liveOn ? "on" : "off"}">${liveOn ? "● Live" : "○ Connecting…"}</span></div>`;
+    // ===== CENTER SCREEN =====
+    const c = centerLoad() || { src: "Recommended", d: rec, ts: 0, by: "" }, cd = Object.assign({}, S.defaults, c.d), canEdit = me === SUB;
+    const o = outlook(cd), r = o.r, pc = prosCons(cd, S.defaults), ok = okLoad().m;
+    const groups = [...new Set(LEVERS.map(L => L.group))];
+    const mini = groups.map(g => `<div class="cs-g">${g}</div>` + LEVERS.filter(L => L.group === g).map(L => { const v = cd[L.key], was = S.defaults[L.key], ch = Math.abs(v - was) > 1e-9;
+      return `<div class="cs-row ${ch ? "chg" : ""}"><span class="cs-l">${short(L)}</span><span class="cs-was">${ch ? "was " + fmt(L, was) : ""}</span>
+        ${canEdit ? `<span class="cs-ed"><button data-cs="${L.key}" data-dir="-1">−</button><input data-csin="${L.key}" value="${+(+v).toFixed(2)}" inputmode="decimal"><button data-cs="${L.key}" data-dir="1">+</button></span>` : `<b class="cs-v">${fmt(L, v)}</b>`}</div>`; }).join("")).join("");
+    const chL = LEVERS.filter(L => Math.abs(cd[L.key] - S.defaults[L.key]) > 1e-9);
     const quads = ["Brand", "Experience", "Low Price", "Frictionless"];
-    const r0 = model(rec);
+    const qb = quads.map((q, k) => { const s = r.sc[k], lead = r.cls[k].leader; return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:#2E5BFF"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(2)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
+    const over = r.spend > S.base.budget + 1e-6, left = S.base.budget - r.spend;
+    const srcTxt = c.src === "Recommended" ? "the recommended plan" : c.src + "'s idea";
+    const center = `<div class="tr-sub cs">
+      <div class="tr-subh"><div><b class="cs-t">🖥 Center screen · what we'll type into the game</b><small class="cs-s">Showing <b>${srcTxt}</b>${c.by && c.by !== c.src ? ` · last change by ${c.by}` : ""}. Click any idea below to put it here.${canEdit ? " You can edit it." : ` Only ${SUB} edits; you'll see changes live.`}</small></div>
+        <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
+      <div class="cs-grid">
+        <div class="cs-mini"><div class="tr-lab">Mini build plan ${canEdit ? "· edit here" : ""}</div>
+          ${canEdit ? `<form class="cs-hyp" id="csHyp"><input id="csHypIn" placeholder="Type a change, e.g. experience to 24 and vendor to 18" autocomplete="off"><button class="tc-ref">Apply</button></form><div id="csHypOut"></div>` : ""}${mini}</div>
+        <div class="cs-mid"><div class="tr-lab">Expected outcome</div>
+          <div class="cs-mv">${fmtM(r.mv)}</div><div class="tr-rng">likely ${fmtR(o.lo)}–${fmtR(o.hi)} ${badge("Medium")}</div>
+          <div class="tr-ol"><div><span>Positioning</span><b style="color:${o.posTag[1]}">${o.posTag[0]}</b>${badge("High")}<p>${o.posTxt}</p></div>
+            <div><span>Long term</span><b style="color:${o.via[1]}">${o.via[0]}</b>${badge("Low")}<p>${o.why}</p></div>
+            <div><span>Net income</span><b>${fmtM(r.niProj)}</b>${badge("Medium")}</div></div>
+          <div class="tr-bars" style="margin-top:8px">${qb}</div>
+          <div class="tr-sp" style="margin-top:8px"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)} · ${over ? `<b style="color:#b42318">⚠ ${fmtM(-left)} over: the game will reject it</b>` : left > 0.005 ? fmtM(left) + " unspent" : "exactly on budget"}</span><div><div style="width:${Math.min(100, r.spend / S.base.budget * 100)}%;${over ? "background:#b42318" : ""}"></div></div></div></div>
+        <div class="cs-right"><div class="tr-lab">Type into the game (changes from last round)</div>
+          ${chL.length ? `<ol class="cs-list">${chL.map(L => `<li><span>${L.label}</span><b>${fmt(L, S.defaults[L.key])} → <em>${fmt(L, cd[L.key])}</em></b></li>`).join("")}</ol>` : `<div class="tc-mut">No changes from last round</div>`}
+          <div class="cs-foot">Every other box: same as last round.</div>
+          <div class="tr-lab" style="margin-top:12px">👍 What it does well</div>${pc.now.pro.concat(pc.lt.pro).slice(0, 3).map(x => `<div class="pp">${x}</div>`).join("") || '<div class="tc-mut">Same as last round</div>'}
+          <div class="tr-lab" style="margin-top:10px">👀 Worth keeping an eye on</div>${pc.now.con.concat(pc.lt.con).slice(0, 3).map(x => `<div class="cc">${x}</div>`).join("") || '<div class="tc-mut">Nothing notable</div>'}</div>
+      </div></div>`;
+    // ===== everyone's ideas =====
     const screen = (who, d, it, isRec) => {
-      const r = model(d), dv = r.mv - r0.mv, col = isRec ? "#1f3fb8" : avColor(who);
-      const ch = LEVERS.filter(L => Math.abs(d[L.key] - rec[L.key]) > 1e-9).map(L => ({ L, w: Math.abs(d[L.key] - rec[L.key]) / (L.max - L.min) })).sort((x, y) => y.w - x.w);
-      const chips = isRec ? `<span class="tdf-chip base">Our starting point</span>` : ch.length ? ch.slice(0, 4).map(x => `<span class="tdf-chip">${short(x.L)} ${d[x.L.key] > rec[x.L.key] ? "↑" : "↓"} ${fmt(x.L, d[x.L.key])}</span>`).join("") + (ch.length > 4 ? `<span class="tdf-more">+${ch.length - 4}</span>` : "") : `<span class="tdf-chip base">Same as recommended</span>`;
-      const bars = quads.map((q, k) => { const c = r.cls[k], s = r.sc[k], lead = c.leader;
-        return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%" title="Leader ${lead}"></em></div><b>${s.toFixed(1)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
-      const pc = isRec ? null : prosCons(d, rec), note = pc ? (pc.lt.pro[0] || pc.now.pro[0] || pc.lt.con[0] || "") : "";
-      const sp = Math.min(100, r.spend / S.base.budget * 100);
-      return `<div class="tr-scr ${isRec ? "rec" : ""} ${who === me ? "mine" : ""}" style="--c:${col}">
+      const oo = outlook(d), rr = oo.r, col = avColor(who), inC = c.src === who;
+      const ch = LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9).map(L => ({ L, w: Math.abs(d[L.key] - S.defaults[L.key]) / (L.max - L.min) })).sort((x, y) => y.w - x.w);
+      const chips = ch.length ? ch.slice(0, 4).map(x => `<span class="tdf-chip">${short(x.L)} ${d[x.L.key] > S.defaults[x.L.key] ? "↑" : "↓"} ${fmt(x.L, d[x.L.key])}</span>`).join("") + (ch.length > 4 ? `<span class="tdf-more">+${ch.length - 4}</span>` : "") : `<span class="tdf-chip base">Same as last round</span>`;
+      const bars = quads.map((q, k) => { const s = rr.sc[k], lead = rr.cls[k].leader; return `<div class="tr-q4"><span>${q}</span><div class="tr-tr"><div style="width:${Math.min(100, s * 10)}%;background:${col}"></div><em style="left:${Math.min(100, lead * 10)}%"></em></div><b>${s.toFixed(1)}${s >= lead - 1e-9 ? " ★" : ""}</b></div>`; }).join("");
+      return `<div class="tr-scr ${isRec ? "rec" : ""} ${who === me ? "mine" : ""} ${inC ? "inc" : ""}" style="--c:${col}">
         <div class="tr-h"><i>${isRec ? "★" : who[0]}</i><div><b>${isRec ? "Recommended" : who}${who === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${isRec ? "From the model" : "added " + new Date(it.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</small></div></div>
         <div class="tdf-title">“${isRec ? (recP ? recP.name : "Recommended plan") : (it.title || autoTitle(d, rec))}”</div>
-        <div class="tdf-mv">${fmtM(r.mv)}<span>${isRec ? "expected value" : (Math.abs(dv) < 0.5 ? "same as rec." : (dv > 0 ? "+" : "−") + "$" + Math.abs(dv).toFixed(0) + "M vs rec.")}</span></div>
-        <div class="tr-rng">likely ${fmtR(r.mv * 0.92)}–${fmtR(r.mv * 1.08)} <em>Medium</em></div>
-        ${(() => { const o = outlook(d); return `<div class="tr-ol">
-          <div><span>Positioning</span><b style="color:${o.posTag[1]}">${o.posTag[0]}</b><em style="color:#1a7f37;border-color:#1a7f37">High</em><p>${o.posTxt}</p></div>
-          <div><span>Long term</span><b style="color:${o.via[1]}">${o.via[0]}</b><em style="color:#b42318;border-color:#b42318">Low</em><p>${o.why}</p></div></div>`; })()}
+        <div class="tdf-mv">${fmtM(rr.mv)}</div><div class="tr-rng">likely ${fmtR(oo.lo)}–${fmtR(oo.hi)} ${badge("Medium")}</div>
+        <div class="tr-ol"><div><span>Positioning</span><b style="color:${oo.posTag[1]}">${oo.posTag[0]}</b>${badge("High")}</div><div><span>Long term</span><b style="color:${oo.via[1]}">${oo.via[0]}</b>${badge("Low")}<p>${oo.why}</p></div></div>
         <div class="tr-bars">${bars}</div>
-        <div class="tr-sp"><span>Spend ${fmtM(r.spend)} of ${fmtM(S.base.budget)}${r.spend > S.base.budget + 1e-6 ? " ⚠ over" : ""}</span><div><div style="width:${sp}%"></div></div></div>
         <div class="tdf-chips">${chips}</div>
-        ${note ? `<div class="tr-note">💡 ${note}</div>` : ""}
-        ${isRec ? "" : `<div class="tc-act"><button data-tcload="${who}">Try on my sliders</button>${who === me ? `<button data-tcdel="${who}">Remove</button>` : ""}</div>`}</div>`;
+        <div class="tc-act">${inC ? `<span class="cs-on">● On the center screen</span>` : `<button class="cs-put" data-center="${who}">↑ Put on center screen</button>`}${!isRec ? `<button data-tcload="${who}">Try on my sliders</button>` : ""}${who === me ? `<button data-tcdel="${who}">Remove</button>` : ""}</div></div>`;
     };
-    const waiting = (S.team || []).filter(n => !t[n]).map(n => `<div class="tr-scr wait" style="--c:${avColor(n)}"><div class="tr-h"><i>${n[0]}</i><div><b>${n}${n === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${n === me ? "Set the sliders, then “Add my idea”" : "No idea shared yet"}</small></div></div></div>`).join("");
+    const waiting = (S.team || []).filter(n => !t[n]).map(n => `<div class="tr-scr wait" style="--c:${avColor(n)}"><div class="tr-h"><i>${n[0]}</i><div><b>${n}${n === me ? ' <span class="tr-you">you</span>' : ""}</b><small>${n === me ? "Set the Build plan sliders, then “Add my idea”" : "No idea added yet"}</small></div></div></div>`).join("");
     const screens = `<div class="tr-grid">${screen("Recommended", rec, null, true)}${names.map(n => screen(n, Object.assign({}, S.defaults, t[n].d), t[n], false)).join("")}${waiting}</div>`;
-    // 3) side-by-side numbers with confidence (only rows that differ)
-    let table = "";
-    if (names.length) {
-      const plans = [["Recommended", rec]].concat(names.map(n => [n, Object.assign({}, S.defaults, t[n].d)])), rs = plans.map(p => model(p[1]));
-      const CC = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" };
-      const res = [["Market value", r => fmtM(r.mv), r => r.mv, "Medium", "±8%", v => Math.abs(v) * 0.03], ["Net income", r => fmtM(r.niProj), r => r.niProj, "Medium", "±7%", v => Math.abs(v) * 0.03],
-        ["Experience", r => r.sc[1].toFixed(2) + (r.sc[1] >= r.cls[1].leader ? " #1" : " #2"), r => r.sc[1], "High", "±0.1", () => 0.05], ["Brand", r => r.sc[0].toFixed(2), r => r.sc[0], "High", "±0.1", () => 0.05],
-        ["Low Price", r => r.sc[2].toFixed(2), r => r.sc[2], "High", "±0.1", () => 0.05], ["Frictionless", r => r.sc[3].toFixed(2), r => r.sc[3], "Medium", "±0.2", () => 0.05], ["Spend", r => fmtM(r.spend), r => r.spend, "High", "exact", () => 0.4]];
-      const shown = res.filter(([n, f, g, c, e, th], k) => k === 0 || rs.some(r => Math.abs(g(r) - g(rs[0])) > th(g(rs[0]))));
-      const head = `<tr><th></th>${plans.map((p, i) => `<th style="color:${i ? avColor(p[0]) : "#1f3fb8"}">${p[0]}</th>`).join("")}</tr>`;
-      const rows = shown.map(([n, f, g, c, e]) => `<tr><td>${n}<span class="tc-cf" style="color:${CC[c]};border-color:${CC[c]}">${c} ${e}</span></td>${rs.map(r => `<td>${f(r)}</td>`).join("")}</tr>`).join("");
-      const diffL = LEVERS.filter(L => plans.some(p => Math.abs(p[1][L.key] - rec[L.key]) > 1e-9));
-      const lev = diffL.map(L => `<tr><td>${L.label}</td>${plans.map((p, i) => { const v = p[1][L.key], same = Math.abs(v - rec[L.key]) < 1e-9; return `<td class="${i === 0 ? "recv" : same ? "same" : ""}">${i === 0 || !same ? fmt(L, v) : "same"}</td>`; }).join("")}</tr>`).join("");
-      table = `<div class="tr-sec">Side by side <small>numbers that differ · badge = how sure the model is</small></div><div class="tc-tw"><table class="tc-table">${head}${rows}</table></div>` +
-        (lev ? `<details class="tdf-all"><summary>Every slider that differs</summary><div class="tc-tw"><table class="tc-table">${head}${lev}</table></div></details>` : "");
-    }
-    // 4) share across devices
-    const mine = me && t[me] ? location.href.split("#")[0] + "#idea=" + encodeURIComponent(encIdea(me, t[me])) : "";
-    const share = `<div class="tr-share"><div><b>Seeing teammates' screens</b><small>Ideas are saved in this browser. To show yours on everyone's screen, copy your link into the group chat; when a teammate opens it, your idea appears in their room.</small></div>
-      <div class="tr-sb"><button class="tc-ref" id="trCopy" ${mine ? "" : "disabled"}>${mine ? "🔗 Copy my idea link" : "Add your idea first"}</button><input id="trPaste" placeholder="Paste a teammate's link"><button class="tc-clr" id="trAdd">Add</button></div></div>`;
-    // Brian submits: his screen (or the recommended plan until he adds one) = what we'd type into the game
-    const SUB = (S.submitter || "Brian"), subD = t[SUB] ? Object.assign({}, S.defaults, t[SUB].d) : rec, subR = model(subD), subPc = prosCons(subD, rec);
-    const OK_KEY = TEAM_KEY + "-ok", okLoad = () => { try { return JSON.parse(localStorage.getItem(OK_KEY) || "{}"); } catch (e) { return {}; } }, ok = okLoad();
-    const subCh = LEVERS.filter(L => Math.abs(subD[L.key] - S.defaults[L.key]) > 1e-9);
-    let pcs = subPc.now.pro.concat(subPc.lt.pro); if (pcs.length < 3 && recP && recP.why) pcs = pcs.concat([].concat(recP.why)); pcs = pcs.slice(0, 4);
-    const watch = subPc.now.con.concat(subPc.lt.con).slice(0, 4);
-    const exp = subR.cls[1];
-    const subO = outlook(subD);
-    const outc = [["Market value", fmtM(subR.mv) + `<small>likely ${fmtR(subO.lo)}–${fmtR(subO.hi)}</small>`, "Medium ±8%", "#9a6700"], ["Positioning", `<span style="color:${subO.posTag[1]}">${subO.posTag[0]}</span><small>${subO.posTxt}</small>`, "High", "#1a7f37"], ["Long-term viability", `<span style="color:${subO.via[1]}">${subO.via[0]}</span><small>${subO.why}</small>`, "Low · judgment", "#b42318"], ["Net income", fmtM(subR.niProj), "Medium ±7%", "#9a6700"],
-      ["Experience", subR.sc[1].toFixed(2) + (subR.sc[1] >= exp.leader ? " · #1" : " · #2 (Zephara " + exp.leader + ")"), "High ±0.1", "#1a7f37"], ["Spend", fmtM(subR.spend) + " of " + fmtM(S.base.budget), "High · exact", "#1a7f37"]];
-    const submit = `<div class="tr-sub" style="--c:${avColor(SUB)}"><div class="tr-subh"><div class="tr-h"><i>${SUB[0]}</i><div><b>${SUB}'s screen · what we'll type into the game</b><small>${t[SUB] ? "“" + (t[SUB].title || autoTitle(subD, rec)) + "”" : SUB + " hasn't added an idea yet, so this shows the recommended plan"}</small></div></div>
-        <div class="tr-ok"><span>On board:</span>${(S.team || []).map(n => `<button class="tr-okb ${ok[n] ? "on" : ""}" data-ok="${n}" style="--c:${avColor(n)}">${ok[n] ? "✓ " : ""}${n}</button>`).join("")}</div></div>
-      <div class="tr-subg"><div><div class="tr-lab">Type into the game</div><div class="tc-fl">${subCh.map(L => `<span>${short(L)}: ${fmt(L, S.defaults[L.key])} → <b>${fmt(L, subD[L.key])}</b></span>`).join("") || "<span>No changes from last round</span>"}</div>
-          <div class="tr-lab" style="margin-top:12px">Expected outcome</div><div class="tr-out">${outc.map(o => `<div><small>${o[0]}</small><b>${o[1]}</b><span class="tc-cf" style="color:${o[3]};border-color:${o[3]};margin:0">${o[2]}</span></div>`).join("")}</div></div>
-        <div><div class="tr-lab">👍 What it does well</div>${pcs.map(x => `<div class="pp">${x}</div>`).join("") || '<div class="tc-mut">—</div>'}
-          <div class="tr-lab" style="margin-top:10px">👀 Worth keeping an eye on</div>${watch.map(x => `<div class="cc">${x}</div>`).join("") || '<div class="tc-mut">Nothing notable</div>'}</div></div></div>`;
-    $("#tcCards").innerHTML = submit + `<div class="tr-sec">Everyone's ideas <small>each one is a mini screen</small></div>` + screens + table + share + `<div class="tr-foot"><span>The model's numbers are estimates.</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
+    $("#tcCards").innerHTML = center + `<div class="tr-sec">Everyone's ideas <small>click “Put on center screen” to look at one together</small></div>` + screens +
+      `<div class="tr-foot"><span>Model numbers are estimates. Ideas sync live through a free relay (only names and slider numbers are sent).</span><button class="tc-link" id="tcClear">Clear the room</button></div>`;
     // events
+    const plans = { Recommended: rec }; names.forEach(n => plans[n] = Object.assign({}, S.defaults, t[n].d));
+    const setCenter = nc => { centerSave(nc); pubCenter(nc); renderTeamCmp(); };
+    document.querySelectorAll("[data-center]").forEach(b => b.onclick = () => { const n = b.dataset.center; setCenter({ src: n, d: Object.assign({}, plans[n]), ts: Date.now(), by: me || "" }); window.scrollTo({ top: 0, behavior: "smooth" }); });
+    const edit = (k, v) => { const L = LEVERS.find(x => x.key === k); v = Math.min(L.max, Math.max(L.min, Math.round(v * 100) / 100)); if (isNaN(v)) return renderTeamCmp(); const nd = Object.assign({}, cd, { [k]: v }); setCenter({ src: c.src, d: nd, ts: Date.now(), by: me }); };
+    document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { const L = LEVERS.find(x => x.key === b.dataset.cs); edit(L.key, cd[L.key] + (+b.dataset.dir) * (L.step || 1)); });
+    document.querySelectorAll("[data-csin]").forEach(i => { i.onchange = () => edit(i.dataset.csin, parseFloat(i.value)); i.onkeydown = e => { if (e.key === "Enter") i.blur(); }; });
+    if ($("#csHyp")) $("#csHyp").onsubmit = e => { e.preventDefault(); const q = $("#csHypIn").value; const hp = askPlan(q, cd);
+      if (!hp.changes.length) { $("#csHypOut").innerHTML = `<div class="cs-hmsg">I couldn't find a change in that. Try “experience to 24” or “cut vendor by 2”.</div>`; return; }
+      const prev = { src: c.src, d: cd, ts: Date.now(), by: me }; setCenter({ src: c.src, d: hp.d, ts: Date.now(), by: me });
+      $("#csHypOut").innerHTML = `<div class="cs-hmsg">✓ ${hp.changes.map(([L, a, b]) => short(L) + " → " + fmt(L, b)).join(", ")} <button type="button" class="hp-undo" id="csUndo">↶ Undo</button></div>`;
+      $("#csUndo").onclick = () => { prev.ts = Date.now(); setCenter(prev); }; };
     document.querySelectorAll("[data-me]").forEach(b => b.onclick = () => { localStorage.setItem(ME_KEY, b.dataset.me); if (pendingAdd) { pendingAdd = false; addMyIdea(); } else renderTeamCmp(); });
-    if ($("#trCopy") && mine) $("#trCopy").onclick = () => { navigator.clipboard && navigator.clipboard.writeText(mine).catch(() => {}); $("#trCopy").textContent = "Copied ✓ paste it in the group chat"; };
-    if ($("#trAdd")) $("#trAdd").onclick = () => { const n = importIdea($("#trPaste").value); if (n) renderTeamCmp(); else { $("#trPaste").value = ""; $("#trPaste").placeholder = "That link didn't work, try copying it again"; } };
-    document.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { const o = okLoad(); o[b.dataset.ok] = !o[b.dataset.ok]; localStorage.setItem(OK_KEY, JSON.stringify(o)); renderTeamCmp(); });
+    document.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { const oo = okLoad(); oo.m[b.dataset.ok] = !oo.m[b.dataset.ok]; oo.ts = Date.now(); okSave(oo); livePub({ k: "ok", m: oo.m, ts: oo.ts }); renderTeamCmp(); });
     if ($("#tdClose")) $("#tdClose").onclick = closeTD;
-    if ($("#tcRefresh")) $("#tcRefresh").onclick = () => { renderTeamCmp(); $("#tcRefresh").textContent = "↻ Updated"; setTimeout(() => { const r = $("#tcRefresh"); if (r) r.textContent = "↻ Refresh"; }, 1200); };
-    if ($("#tcClear")) $("#tcClear").onclick = () => { if (!confirm("Clear everyone's ideas for this round on this computer?")) return; [TEAM_KEY, VOTE_KEY, FINAL_KEY, TEAM_KEY + "-ok"].forEach(k => localStorage.removeItem(k)); renderTeamCmp(); };
-    document.querySelectorAll("[data-tcload]").forEach(b => b.onclick = () => { const tt = teamLoad(); state.d = Object.assign({}, S.defaults, tt[b.dataset.tcload].d); syncLevers(); update(); closeTD(); window.scrollTo({ top: 0, behavior: "smooth" }); });
-    document.querySelectorAll("[data-tcdel]").forEach(b => b.onclick = () => { const tt = teamLoad(); delete tt[b.dataset.tcdel]; teamSave(tt); renderTeamCmp(); });
-  }
-  // opening a teammate's idea link drops it into the room
-  function teamFromHash() {
-    if (!/^#idea=/.test(location.hash)) return;
-    const n = importIdea(location.hash); history.replaceState(null, "", location.pathname + location.search);
-    if (n) { show("cockpit"); openTD(); }
+    if ($("#tcRefresh")) $("#tcRefresh").onclick = () => { renderTeamCmp(); $("#tcRefresh").textContent = "↻ Updated"; setTimeout(() => { const x = $("#tcRefresh"); if (x) x.textContent = "↻ Refresh"; }, 1200); };
+    if ($("#tcClear")) $("#tcClear").onclick = () => { if (!confirm("Clear everyone's ideas and the center screen for this round (for the whole team)?")) return; const ts = Date.now(); [TEAM_KEY, CENTER_KEY, OK_KEY].forEach(k => localStorage.removeItem(k)); livePub({ k: "clear", ts }); renderTeamCmp(); };
+    document.querySelectorAll("[data-tcload]").forEach(b => b.onclick = () => { state.d = Object.assign({}, plans[b.dataset.tcload]); syncLevers(); update(); closeTD(); });
+    document.querySelectorAll("[data-tcdel]").forEach(b => b.onclick = () => { const tt = teamLoad(), ts = Date.now(); delete tt[b.dataset.tcdel]; teamSave(tt); livePub({ k: "del", n: b.dataset.tcdel, ts }); renderTeamCmp(); });
   }
 
   // ---------- Levers page (plain-English cheat sheet, grouped by our decision steps) ----------
@@ -1419,7 +1466,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp(); autoFillTitle(); teamFromHash();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderTeamCmp(); autoFillTitle(); liveStart();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
