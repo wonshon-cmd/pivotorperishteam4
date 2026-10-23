@@ -902,11 +902,36 @@
       $("#ppUndo").onclick = () => { state.d = before; syncLevers(); update(); $("#ppOut").innerHTML = `<div class="pp-msg">Undone: sliders are back where they were.</div>`; };
     };
   }
+  // Hand-off to Claude (this chat): copy the question + everything Claude needs to answer it well
+  function claudeBrief(q, d) {
+    d = d || state.d; const r = model(d), B = S.base, R = (S.rounds || []).slice(-1)[0] || {}, k = R.kpi || {};
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+    const ch = LEVERS.filter(L => Math.abs(d[L.key] - S.defaults[L.key]) > 1e-9);
+    const pos = (S.positions && S.positions.rows || []).slice(0, 3).map(x => `${x[0]} ${x[1]} (Zephara ${x[6]})`).join("; ");
+    return [
+      `QUESTION: ${q}`, "",
+      `CONTEXT (Getchells Copilot, Team 4) — Round ${S.round} input screen → Round ${S.round + 1} status. Model data ${S.dataVersion}.`,
+      `Status now: MV $${k.marketValue}M (${k.mvChange}%), net income $${k.netIncome}M, revenue $${k.revenue}M, P/E ${B.pe}, WACC ${B.wacc}%, cash $${B.cash}M, LT debt $${B.debt}M, budget $${B.budget}M.`,
+      `Matrix now [Brand, Experience, Low Price, Frictionless]: us ${(S.rivals[S.company] || []).join(" / ")}; Zephara ${(S.rivals.Zephara || []).join(" / ")}.`,
+      `Positions: ${pos}. Industry avg spend now: service $${(S.indAvgNow || {}).service}M, experience $${(S.indAvgNow || {}).experience}M, online $${(S.indAvgNow || {}).online}M.`, "",
+      `CURRENT SLIDERS: ${LEVERS.map(L => `${L.label} ${fmt(L, d[L.key])}`).join("; ")}.`,
+      `Changes vs last round: ${ch.length ? ch.map(L => `${L.label} ${fmt(L, S.defaults[L.key])} → ${fmt(L, d[L.key])}`).join("; ") : "none"}.`,
+      `Model projection: MV ≈ $${r.mv.toFixed(0)}M, net income ≈ $${r.niProj.toFixed(1)}M, revenue ≈ $${r.revenue.toFixed(0)}M, P/E ≈ ${(r.pe || B.pe).toFixed(2)}, quadrants ${r.sc.map(x => x.toFixed(2)).join(" / ")}, leads ${r.leads}, spend $${r.spend.toFixed(2)}M of $${B.budget}M.`
+    ].join("\n");
+  }
+  function claudeBtn(q, d) {
+    const id = "cb" + Math.random().toString(36).slice(2, 8);
+    setTimeout(() => { const b = document.getElementById(id); if (!b) return; b.onclick = () => {
+      const t = claudeBrief(q, d); const done = () => { b.textContent = "✓ Copied: paste it into the Claude chat"; b.classList.add("ok"); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => { prompt("Copy this and paste it into the Claude chat:", t); });
+      else prompt("Copy this and paste it into the Claude chat:", t); }; }, 0);
+    return `<button type="button" class="ask-claude" id="${id}">✦ Ask Claude about this <small>copies your question + the full plan context</small></button>`;
+  }
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
     if ($("#qaForm") && !$("#qaForm").dataset.on) {
       $("#qaForm").dataset.on = 1;
-      const qa = q => { if (!q.trim()) return; askSeen.add(q); askLast = q; $("#qaOut").innerHTML = `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q, state.d)}</div>`; renderAskSugg(); };
+      const qa = q => { if (!q.trim()) return; askSeen.add(q); askLast = q; $("#qaOut").innerHTML = `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q, state.d)}${claudeBtn(q, Object.assign({}, state.d))}</div>`; renderAskSugg(); };
       askRun = qa;
       $("#qaForm").onsubmit = e => { e.preventDefault(); qa($("#qaIn").value); $("#qaIn").value = ""; };
       renderAskSugg();
@@ -916,14 +941,14 @@
     top.insertAdjacentHTML("beforeend", `<button id="askBtn"><span class="ask-lbl">Ask</span> <span class="ask-star">✦</span></button>`);
     document.body.insertAdjacentHTML("beforeend", `
       <div id="askPanel"><div class="ask-head"><b>Ask the copilot</b><button id="askClose" aria-label="Close">×</button></div>
-      <div id="askLog"><div class="ask-msg bot">Ask a what-if or how-it-works question. I run our model (vs Plan A) and answer in plain English with our confidence.</div></div>
+      <div id="askLog"><div class="ask-msg bot">Ask a what-if or how-it-works question. I run our model and answer in plain English with our confidence. For anything deeper, tap <b>✦ Ask Claude about this</b> under the answer and paste it into the Claude chat.</div></div>
       <div class="ask-sugg">${["What if we lower online to $8M?", "Raise markup by 2 points?", "Should we cut vendor management?", "What if breadth goes to 60?", "What does the analytics score mean?", "Should we pay down debt?", "How do we beat $1.5B?"].map(x => `<button class="ask-s">${x}</button>`).join("")}</div>
       <form id="askForm"><input id="askIn" placeholder="e.g. What if we raise shopping experience by $3M?" autocomplete="off"><button class="primary">Ask</button></form></div>`);
     const open = v => document.getElementById("askPanel").classList.toggle("open", v);
     document.getElementById("askBtn").onclick = () => { document.getElementById("askBtn").classList.add("used"); open(true); document.getElementById("askIn").focus(); };
     document.getElementById("askClose").onclick = () => open(false);
     const ask = q => { if (!q.trim()) return; const log = document.getElementById("askLog");
-      log.insertAdjacentHTML("beforeend", `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q)}</div>`);
+      log.insertAdjacentHTML("beforeend", `<div class="ask-msg me">${q.replace(/</g, "&lt;")}</div><div class="ask-msg bot">${askAnswer(q)}${claudeBtn(q, Object.assign({}, state.d))}</div>`);
       log.scrollTop = log.scrollHeight; };
     document.getElementById("askForm").onsubmit = e => { e.preventDefault(); const i = document.getElementById("askIn"); ask(i.value); i.value = ""; };
     document.querySelectorAll("#askPanel .ask-s").forEach(b => b.onclick = () => ask(b.textContent));

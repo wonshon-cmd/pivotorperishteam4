@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R7-v101",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R7-v103",  // bump whenever data is updated (clears stale browser saves)
   round: 7,
 
   // Current financial position ($M) — END OF ROUND 6 = our Round 7 status (CSV "Round-6", exact)
@@ -270,7 +270,7 @@ window.SIM = {
 
   // Lever page: grouped by how we decide (our thought process)
   leverGroups: [
-    { q: "1 · Does it help us WIN Brand or Experience?", why: "Leading two quadrants lifts our P/E (≈ +10% per point of Brand + Experience).",
+    { q: "1 · Does it help us WIN Brand or Experience?", why: "Leading two quadrants lifts our P/E (≈ +0.45 P/E per point of Brand + Experience, fitted on R1–R6).",
       note: "<b>How brand works:</b> every product is either <b>our own label</b> (private brand %) or a <b>national brand</b> (the rest = 100% − private brand %). Each has a <b>quality</b> setting (1–10). Raising both qualities 5 → 6 lifted our Brand score +0.4. When we raised our own-label share 50 → 60% (and cut depth the same round), Brand fell −1.6, so more own-label may weaken Brand.", keys: ["experience", "service", "pbQuality", "nbQuality"] },
     { q: "2 · Does it keep Low Price at fair value?", why: "We only need to stay above 75% of the leader (we're at 4.8 vs 4.1 needed).", keys: ["vendor", "markupLow", "markupHigh"] },
     { q: "3 · Does it grow revenue cheaply?", why: "Revenue growth turns straight into profit when spending stays flat.", keys: ["breadthLow", "breadthHigh", "stores"] },
@@ -680,7 +680,7 @@ window.SIM = {
   Object.assign(L.breadthLow, { data: ["R5 test (50 → 55): breadth position 2.4 → 2.7; lower-cost sales +10.4% (vs +10.0%); inventory days 72 → 74.", "Industry average 43, max 74."], status: "Tested 55 in R5: tiny revenue gain" });
   Object.assign(L.online, { build: ["up", "Builds up", "60% is capitalized, so our online position keeps growing (0 → 1.3) and mostly stays if we cut later."],
     rule: "Online share of our sales is 48.7% and slipping: keep building the position (≈+$1.5M a round).", longTerm: "Raise to ≈$16M, cut only in the final round", status: "Raised every round; position 1.3" });
-  Object.assign(L.experience, { build: ["up", "Builds up", "20% is capitalized, so our position keeps growing (2.4 → 3.8, #1) and mostly stays if we cut later."],
+  Object.assign(L.experience, { build: ["up", "Builds up", "20% is capitalized, so our position keeps growing (2.4 → 3.9, #1) and mostly stays if we cut later."],
     rule: "We're already the industry's top spender ($20M); add ≈$1.5M a round while the budget grows.", longTerm: "Raise to ≈$21.5M, hold in the final round", status: "Raised R1, R3, R4, R5" });
   Object.assign(L.service, { longTerm: "Raise to ≈$24M and keep it there", why: "It's scored against rivals, who add ≈7% a round; it's also the only lever that lifts Experience AND Frictionless at once." });
   Object.assign(L.depthHigh, { longTerm: "Back to 30 (or 32 to test)", why: "Premium depth moves Brand; it costs inventory, not budget." });
