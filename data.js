@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R7-v103",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R7-v105",  // bump whenever data is updated (clears stale browser saves)
   round: 7,
 
   // Current financial position ($M) — END OF ROUND 6 = our Round 7 status (CSV "Round-6", exact)

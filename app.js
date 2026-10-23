@@ -28,11 +28,11 @@
 
   // ---------- Levers ----------
   const LEVERS = [
-    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 70,  step: 1,   q: "Low Price",    group: "Invest" },
-    { key: "online",      label: "Online",            unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frictionless", group: "Invest" },
-    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 30, step: 0.5, q: "Experience",   group: "Invest" },
-    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 25,  step: 0.5, q: "Frict. / Exp.", group: "Invest" },
-    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 15,  step: 0.5, q: "Multiplier",   group: "Invest" },
+    { key: "vendor",      label: "Vendor management", unit: "$M", min: 0,  max: 80,  step: 1,   q: "Low Price",    group: "Invest" },
+    { key: "online",      label: "Online",            unit: "$M", min: 0,  max: 40,  step: 0.5, q: "Frictionless", group: "Invest" },
+    { key: "experience",  label: "Shopping experience", unit: "$M", min: 0, max: 45, step: 0.5, q: "Experience",   group: "Invest" },
+    { key: "service",     label: "Customer service",  unit: "$M", min: 0,  max: 45,  step: 0.5, q: "Frict. / Exp.", group: "Invest" },
+    { key: "analytics",   label: "Customer analytics", unit: "$M", min: 0, max: 20,  step: 0.5, q: "Multiplier",   group: "Invest" },
     { key: "markupLow",   label: "Markup · lower-cost",  unit: "%", min: 20, max: 90, step: 1,   q: "Low Price",    group: "Price" },
     { key: "markupHigh",  label: "Markup · higher-cost", unit: "%", min: 20, max: 100, step: 1,  q: "Low Price",    group: "Price" },
     { key: "pbQuality",   label: "Private brand quality",  unit: "", min: 1, max: 10, step: 1,  q: "Brand",        group: "Brand" },
@@ -704,11 +704,16 @@
       if (sv) { state.d[sv.dataset.setk] = +sv.dataset.setv; syncLevers(); update(); hideLeverTip(); return; } });
     wrap.addEventListener("click", e => { const b = e.target.closest("[data-undo]"); if (!b) return;
       const k = b.dataset.undo; state.d[k] = (state.baseD || S.defaults)[k]; syncLevers(); update(); hideLeverTip(); });
+    // Any change (drag, − / + buttons, typing a number, chips) fades the hover card so the quadrants stay visible
+    let ghostT = null, dragging = false;
     const ghost = on => { const t = document.getElementById("levTip"); if (t) t.classList.toggle("ghost", on); };
+    const ghostPulse = () => { ghost(true); clearTimeout(ghostT); ghostT = setTimeout(() => { if (!dragging) ghost(false); }, 1500); };
     wrap.querySelectorAll("input[type=range]").forEach(inp => {
-      inp.addEventListener("pointerdown", () => ghost(true));
-      ["pointerup", "pointercancel", "change"].forEach(ev => inp.addEventListener(ev, () => setTimeout(() => ghost(false), 400)));
+      inp.addEventListener("pointerdown", () => { dragging = true; ghost(true); });
+      ["pointerup", "pointercancel", "change"].forEach(ev => inp.addEventListener(ev, () => { dragging = false; ghostPulse(); }));
     });
+    wrap.addEventListener("input", ghostPulse);
+    wrap.addEventListener("click", e => { if (e.target.closest("button, [data-setk], [data-xp], [data-undo]")) ghostPulse(); });
     wrap.querySelectorAll("input").forEach(inp => {
       inp.addEventListener("input", () => {
         const k = inp.dataset.k; let v = parseFloat(inp.value);
@@ -1492,8 +1497,14 @@
     });
   }
 
+  // Narrow screens: the quadrants scroll away, so a slim bar at the bottom keeps the 4 scores + value in view
+  function renderMiniBar() {
+    let el = document.getElementById("miniBar"); if (!el) { document.body.insertAdjacentHTML("beforeend", '<div id="miniBar"></div>'); el = document.getElementById("miniBar"); }
+    const r = model(state.d), st = r.cls.map(c => c.status);
+    el.innerHTML = `<b>${fmtM(r.mv)}</b>` + Q.map((q, i) => `<span class="mb-${st[i].toLowerCase()}">${q} ${r.sc[i].toFixed(1)} <i>${st[i]}</i></span>`).join("") + `<span class="mb-sp">${fmtM(r.spend)} / ${fmtM(S.base.budget)}</span>`;
+  }
   function update() {
-    autoFillTitle(); renderAskSugg();
+    autoFillTitle(); renderAskSugg(); setTimeout(renderMiniBar, 0);
     const d = state.d, r = model(d);
     const base = S.rivals[S.company];
     renderQuads(r, base);
