@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R7-v97",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R7-v98",  // bump whenever data is updated (clears stale browser saves)
   round: 7,
 
   // Current financial position ($M) — END OF ROUND 6 = our Round 7 status (CSV "Round-6", exact)
@@ -726,4 +726,12 @@ window.SIM = {
   faq("1.5", { a: "We're at <b>$1.18B</b>. Plan A projects ≈$1.36B after Round 7, then ≈$1.63B with a careful final round (keep experience) or up to ≈$1.87B with an aggressive harvest (Medium, ±8%)." });
   faq("zephara", { a: "We took Experience #1 (6.9 vs Zephara 6.5) and lead Brand by 0.7. Zephara still has the better service position (3.3 vs our 3.0) and lower costs; it's the slowest grower (+6.4%)." });
   faq("final round", { a: "Round 8 is the last. Effects that only pay off later stop mattering: cut vendor (≈$10–15M), analytics and online to near the minimum. Keep service, because it holds the Experience lead (and P/E). Shopping experience is the big call: cutting it adds profit but its position falls; we'll decide with Round 7 data." });
+})(window.SIM);
+
+// ---- Cash + inventory guidance (Round 7 status) ----
+(function (S) {
+  S.faq.unshift({ keys: ["cash", "idle cash", "inventory", "working capital", "current assets"], conf: "Medium",
+    a: "Cash <b>$122.4M</b> + inventory <b>$97.3M</b> = 87% of current assets ($250.3M). Cash earns nothing (interest $6.5M = exactly the cost of our $114M long-term debt) and there's no repay or dividend box, so it keeps piling up (≈$190M next round). It doesn't lower market value directly (value = P/E × profit, and P/E rose while cash grew), but it drags ROE (24.2% → 21.3%) and market-to-book (3.7 → 3.4). Inventory rose 11% (breadth 55, premium depth 30); days of inventory 72 → 75.",
+    rec: "Spend the full budget; use cash for stock through lower-cost depth 33 (S1/S2 value depth most), not new stores (one round to pay back). In the final round hold depth flat." });
+  S.minorCalls.unshift(["depthLow", "Raise to 33", "Paid from idle cash ($122M), no budget used; S1/S2 value depth more each round. Keep days of inventory under ≈80."]);
 })(window.SIM);
