@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R5-team-v89",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R5-sub-v90",  // bump whenever data is updated (clears stale browser saves)
   round: 5,
 
   // Current financial position ($M) — END OF ROUND 2 (exported CSVs, exact)
@@ -115,7 +115,8 @@ window.SIM = {
 ,
     { round: 3, label: "R3", d: { online: 11.5, service: 17, experience: 17, vendor: 23, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
 ,
-    { round: 4, label: "R4", d: { online: 12.5, service: 18, experience: 17.5, vendor: 20, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } }
+    { round: 4, label: "R4", d: { online: 12.5, service: 18, experience: 17.5, vendor: 20, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } },
+    { round: 5, label: "R5 submitted", d: { online: 14.5, service: 18, experience: 20, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 28, breadthLow: 55, breadthHigh: 50 } },
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -333,6 +334,13 @@ window.SIM = {
       levers: { vendor: 20, online: 12.5, experience: 18, service: 17, analytics: 5, breadthLow: 55, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthHigh: 50, pbLow: 60, pbHigh: 60 },
       why: ["<b>Highest net income (≈$64.7M)</b>; model value ≈$956M.", "Experience ≈6.33 = 97% of Zephara: still 'close to leader'."],
       risks: ["Stays #2 in Experience; if Zephara climbs we slip below 95%."]
+    },
+    {
+      id: "S", name: "What we submitted (Round 5)", badge: "Submitted", segs: [5, 3],
+      tag: "Entered on the Round 5 screen · $76.52M of $77.48M ($0.98M left)",
+      levers: { vendor: 18, online: 14.5, experience: 20, service: 18, analytics: 6, breadthLow: 55, breadthHigh: 50, depthLow: 30, depthHigh: 28, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185 },
+      why: ["Model projection on file: <b>MV ≈ $952M</b>, net income ≈ $63.2M, revenue ≈ $682M, debt ≈ $112M; Brand 5.08, <b>Experience ≈6.54 vs Zephara 6.5 (coin flip for #1)</b>, Low Price 4.76, Frictionless ≈4.03."],
+      risks: ["Vendor 20 → 18 widens the unit-cost gap (Medium). Depth (higher-cost) 30 → 28 and breadth 55 are untested (Low). Compare when Round 5 results arrive."]
     },
     {
       id: "C", name: "Change nothing", badge: "Safe", segs: [5, 3],
