@@ -758,7 +758,7 @@
     const vsLbl = baseOverride ? "vs your current sliders" : `vs Plan ${rec.id || "A"}`;
     let P = askParse(q);
     const tl = q.toLowerCase(), faqHit = (S.faq || []).find(x => x.keys.some(k => tl.includes(k)));
-    if (P && faqHit && P.dir === 0 && P.num == null && /\b(mean|what is|what's|explain|why|how does|how do|score)\b/.test(tl)) P = null;
+    if (P && faqHit && P.dir === 0 && P.num == null) P = null;   // no raise/cut/number → it's a "how does it work / what should we do" question
     if (!P) {
       const t = q.toLowerCase();
       const f = (S.faq || []).find(x => x.keys.some(k => t.includes(k)));
