@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R6-v93",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R6-sub-v94",  // bump whenever data is updated (clears stale browser saves)
   round: 6,
 
   // Current financial position ($M) — END OF ROUND 5 = our Round 6 status (CSV "Round-5", exact)
@@ -123,6 +123,7 @@ window.SIM = {
 ,
     { round: 4, label: "R4", d: { online: 12.5, service: 18, experience: 17.5, vendor: 20, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } },
     { round: 5, label: "R5", d: { online: 14.5, service: 18, experience: 20, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 28, breadthLow: 55, breadthHigh: 50 } },
+    { round: 6, label: "R6 submitted", d: { online: 16, service: 24, experience: 21.5, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 55, breadthHigh: 50 } },
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -237,7 +238,7 @@ window.SIM = {
       { r: "R3", model: "v5", mvP: 579, mvA: 533.8, niP: 35.3, niA: 34.4, qErr: "Exp 6.46 vs 6.3", fix: "Service saturates; P/E drift" },
       { r: "R4", model: "v6", mvP: 717, mvA: 772.4, niP: 47.2, niA: 50.7, qErr: "Exp 6.29 vs 6.4", fix: "Debt = free cash flow" },
       { r: "R5", model: "v7", mvP: 952, mvA: 1024.2, niP: 63.2, niA: 66.6, qErr: "Brand 5.08 vs 4.9 · Exp 6.54 vs 6.3 · Fric 4.03 vs 3.8", fix: "v8: position model relative to industry spend; P/E drift 1.0; cash builds" },
-      { r: "R6 (now)", model: "v8", mvP: 1333, mvA: null, niP: 79.3, niA: null, qErr: "Plan A: Exp ≈7.0 · Brand ≈5.05", fix: "Compare when Round 6 results arrive" }
+      { r: "R6 (submitted)", model: "v8", mvP: 1354, mvA: null, niP: 77.4, niA: null, qErr: "Brand ≈5.45 · Exp ≈7.02 · Fric ≈4.58", fix: "Compare when Round 6 results arrive" }
     ],
     next: "So for this round: raise service to ≈$24M to win the Experience lead back, put higher-cost depth back to 30 for Brand, and spend the rest of the bigger $85.5M budget on experience and online, which keep building."
   },
@@ -347,6 +348,13 @@ window.SIM = {
       levers: { vendor: 18, online: 14.5, experience: 20, service: 24, analytics: 6, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, pbLow: 60, pbHigh: 60 },
       why: ["Highest value this round (≈$1.34B) because less is expensed, but it builds less shopping-experience and online position for Rounds 7–8."],
       risks: ["$3M unspent; Experience ≈6.94 (still #1)."]
+    },
+    {
+      id: "S", name: "What we submitted (Round 6)", badge: "Submitted", segs: [5, 3],
+      tag: "Entered on the Round 6 screen · $85.50M of $85.52M ($0.02M left)",
+      levers: { vendor: 18, online: 16, experience: 21.5, service: 24, analytics: 6, breadthLow: 55, breadthHigh: 50, depthLow: 30, depthHigh: 30, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, pbLow: 60, pbHigh: 60, stores: 185 },
+      why: ["Plan A + quality 7/7. Model projection on file: <b>MV ≈ $1,354M</b>, net income ≈ $77.4M, revenue ≈ $763M; <b>Brand ≈5.45, Experience ≈7.02 (lead)</b>, Low Price 4.8, Frictionless ≈4.58."],
+      risks: ["Service +33% and quality 7 are the big moves (Medium / High). Zephara may also raise service. Compare when Round 6 results arrive."]
     },
     {
       id: "C", name: "Change nothing", badge: "Safe", segs: [5, 3],
