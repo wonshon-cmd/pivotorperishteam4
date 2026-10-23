@@ -67,16 +67,19 @@
     const b = S.rivals[S.company], d0 = S.defaults, P = S.posNow || {}, A = S.indAvgNext || {}, A0 = S.indAvgNow || {};
     // v8 (refit on R0–R5): quadrant moves = moves in the game's product positions (audit R0–R5)
     // Brand: quality (+0.2/step each, R1 A/B) + higher-cost DEPTH (R0→R1 depth 50→30 and R5 30→28 both moved Brand ≈ with the depth position: 0.075/pt)
-    const brand = 0.2 * (d.pbQuality - d0.pbQuality) + 0.2 * (d.nbQuality - d0.nbQuality) + 0.075 * (d.depthHigh - d0.depthHigh);
+    // v9 (R6): quality 6 → 7 moved our private-brand positions +0.3 and Brand ≈ +0.25 (less than 5 → 6 did: diminishing);
+    // depth 28 → 30 only +0.1 position (rivals' depth rose). Brand = 0.12/quality step (each) + 0.06/pt higher-cost depth
+    const brand = 0.12 * (d.pbQuality - d0.pbQuality) + 0.12 * (d.nbQuality - d0.nbQuality) + 0.06 * (d.depthHigh - d0.depthHigh);
     // Service position is RELATIVE: ≈2.15 × (our spend ÷ industry avg). Rivals raise service ≈7.5%/round, so flat spend loses ground.
     const svcPos = s => 2.15 * s / (A.service || 16.3), dSvc = svcPos(d.service) - 2.15 * d0.service / (A0.service || 15.2);
     // Shopping-experience and online positions BUILD toward a target set by our spend ÷ industry avg (25% of the gap per round)
     const dExp = 0.25 * (2.5 * d.experience / (A.experience || 12.7) - (P.exp || 3.8));
-    const dOnl = 0.25 * (2.2 * d.online / (A.online || 17.9) - (P.onl || 1.3));
+    const dOnl = 0.2 * (2.2 * d.online / (A.online || 19.4) - (P.onl || 1.4));   // v9: builds 20% of the gap per round (R5 +0.2, R6 +0.1)
     const dAn = 0.03 * (d.analytics - d0.analytics);   // tiny, untested
     const lowP = 1.0 * (sq(d.vendor, 30) - sq(d0.vendor, 30)) - 0.07 * (d.markupLow - d0.markupLow) - 0.035 * (d.markupHigh - d0.markupHigh);
+    const dr = S.drift || [0, 0, 0, 0];
     const delta = [brand, dExp + dSvc + dAn, lowP, dOnl + dSvc + dAn];
-    return b.map((v, i) => clamp(v + delta[i], 0, 10));
+    return b.map((v, i) => clamp(v + delta[i] + (dr[i] || 0), 0, 10));
   }
 
   function demand(sc) {
@@ -90,7 +93,7 @@
       const a0 = s.weights.reduce((t, w, i) => t + w * base[i] / topB[i], 0);
       idx += s.clvShare * (a / a0);
     });
-    idx = 1 + 0.2 * (idx - 1);
+    idx = 1 + (S.base.demandW ?? 0.2) * (idx - 1);   // v9: weight refit on R6 share gain
     const pen = arr => arr.reduce((p, v, i) => {
       const r = v / lead[i];
       const fr = S.fairRatio || 0.75;
@@ -120,11 +123,11 @@
     const mB = WL * d.markupLow / 100 + (1 - WL) * d.markupHigh / 100;
     const dIdx = demand(sc);
     const vol = dIdx * Math.pow((1 + m0) / (1 + mB), 3.2) * Math.pow(d.stores / D0.stores, 0.1) * Math.pow(mix(d, "depth") / mix(D0, "depth"), 0.02)
-      * Math.pow(mix(d, "breadth") / mix(D0, "breadth"), 0.15); // breadth = customers' #2 value (1.41); low confidence, never tested
+      * Math.pow(mix(d, "breadth") / mix(D0, "breadth"), 0.05); // v9: R5 test (lower breadth 50 → 55) lifted lower-cost growth only ≈+0.4 pt → small elasticity
     const revenue = B.revenue * vol * (1 + mB) / (1 + m0) * (1 + (S.base.growth || 0) * (S.noGrowth ? 0 : 1));
 
     // Gross margin held 36.2–36.3% in R0–R2 despite quality 5→6 and vendor 30→25: cost effects are small
-    const costIdx = (dd) => 1 - 0.03 * sq(dd.vendor, 30) + 0.003 * (dd.pbQuality - 5) + 0.003 * (dd.nbQuality - 5) - 0.0004 * (mix(dd, "pb") - 50);
+    const costIdx = (dd) => 1 - 0.03 * sq(dd.vendor, 30) + 0.003 * (dd.pbQuality - 5) + 0.003 * (dd.nbQuality - 5) - 0.0004 * (mix(dd, "pb") - 50);  // R6: quality 7 lifted unit cost ≈+2% vs rivals but margin held (markup is on cost)
     const k = (B.cogs / B.revenue) * (1 + m0) / costIdx(D0);
     const cogs = revenue / (1 + mB) * costIdx(d) * k;
     const gross = revenue - cogs;
@@ -153,7 +156,7 @@
     // the rest nets to ≈ NI + 2.5 (dep exceeds capex by ~$6M; receivables + cash − payables ≈ $3.5M)
     const retained = (ebit - B.interest * 0.85) * 0.65 + 2.5;
     // v8: short-term loans hit $0 in R5; long-term debt only runs off ≈$2.8M/round, so extra free cash flow now piles up as CASH
-    const ltNow = B.debt - (B.stLoans ?? 0), ltNext = Math.max(0, ltNow - 2.8);
+    const ltNow = B.debt - (B.stLoans ?? 0), ltNext = Math.max(0, ltNow - 4.5);   // R6: LT debt 116.7 → 112.0
     const debtRaw = B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed - retained;
     const debt = Math.max(ltNext, debtRaw);
     const cash = B.cash - 0.4 * (openCapex + onlineCap) + Math.max(0, ltNext - debtRaw);
@@ -208,15 +211,19 @@
     const clvVal = B.clv * (S.base.clvF || 0.1) * dIdx * (1 + 0.004 * (mix(d, "pb") - 50)) * (1 + 0.04 * (d.pbQuality - 5));
     const liq = cash + 0.6 * B.inventory + 0.8 * B.receivables + 0.4 * B.netPPE * d.stores / D0.stores - debt - B.ap;
     // R1 mulligan A/B: P/E 13.9 → 16.6 for +1.8 Brand+Experience ≈ +10% P/E per point (profit effect is modelled separately)
-    const mvK = Math.exp(0.10 * ((sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1])));
+    // v9: R6 Brand + Experience +0.9 lifted P/E only ≈3% (15.4 → 15.9) → 0.035 per point (was 0.10 from the R1 mulligan)
+    // v9 P/E fit on R1–R6 (max error 0.26): P/E ≈ 14.06 + 0.445 × (Brand + Experience) − 0.33 × WACC → change form below
+    const dBE = (sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1]);
+    const peNext = (S.base.pe || 15) + 0.445 * dBE;
+    const mvK = 1;
     // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
     const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
-    const mv = S.base.pe ? Math.max(S.base.pe * (S.base.peDrift || 1) * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
+    const mv = S.base.pe ? Math.max(peNext * (S.base.peDrift || 1) * Math.max(niProj, 0) * mvK, liq) : Math.max(dcf, clvVal, liq) * mvK;
     const method = S.base.pe ? "P/E × net income" : mv === dcf ? "DCF" : mv === clvVal ? "CLV / brand" : "Liquidation";
 
     const spend = d.online + d.service + d.experience + d.vendor + d.analytics + Math.max(0, newStores) * 1.75;
 
-    return { niProj, sc, cls, leads, gaps, revenue, gross, ebit, roic, wacc, rate, rating, debt, cash, T, g, interest, cr, cov, DE, inventory,
+    return { pe: peNext, niProj, sc, cls, leads, gaps, revenue, gross, ebit, roic, wacc, rate, rating, debt, cash, T, g, interest, cr, cov, DE, inventory,
              dcf, clvVal, liq, mv, method, spend, dIdx, dcfRaw };
   }
 
@@ -398,6 +405,21 @@
       tile("Debt", fm(k.debt), (k.debt / k.equity).toFixed(1) + "× equity", k.debt / k.equity > 2),
       k.roic ? tile("ROIC vs WACC", k.roic + "% vs " + k.wacc + "%", k.roic >= k.wacc ? "creating value" : "growth destroys value", k.roic < k.wacc) : tile("Customer lifetime value", fm(k.clv), "WACC " + k.wacc + "%", false)
     ].join("");
+
+    // Game scorecard "Financial metrics" (+ days of inventory), with the move vs the round before
+    const fs = $("#finStrip");
+    if (fs) {
+      const f = r.fin, pr = (R[standIdx - 1] || {}).fin;
+      fs.innerHTML = !f ? "" : `<div class="fin-h">Financial metrics <small>game scorecard · ▲▼ vs the round before</small></div><div class="fin-row">` + [
+        ["Return on sales", "ros", "%", 1], ["Asset turnover", "at", "×", 1], ["Return on assets", "roa", "%", 1], ["Return on equity", "roe", "%", 1],
+        ["WACC", "wacc", "%", -1], ["P/E", "pe", "", 1], ["Market to book", "mb", "×", 1], ["Market value", "mv", "$M", 1], ["Change in value", "chg", "%", 1],
+        ["Gross margin", "gm", "%", 1], ["Operating expense", "opex", "% of sales", -1], ["Days of inventory", "days", " days", -1]
+      ].map(([lbl, key, u, good]) => {
+        const v = f[key], p0 = pr ? pr[key] : null, d = p0 == null ? 0 : v - p0, cls = !d ? "fl" : (d * good > 0 ? "up" : "dn");
+        const val = u === "$M" ? "$" + v.toLocaleString(undefined, { maximumFractionDigits: 1 }) + "M" : v + (u === "×" ? "×" : u === "%" ? "%" : u === " days" ? " days" : u === "% of sales" ? "%" : "");
+        return `<div class="fin-c"><small>${lbl}</small><b>${val}</b>${p0 == null ? "" : `<i class="${cls}">${d > 0 ? "▲" : d < 0 ? "▼" : "="} ${d ? Math.abs(d).toFixed(key === "mv" ? 0 : 1) : ""}</i>`}</div>`;
+      }).join("") + `</div>${f.note ? `<div class="fin-note">${f.note}</div>` : ""}`;
+    }
 
     const m = r.matrix;
     $("#standQuads").innerHTML = Q.map((q, i) => {
@@ -938,7 +960,11 @@
       <div class="zc-grid"><table class="zc-tab"><tr><th></th><th>Us</th><th>Zephara</th></tr>${Z.compare.map(([n, u, z, w]) => `<tr><td>${n}</td><td class="${w > 0 ? "win" : w < 0 ? "lose" : ""}">${u}</td><td>${z}</td></tr>`).join("")}</table>
       <div class="zc-moves">${Z.moves.map(([v, t, d, c]) => `<div class="zm"><span class="cb ${v.toLowerCase()}">${v}</span><div><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div>
       <div class="zc-w"><b>Watch next round:</b> ${Z.watch}</div></div>`;
-    document.querySelectorAll(".zeph-slot").forEach(el => el.innerHTML = html);
+    const E = S.endgame, eg = !E ? "" : (() => { const mx = Math.max(...E.share.map(x => x[1]));
+      return `<div class="zc eg"><div class="zc-h"><div><div class="zc-t">${E.title}</div><div class="zc-s">${E.sub}</div></div></div>
+      <div class="eg-grid"><div class="eg-share"><div class="eg-lab">Revenue market share · Round 6</div>${E.share.map(([n, v]) => `<div class="eg-bar ${n === S.company ? "us" : ""}"><span>${n}</span><i><b style="width:${v / mx * 100}%"></b></i><em>${v}%</em></div>`).join("")}<div class="eg-note">${E.shareNote}</div></div>
+      <div class="eg-steps">${E.steps.map(([r, t, d, c], i) => `<div class="eg-step"><span class="eg-n">${i + 1}</span><div><small>${r}</small><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div></div>`; })();
+    document.querySelectorAll(".zeph-slot").forEach(el => el.innerHTML = eg + html);
   }
 
 
@@ -1590,7 +1616,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; renderTeamCmp(); autoFillTitle(); liveStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; window.__calibrate = () => calibrate(); renderTeamCmp(); autoFillTitle(); liveStart();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };
