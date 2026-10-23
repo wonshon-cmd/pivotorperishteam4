@@ -1527,7 +1527,7 @@
     ].filter(x => x[1] > 0);
     const total = Math.max(S.base.budget, r.spend);
     $("#moneyBar").innerHTML = items.map(([n, v, q]) =>
-      `<div style="flex-basis:${v / total * 100}%;background:${QCOL[q]}" title="${n} $${v}M">${v / total > 0.13 ? n + " $" + Math.round(v) + "M" : ""}</div>`).join("");
+      `<div style="flex-basis:${v / total * 100}%;background:${QCOL[q]}" title="${n} $${v}M">${v / total > 0.2 ? n + " $" + Math.round(v) + "M" : v / total > 0.08 ? "$" + Math.round(v) + "M" : ""}</div>`).join("");
     $("#moneyTxt").textContent = fmtM(r.spend) + " of " + fmtM(S.base.budget);
 
     const moves = LEVERS.map(L => ({ L, dv: d[L.key] - S.defaults[L.key] }))
