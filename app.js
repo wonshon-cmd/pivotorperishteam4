@@ -64,22 +64,19 @@
   }
 
   function scores(d) {
-    const b = S.rivals[S.company], d0 = S.defaults;
-    const am = 0.8 + 0.2 * Math.sqrt(Math.max(d.analytics, 0) / 10);   // analytics = multiplier
-    const am0 = 0.8 + 0.2 * Math.sqrt(Math.max(d0.analytics, 0) / 10);
-    const f = (dd, m) => [
-      // R1 A/B: quality 6/6 vs 5/5 ≈ +0.4. R0→R1 (both runs): PB 50→60% + depth 50→30 cost Brand −1.6 (split 50/50, low confidence)
-      0.2 * dd.pbQuality + 0.2 * dd.nbQuality - 0.08 * mix(dd, "pb") + 0.04 * mix(dd, "depth"),
-      m * 2.34 * sq(dd.experience, 10) + 6.85 * (1 - Math.exp(-dd.service / 5.2)), // v6: service SATURATES (R3: +$2M → only ≈+0.12); fits try 1, R1 final, R2, R3 exactly
-      1.0 * sq(dd.vendor, 30) - 0.07 * dd.markupLow - 0.035 * dd.markupHigh,
-      m * 0.08 * Math.log(Math.max(dd.online, 0.5) / 2) + 2.5 * sq(dd.service, 15) // immediate effect small; the build-up is in the drift below
-    ];
-    const now = f(d, am), then = f(d0, am0);
-    const dr = (S.drift || [0, 0, 0, 0]).slice(); // standing still loses ground (R2: Experience −0.1)
-    // Audit R0–R4: online is 60% capitalized, so our online position builds ≈+0.3/round at ~0.83× industry spend,
-    // offset by our service position slipping as rivals raise service → net Frictionless build ≈ +0.1/round, scaled by online spend
-    dr[3] += 0.1 * Math.min(1.5, d.online / Math.max(d0.online, 1));
-    return b.map((v, i) => clamp(v + now[i] - then[i] + dr[i], 0, 10));
+    const b = S.rivals[S.company], d0 = S.defaults, P = S.posNow || {}, A = S.indAvgNext || {}, A0 = S.indAvgNow || {};
+    // v8 (refit on R0–R5): quadrant moves = moves in the game's product positions (audit R0–R5)
+    // Brand: quality (+0.2/step each, R1 A/B) + higher-cost DEPTH (R0→R1 depth 50→30 and R5 30→28 both moved Brand ≈ with the depth position: 0.075/pt)
+    const brand = 0.2 * (d.pbQuality - d0.pbQuality) + 0.2 * (d.nbQuality - d0.nbQuality) + 0.075 * (d.depthHigh - d0.depthHigh);
+    // Service position is RELATIVE: ≈2.15 × (our spend ÷ industry avg). Rivals raise service ≈7.5%/round, so flat spend loses ground.
+    const svcPos = s => 2.15 * s / (A.service || 16.3), dSvc = svcPos(d.service) - 2.15 * d0.service / (A0.service || 15.2);
+    // Shopping-experience and online positions BUILD toward a target set by our spend ÷ industry avg (25% of the gap per round)
+    const dExp = 0.25 * (2.5 * d.experience / (A.experience || 12.7) - (P.exp || 3.8));
+    const dOnl = 0.25 * (2.2 * d.online / (A.online || 17.9) - (P.onl || 1.3));
+    const dAn = 0.03 * (d.analytics - d0.analytics);   // tiny, untested
+    const lowP = 1.0 * (sq(d.vendor, 30) - sq(d0.vendor, 30)) - 0.07 * (d.markupLow - d0.markupLow) - 0.035 * (d.markupHigh - d0.markupHigh);
+    const delta = [brand, dExp + dSvc + dAn, lowP, dOnl + dSvc + dAn];
+    return b.map((v, i) => clamp(v + delta[i], 0, 10));
   }
 
   function demand(sc) {
@@ -155,9 +152,12 @@
     // Debt falls by the free cash flow (exact R2–R4): NI + depreciation − capex − working capital. Inventory growth is in invFreed;
     // the rest nets to ≈ NI + 2.5 (dep exceeds capex by ~$6M; receivables + cash − payables ≈ $3.5M)
     const retained = (ebit - B.interest * 0.85) * 0.65 + 2.5;
-    const debt = Math.max(0, B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed - retained);
-    const cash = B.cash - 0.4 * (openCapex + onlineCap);
-    const stLoans = Math.max(0, debt - (B.debt - (B.stLoans || 158.4)));
+    // v8: short-term loans hit $0 in R5; long-term debt only runs off ≈$2.8M/round, so extra free cash flow now piles up as CASH
+    const ltNow = B.debt - (B.stLoans ?? 0), ltNext = Math.max(0, ltNow - 2.8);
+    const debtRaw = B.debt + 0.6 * (openCapex + onlineCap) - closeRecover - invFreed - retained;
+    const debt = Math.max(ltNext, debtRaw);
+    const cash = B.cash - 0.4 * (openCapex + onlineCap) + Math.max(0, ltNext - debtRaw);
+    const stLoans = Math.max(0, debt - ltNext);
     const DE = debt / B.equity, DE0 = B.debt / B.equity;
 
     // Credit rating 0–9 from the professor's three ratios
@@ -166,7 +166,7 @@
     const avgDebt0 = (B.debt + (B.debtPrev || B.debt)) / 2;
     const rate0 = B.interest / avgDebt0 * 100; // interest ≈ 9.5% of average debt in R1 and R2
     const ebit0 = S.base.ebit0 || ebit;
-    const cr0 = (B.cash + B.receivables + B.inventory) / (B.ap + (B.stLoans || 158.4));
+    const cr0 = (B.cash + B.receivables + B.inventory) / (B.ap + (B.stLoans ?? 158.4));
     const rating0 = ratingOf(cr0, ebit0 / B.interest, DE0);
     let rate = rate0, interest = debt * rate / 100, rating = rating0, cr = cr0, cov = 0;
     for (let k = 0; k < 3; k++) {
