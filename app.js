@@ -842,6 +842,44 @@
     box.innerHTML = `<span class="qa-try">Try:</span>` + askSuggest(state.d).map(x => `<button type="button" class="ask-s">${x}</button>`).join("");
     box.querySelectorAll(".ask-s").forEach(b => b.onclick = () => askRun(b.textContent));
   }
+  // Paste a plan → sliders: reads "Label: value" lines (game export, Mike's tool, a chat message) and maps labels to levers
+  const PASTE_MAP = [
+    [/national.*quality|quality.*national|\bnb\b.*quality/, "nbQuality"], [/(private|own).*quality|quality.*(private|own)|\bpb\b.*quality/, "pbQuality"],
+    [/(private|own).*(higher|high)|(higher|high).*(private|own)/, "pbHigh"], [/(private|own).*(lower|low)|(lower|low).*(private|own)/, "pbLow"],
+    [/markup.*(higher|high)|(higher|high).*markup/, "markupHigh"], [/markup.*(lower|low)|(lower|low).*markup/, "markupLow"],
+    [/breadth.*(higher|high)|(higher|high).*breadth/, "breadthHigh"], [/breadth.*(lower|low)|(lower|low).*breadth/, "breadthLow"],
+    [/depth.*(higher|high)|(higher|high).*depth/, "depthHigh"], [/depth.*(lower|low)|(lower|low).*depth/, "depthLow"],
+    [/online/, "online"], [/service/, "service"], [/experience/, "experience"], [/vendor/, "vendor"], [/analytic/, "analytics"], [/stores?\b|retail coverage/, "stores"]
+  ];
+  const PASTE_SKIP = /budget|spend|remaining|status|target|priority|hypothesis|verify|other|round|team|draft|note/;
+  function parsePlan(txt) {
+    const got = {}, skipped = [], unread = [];
+    String(txt).split(/\r?\n/).forEach(line => {
+      const m = line.match(/^\s*([^:=]{2,60})[:=]\s*(.+)$/); if (!m) return;
+      const lab = m[1].toLowerCase().replace(/[-_]/g, " ").trim(), val = m[2];
+      if (PASTE_SKIP.test(lab)) { skipped.push(m[1].trim()); return; }
+      const hit = PASTE_MAP.find(([re]) => re.test(lab)); if (!hit) { unread.push(m[1].trim()); return; }
+      const num = parseFloat(val.replace(/[$,\s]/g, "").replace(/[a-z%]+$/i, "")); if (isNaN(num)) { unread.push(m[1].trim()); return; }
+      const L = LEVERS.find(x => x.key === hit[1]); got[hit[1]] = Math.max(L.min, Math.min(L.max, num));
+    });
+    return { got, skipped, unread };
+  }
+  function initPaste() {
+    if (!$("#ppGo") || $("#ppGo").dataset.on) return; $("#ppGo").dataset.on = 1;
+    const fmt = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+    $("#ppGo").onclick = () => {
+      const P = parsePlan($("#ppIn").value), keys = Object.keys(P.got);
+      if (!keys.length) { $("#ppOut").innerHTML = `<div class="pp-msg warn">I couldn't find any slider values. Use lines like “Online investment: $13.5m” or “Stores: 185”.</div>`; return; }
+      const before = Object.assign({}, state.d); keys.forEach(k => state.d[k] = P.got[k]); syncLevers(); update();
+      const ch = LEVERS.filter(L => Math.abs(state.d[L.key] - before[L.key]) > 1e-9), r = model(state.d), over = r.spend > S.base.budget + 1e-6;
+      const missing = LEVERS.filter(L => !(L.key in P.got)).map(L => L.label);
+      $("#ppOut").innerHTML = `<div class="pp-msg"><div class="hp-top"><b>✓ Read ${keys.length} of ${LEVERS.length} boxes · ${ch.length} slider${ch.length === 1 ? "" : "s"} moved</b><button type="button" class="hp-undo" id="ppUndo">↶ Undo</button></div>
+        ${ch.length ? `<div class="hp-ch">${ch.map(L => `<span>${L.label}: ${fmt(L, before[L.key])} → <b>${fmt(L, state.d[L.key])}</b></span>`).join("")}</div>` : "<div>Every value already matched the sliders.</div>"}
+        <div class="hp-res"><div><small>Market value</small><b>${fmtM(r.mv)}</b><i>Medium</i></div><div><small>Experience</small><b>${r.sc[1].toFixed(2)} ${r.sc[1] >= r.cls[1].leader ? "#1" : "#2"}</b><i>High</i></div><div><small>Spend</small><b style="${over ? "color:#b42318" : ""}">${fmtM(r.spend)}${over ? " ⚠ over" : ""}</b><i>of ${fmtM(S.base.budget)}</i></div></div>
+        ${missing.length ? `<div class="pp-note">Not in the paste, left as they were: ${missing.join(", ")}.</div>` : ""}${P.unread.length ? `<div class="pp-note">Couldn't match: ${P.unread.join(", ")}.</div>` : ""}</div>`;
+      $("#ppUndo").onclick = () => { state.d = before; syncLevers(); update(); $("#ppOut").innerHTML = `<div class="pp-msg">Undone: sliders are back where they were.</div>`; };
+    };
+  }
   function confPill(c) { const col = { High: "#1a7f37", Medium: "#9a6700", Low: "#b42318" }[c]; return `<span class="ask-conf" style="color:${col};border-color:${col}">${c} confidence</span>`; }
   function initAsk() {
     if ($("#qaForm") && !$("#qaForm").dataset.on) {
@@ -1552,7 +1590,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); renderTeamCmp(); autoFillTitle(); liveStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); renderTeamCmp(); autoFillTitle(); liveStart();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };

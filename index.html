@@ -7,7 +7,7 @@
   <title>Getchells Strategy Copilot · Team 4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=R5-team-v88">
+  <link rel="stylesheet" href="styles.css?v=R5-team-v89">
 </head>
 <body>
 
@@ -194,6 +194,12 @@
           <div class="qa-sugg"></div>
           <div id="qaOut" class="qa-out"></div>
         </div>
+        <div class="qa pp">
+          <div class="qa-head">Paste a plan <span>we'll set the sliders to match (Undo anytime)</span></div>
+          <textarea id="ppIn" rows="5" placeholder="Paste any plan with lines like:&#10;Online investment: $13.5m&#10;Customer service: $19m&#10;Lower-cost markup: 54.00%&#10;Stores: 185"></textarea>
+          <div class="pp-act"><button class="primary" id="ppGo">Set sliders to this plan</button><span class="pp-hint">Reads “Label: value” lines; budget, notes and hypothesis lines are skipped.</span></div>
+          <div id="ppOut"></div>
+        </div>
       </main>
 
       <aside class="panel value-panel">
@@ -239,7 +245,7 @@
     </div>
   </div>
 
-  <script src="data.js?v=R5-team-v88"></script>
-  <script src="app.js?v=R5-team-v88"></script>
+  <script src="data.js?v=R5-team-v89"></script>
+  <script src="app.js?v=R5-team-v89"></script>
 </body>
 </html>
