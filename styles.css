@@ -871,3 +871,9 @@ details.fold[open] summary { margin-bottom: 12px; }
 .eg-cgrid { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 18px; font-size: 13px; } @media (max-width: 1000px) { .eg-cgrid { grid-template-columns: 1fr; } }
 .eg-bt { display: flex; gap: 8px; flex-wrap: wrap; } .eg-bt span { background: var(--bg); border-radius: 8px; padding: 4px 8px; display: flex; flex-direction: column; } .eg-bt small { color: var(--muted); font-size: 11px; } .eg-bt b { font-size: 14px; }
 .eg-cgrid ul { margin: 4px 0 0 16px; padding: 0; line-height: 1.45; }
+/* Ask v2: short answer first, compact table */
+.ask-short { margin: 4px 0 8px; padding: 9px 11px; border-radius: 10px; line-height: 1.45; }
+.ask-short.yes { background: #e6f4ea; color: #14532d; } .ask-short.no { background: #fde8e6; color: #7f1d1d; } .ask-short.meh { background: #fdf3dc; color: #5c3d00; }
+.ask-tbl { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
+.ask-tbl th, .ask-tbl td { padding: 4px 6px; border-bottom: 1px solid #e6e8ef; text-align: right; }
+.ask-tbl th:first-child, .ask-tbl td:first-child { text-align: left; color: #555; }

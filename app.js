@@ -749,77 +749,204 @@
   ];
   const STEP = { experience: 2, service: 2, online: 2, vendor: 3, analytics: 1, markupLow: 2, markupHigh: 2, pbQuality: 1, nbQuality: 1, pbLow: 5, pbHigh: 5, breadthLow: 5, breadthHigh: 5, depthLow: 5, depthHigh: 5, stores: 10 };
   function askParse(q) {
-    const t = " " + q.toLowerCase().replace(/[?!]/g, " ") + " ";
+    let t = " " + q.toLowerCase().replace(/[?!]/g, " ") + " ";
+    t = t.replace(/\b(zero|nothing|nil)\b/g, "0").replace(/\bhalf\b/g, "50%").replace(/\bdouble\b/g, "100% more");
     let hit = null;
     for (const [id, words, keys] of ASK_LEVERS) { if (words.some(w => t.includes(w))) { hit = keys; break; } }
     if (!hit) return null;
     const up = /\b(raise|increase|more|add|higher|up|boost|grow|open|expand|spend more)\b/.test(t);
     const down = /\b(lower|cut|decrease|reduce|less|down|drop|trim|close|shrink|spend less|remove)\b/.test(t);
-    const num = (t.match(/\$?\s*(\d+(?:\.\d+)?)\s*(m|%|pts?|points?)?/) || [])[1];
+    const mm = t.match(/\$?\s*(\d+(?:\.\d+)?)\s*(m\b|%|percent|pts?\b|points?\b)?/) || [];
     const to = /\bto\s+\$?\s*\d/.test(t), by = /\bby\s+\$?\s*\d/.test(t);
-    return { keys: hit, dir: down && !up ? -1 : up && !down ? 1 : (down ? -1 : 0), num: num == null ? null : +num, to, by };
+    return { keys: hit, dir: down && !up ? -1 : up && !down ? 1 : (down ? -1 : 0), num: mm[1] == null ? null : +mm[1], pct: /%|percent/.test(mm[2] || ""), to, by };
+  }
+  // ---- Ask v2 helpers: tested range, official guidance, quadrant standing ----
+  const GF = () => S.gameFairRatio || 2 / 3, FR = () => S.fairRatio || 0.75;
+  function testedRange(k) {
+    const v = (S.decisionLog || []).map(x => x.d && x.d[k]).filter(x => x != null).concat([S.defaults[k]]);
+    return [Math.min(...v), Math.max(...v)];
+  }
+  const fmtL = (L, v) => L.unit === "$M" ? "$" + (+(+v).toFixed(2)) + "M" : (+(+v).toFixed(2)) + (L.unit === "%" ? "%" : "");
+  function quadStanding(v, i) {
+    const { lead, who } = rivalLeaders(), L = lead[i], rk = quadRank(v, i);
+    const line = v >= L * 0.95 ? (rk.rank === 1 ? "LEAD" : "near the lead") : v >= FR() * L ? "above fair value (75%)" : v >= GF() * L ? `above the game's fair line (≈${(GF() * L).toFixed(2)}) but below the slides' 75% (${(FR() * L).toFixed(2)})` : `BELOW fair value (game line ≈${(GF() * L).toFixed(2)})`;
+    return `${Q[i]} <b>${v.toFixed(2)}</b> · ${rk.txt} · ${line}`;
+  }
+  function guideConflict(k, was, v) {
+    const up = v > was, rel = was ? (v - was) / was : 1;
+    if (k === "online" && v <= 0.01) return "Online is the professor's Frictionless lever and fair value is required in all four quadrants. $0 online goes against that, and how fast the score falls after a cut is untested.";
+    if (k === "online" && rel <= -0.2) return "Online is the professor's Frictionless lever; Frictionless is already our weakest quadrant.";
+    if (k === "vendor" && !up) return "The slides call vendor management the most reliable long-term lever (lower costs, can lower WACC). Our model only sees the saving.";
+    if (k === "analytics" && !up) return "The slides call analytics a multiplier for shopping experience and online. Our model can't measure that, so the saving looks better than it is.";
+    if (k === "stores" && up) return "The slides call stores the most common value trap ($1.75M each, more assets and debt). With two rounds left they can't pay back.";
+    if (k === "experience" && rel <= -0.15) return "Shopping experience carries our Experience lead, one of our two leads. How fast the score falls after a cut is untested.";
+    if (k === "service" && rel <= -0.1) return "Service is scored against rivals, who add 10–12% a round; cutting it drops Experience and Frictionless together.";
+    if (["markupLow", "markupHigh"].includes(k) && Math.abs(v - was) >= 2) return "We have never changed markups (54% / 66% all game), so the size of the sales response is a guess.";
+    return "";
+  }
+  const FINAL_RE = /final round|round 8|last round|end of the game|endgame|last year/;
+  // A plan (several boxes) → full answer: short verdict, numbers, standing, professor's rule, how sure, what I'd do
+  function askEval(q, base, d, changes, vsLbl) {
+    const r0 = model(base), r1 = model(d), t = q.toLowerCase();
+    const m = (x, dp = 0) => (x >= 0 ? "+" : "−") + "$" + Math.abs(x).toFixed(dp) + "M";
+    const dMV = r1.mv - r0.mv, dNI = r1.niProj - r0.niProj, dRev = r1.revenue - r0.revenue;
+    const dSpend = r1.spend - r0.spend, over = r1.spend > S.base.budget + 1e-6, err = r0.mv * 0.04;
+    const k0 = changes[0][0].key, I = (S.leverInfo || {})[k0] || {};
+    const moved = [0, 1, 2, 3].filter(i => Math.abs(r1.sc[i] - r0.sc[i]) >= 0.01);
+    const newGap = [0, 1, 2, 3].filter(i => { const L = rivalLeaders().lead[i]; return r1.sc[i] < GF() * L && r0.sc[i] >= GF() * L; });
+    const conflicts = changes.map(([L, a, b]) => guideConflict(L.key, a, b)).filter(Boolean);
+    const untested = changes.filter(([L, a, b]) => { const [lo, hi] = testedRange(L.key); return b < lo - 1e-9 || b > hi + 1e-9; });
+    const lowConf = changes.filter(([L]) => ((S.leverInfo || {})[L.key] || {}).conf === "Low");
+    // verdict (most serious first)
+    let v, cls;
+    if (over) { v = `The game won't accept it: ${fmtM(r1.spend - S.base.budget)} over the ${fmtM(S.base.budget)} budget.`; cls = "no"; }
+    else if (r1.leads < r0.leads) { v = "Don't do it: we'd lose a quadrant lead, and leading two quadrants is the professor's main rule for market value."; cls = "no"; }
+    else if (newGap.length) { v = `Not advised: ${newGap.map(i => Q[i]).join(" and ")} would drop below fair value, which the professor says we must hold in all four quadrants.`; cls = "no"; }
+    else if (conflicts.length && dMV > 0) { v = `Our model shows ${m(dMV)}, but I wouldn't do it: it goes against the professor's guidance, and that effect isn't in our model, so the gain isn't verified.`; cls = "no"; }
+    else if (untested.length || lowConf.length) { v = `Untested ground: our model says ${m(dMV)}, but we've never tried ${(untested.length ? untested : lowConf).map(([L, a, b]) => `${L.label.toLowerCase()} at ${fmtL(L, b)}`).join(" or ")}, so treat the number as a guess.${dMV > err ? " If you want it, take a small step." : ""}`; cls = "meh"; }
+    else if (dMV > err) { v = `Worth doing: about ${m(dMV)} of value, more than the model's error (≈${m(err).replace("+", "")}), with no lead or fair value lost.`; cls = "yes"; }
+    else if (dMV < -err) { v = `Not recommended: it costs about ${m(dMV).replace("−", "")} of value.`; cls = "no"; }
+    else { v = `About neutral: ${m(dMV)} is within the model's error (±${m(err).replace("+", "")}). Decide on the quadrant effects below.`; cls = "meh"; }
+    // confidence
+    let conf = (I.conf || "Medium");
+    if (untested.length || conflicts.length || lowConf.length) conf = "Low"; else if (changes.length > 1 && conf === "High") conf = "Medium";
+    // numbers
+    const chain = [];
+    if (Math.abs(dSpend) >= 0.05) chain.push(`Budget: we ${dSpend > 0 ? "spend" : "save"} <b>$${Math.abs(dSpend).toFixed(1)}M</b> (${fmtM(r1.spend)} of ${fmtM(S.base.budget)}).`);
+    if (Math.abs(dRev) >= 0.5) chain.push(`Revenue ${dRev > 0 ? "rises" : "falls"} ≈${m(dRev)}.`);
+    chain.push(`Net income ${dNI >= 0 ? "+" : "−"}$${Math.abs(dNI).toFixed(1)}M → market value (P/E × profit) <b>${m(dMV)}</b>: ${fmtM(r0.mv)} → ${fmtM(r1.mv)} (likely range ${fmtM(r1.mv * 0.92)}–${fmtM(r1.mv * 1.08)}).`);
+    const stand = (moved.length ? moved : []).map(i => `<li>${quadStanding(r1.sc[i], i)} <span class="mut">(${r1.sc[i] >= r0.sc[i] ? "+" : "−"}${Math.abs(r1.sc[i] - r0.sc[i]).toFixed(2)})</span></li>`).join("");
+    // professor's guidance + how sure
+    const G = S.guide || {}, gl = [...new Set(changes.map(([L]) => G[L.key]).filter(Boolean))];
+    const sure = changes.map(([L, a, b]) => { const [lo, hi] = testedRange(L.key), avg = (S.indAvgNext || {})[L.key] || (S.indAvgNow || {})[L.key];
+      return `${L.label}: we've played ${fmtL(L, lo)}–${fmtL(L, hi)}${b < lo - 1e-9 || b > hi + 1e-9 ? ` → <b>${fmtL(L, b)} is outside that</b>` : ""}${avg ? `; rivals' average ≈$${(+avg).toFixed(1)}M (${(b / avg).toFixed(1)}×)` : ""}.`; });
+    const fin = FINAL_RE.test(t);
+    const doIt = cls === "yes" ? "Do it." : `Stick with Plan A (${changes.map(([L]) => `${L.label.toLowerCase()} ${fmtL(L, (recPlanD())[L.key])}`).join(", ")})${cls === "meh" ? " unless the team wants to test it with a small step" : ""}.`;
+    const what = changes.map(([L, a, b]) => `${L.label} ${fmtL(L, a)} → <b>${fmtL(L, b)}</b>`).join(", ");
+    return `<div class="ask-short ${cls}"><b>Short answer:</b> ${v}</div>
+      <div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>
+      ${fin ? `<div class="ask-hyp"><b>Final round:</b> our model scores the next round, so read the numbers as direction only. Final-round call: ${changes.map(([L]) => `<b>${L.label}</b>: ${(S.finalCall || {})[L.key] || "hold"}`).join(" ")}</div>` : ""}
+      ${changes.length === 1 && I.what ? `<div class="ask-plain"><b>How it works:</b> ${I.what} ${changes[0][2] > changes[0][1] ? (I.up || "") : (I.down || "")}</div>` : ""}
+      <div class="ask-sub">What our model says</div><ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}${stand}</ul>
+      ${gl.length ? `<div class="ask-data"><b>Professor's guidance</b><ul>${gl.map(x => `<li>${x}</li>`).join("")}</ul></div>` : ""}
+      ${conflicts.length ? `<div class="ask-hyp"><b>⚠ Goes against the guidance:</b> ${conflicts.join(" ")}</div>` : ""}
+      <div class="ask-data"><b>How sure</b><ul>${sure.map(x => `<li>${x}</li>`).join("")}<li>Model error on market value: ≈4% average over Rounds 2–6 (worst 7%).</li></ul></div>
+      <div class="ask-rec"><b>What I'd do:</b> ${doIt}</div>${confPill(conf)}`;
+  }
+  function recPlanD() { const rec = (S.plans || []).find(p => p.badge === "Recommended") || {}; return Object.assign({}, S.defaults, rec.levers || {}); }
+  // Status, plans, model accuracy, guidance, risk, "what moves X": answered from live numbers
+  function askIntent(q, d, P) {
+    const t = q.toLowerCase(), r = model(d), change = P && (P.dir !== 0 || P.num != null);
+    const li = (a) => `<ul class="ask-chain">${a.map(x => `<li>${x}</li>`).join("")}</ul>`;
+    const qi = Q.findIndex(n => t.includes(n.toLowerCase())) >= 0 ? Q.findIndex(n => t.includes(n.toLowerCase())) : /friction/.test(t) ? 3 : /low.?price|price score/.test(t) ? 2 : -1;
+    // rivals push: rivals' service +15% (we assume +10%) and Zephara Experience +0.3
+    if (/(zephara|rivals?|competitors?|cadabra|bestco|pricemart|kt benny|\baim\b)[^.]*\b(raise|raises|push|pushes|spend more|spends more|catch|catches|increase|increases|add|adds|beat|overtake)/.test(t)) {
+      const keep = { a: S.indAvgNext, z: S.rivals.Zephara };
+      S.indAvgNext = Object.assign({}, S.indAvgNext, { service: (S.indAvgNow || {}).service * 1.15 }); S.rivals.Zephara = S.rivals.Zephara.slice(); S.rivals.Zephara[1] += 0.3;
+      let rp; try { rp = model(d); } finally { S.indAvgNext = keep.a; S.rivals.Zephara = keep.z; }
+      const z = (S.rivals.Zephara[1] + 0.3), holds = rp.sc[1] > z;
+      return `<div class="ask-short ${holds ? "yes" : "no"}"><b>Short answer:</b> ${holds ? `Yes, with these sliders we keep Experience #1 even if rivals push harder: ${rp.sc[1].toFixed(2)} vs Zephara ≈${z.toFixed(2)}` : `No: Experience ${rp.sc[1].toFixed(2)} would fall behind Zephara ≈${z.toFixed(2)}`}.</div>
+        <div class="ask-sub">Stress test: rivals raise service 15% (we plan for 10%) and Zephara's Experience jumps +0.3</div>
+        ${li([`Normal case: Experience ${r.sc[1].toFixed(2)}, Frictionless ${r.sc[3].toFixed(2)}, value ${fmtM(r.mv)}.`, `Rivals push: Experience <b>${rp.sc[1].toFixed(2)}</b>, Frictionless <b>${rp.sc[3].toFixed(2)}</b> (game fair line ≈${(GF() * rivalLeaders().lead[3]).toFixed(2)}), value ${fmtM(rp.mv)}.`, "Service is scored against rivals' average, so it is the lever that answers a rival push; shopping experience builds slowly (25% of the gap a round)."])}
+        <div class="ask-rec"><b>What I'd do:</b> ${holds ? "Keep Plan A's service ($32M). Watch Zephara's Experience each round; if it passes 7.0, raise service in the final round." : "Raise service by $2–4M before submitting."}</div>${confPill("Medium")}`;
+    }
+    // what moves a quadrant
+    if (/what (else )?(moves|drives|affects|raises|lifts|improves|helps|changes)|how (do|can) we (raise|improve|lift|increase|grow|fix)|levers? for/.test(t) && qi >= 0) {
+      const tests = [["online", 1], ["service", 1], ["analytics", 1], ["experience", 1], ["vendor", 1], ["markupLow", -1], ["pbQuality", 1], ["nbQuality", 1], ["depthHigh", 1]];
+      const off = { Brand: "Private + national brand quality (high-quality brands)", Experience: "Shopping experience, customer service, customer analytics", "Low Price": "Vendor management, markup", Frictionless: "Online, customer service, customer analytics" }[Q[qi]];
+      const rows = tests.map(([k, st]) => { const dd = Object.assign({}, d); dd[k] += st; const r1 = model(dd); return [k, st, r1.sc[qi] - r.sc[qi], r1.mv - r.mv]; }).filter(x => Math.abs(x[2]) >= 0.005).sort((a, b) => b[2] - a[2]);
+      const lbl = k => LEVERS.find(L => L.key === k).label, stp = (k, s) => { const L = LEVERS.find(x => x.key === k); return L.unit === "$M" ? "+$1M" : s < 0 ? "−1 pt" : "+1"; };
+      const conf = { service: "High", online: "Medium", analytics: "Low", experience: "Medium", vendor: "Medium", markupLow: "Low", pbQuality: "Medium", nbQuality: "Medium", depthHigh: "Medium" };
+      return `<div class="ask-short meh"><b>Short answer:</b> the professor's map says <b>${Q[qi]}</b> moves with: ${off}.</div>
+        <div class="ask-sub">Measured in our data (per step, from your current sliders)</div>
+        ${li(rows.map(([k, st, dq, dv]) => `${lbl(k)} ${stp(k, st)} → ${Q[qi]} <b>+${dq.toFixed(2)}</b> · value ${dv >= 0 ? "+" : "−"}$${Math.abs(dv).toFixed(0)}M <span class="mut">(${conf[k] || "Medium"})</span>`))}
+        ${qi === 3 ? `<div class="ask-plain">Service is the strongest Frictionless lever per dollar (≈5× online) because it is scored against rivals' spend and counts for Experience too. Online builds slowly (60% capitalized, position 1.4) and analytics is the slides' multiplier, but we've never measured it cleanly. Breadth, depth and stores don't move the matrix.</div>` : ""}
+        <div class="ask-rec"><b>What I'd do:</b> ${qi === 3 ? "Use service (Plan A $32M) and hold online $16M + analytics $6M. Don't cut online." : qi === 1 ? "Service first, shopping experience second; keep analytics as the multiplier." : qi === 0 ? "Hold quality 7/7 and premium depth 30; Brand is already #1 by 0.7." : "Hold vendor $18M and markups 54/66: Low Price is already above fair value."}</div>${confPill("Medium")}`;
+    }
+    // compare plans
+    if (/plan\s*[abc]\b.*\b(vs|versus|or|better|compare|than|difference)|\bcompare\b.*plan|which plan|why plan/.test(t)) {
+      const ps = S.plans || [];
+      return `<div class="ask-short yes"><b>Short answer:</b> Plan A follows the professor's rules with the fewest changes; B earns more in our model only by cutting the two levers the slides call most reliable (vendor) and a multiplier (analytics); C risks the Experience lead.</div>
+        <table class="ask-tbl"><tr><th></th>${ps.map(p => `<th>Plan ${p.id}</th>`).join("")}</tr>
+        ${[["Market value", p => fmtM(model(Object.assign({}, S.defaults, p.levers)).mv)], ["Net income", p => "$" + model(Object.assign({}, S.defaults, p.levers)).niProj.toFixed(1) + "M"], ["Spend", p => fmtM(model(Object.assign({}, S.defaults, p.levers)).spend)],
+           ...Q.map((n, i) => [n, p => model(Object.assign({}, S.defaults, p.levers)).sc[i].toFixed(2)]), ["Leads", p => model(Object.assign({}, S.defaults, p.levers)).leads], ["Label", p => p.badge]]
+          .map(([n, f]) => `<tr><td>${n}</td>${ps.map(p => `<td>${f(p)}</td>`).join("")}</tr>`).join("")}</table>
+        ${li(ps.map(p => `<b>Plan ${p.id} · ${p.name}:</b> ${p.why[0]}`))}<div class="ask-rec"><b>What I'd do:</b> Plan A. The ≈$38M gap to B is inside the model's error and rests on effects we can't verify.</div>${confPill("Medium")}`;
+    }
+    // model accuracy
+    if (/accura|trust the model|how good is the model|model error|reliable is the model|how reliable|track record/.test(t)) {
+      const C = (S.endgame || {}).check || {};
+      return `<div class="ask-short meh"><b>Short answer:</b> within ≈4% on market value on average (worst 7%), quadrant scores within 0.15, when we replay Rounds 2–6 from their real starting points.</div>
+        ${li((C.rows || []).map(([a, b]) => `${a}: ${b}`))}<div class="ask-data"><b>Verified</b><ul>${(C.verified || []).map(x => `<li>${x}</li>`).join("")}</ul></div>
+        <div class="ask-hyp"><b>Untested (treat as guesses):</b> ${(C.untested || []).join("; ")}.</div>
+        <div class="ask-rec"><b>What it means:</b> differences under ≈$55M between two plans are inside the error. Decide those on the professor's rules and quadrant positions, not the value number.</div>${confPill("High")}`;
+    }
+    // risk of the current plan or a lever
+    if (/\brisk|safe\b|safer|sure\b|danger|worried|confident/.test(t) && !(P && P.dir !== 0)) {
+      const k = P && P.keys && P.keys[0];
+      if (k) { const L = LEVERS.find(x => x.key === k), [lo, hi] = testedRange(k), v = P.num != null && !P.pct ? P.num : d[k], avg = (S.indAvgNext || {})[k] || (S.indAvgNow || {})[k], I = (S.leverInfo || {})[k] || {}, out = v < lo - 1e-9 || v > hi + 1e-9;
+        return `<div class="ask-short ${out ? "meh" : "yes"}"><b>Short answer:</b> ${L.label} at ${fmtL(L, v)} is ${out ? `<b>outside what we've tested</b> (${fmtL(L, lo)}–${fmtL(L, hi)}), so the size of its effect is a guess` : `inside what we've tested (${fmtL(L, lo)}–${fmtL(L, hi)})`}.</div>
+          ${li([avg ? `Rivals' average ≈$${(+avg).toFixed(1)}M → we'd be at ${(v / avg).toFixed(1)}×.` : "", I.data && I.data[0], k === "service" ? "Downside if returns flatten above ≈1.5×: we overpay ≈$2–4M. It does not cost a lead. A smaller step ($30M) keeps both leads in our base case, but Frictionless then sits right on the game's fair line." : "", (S.guide || {})[k] ? "Professor: " + S.guide[k] : ""].filter(Boolean))}
+          <div class="ask-rec"><b>What I'd do:</b> ${I.longTerm || "Hold Plan A's value"}.</div>${confPill(out ? "Low" : I.conf || "Medium")}`; }
+      const fl = riskFlags(d);
+      return `<div class="ask-short ${fl.length ? "meh" : "yes"}"><b>Short answer:</b> ${fl.length ? `${fl.length} thing${fl.length > 1 ? "s" : ""} to double-check in the current sliders` : "nothing risky in the current sliders"}.</div>
+        ${fl.length ? li(fl.map(f => `<b>${f.label}</b>${f.from != null ? ` ${f.from} → ${f.to}` : ""}: ${f.why}`)) : ""}
+        <div class="ask-hyp"><b>Untested in general:</b> ${(((S.endgame || {}).check || {}).untested || []).join("; ")}.</div>${confPill("Medium")}`;
+    }
+    // where we stand / leads / fair value
+    if (!change && /(lead|leading|rank|#1|number one|winning|ahead|behind|fair value|where (do|are) we|standing|status|two quadrants|2 quadrants)/.test(t)) {
+      const now = S.rivals[S.company];
+      return `<div class="ask-short ${r.leads >= 2 ? "yes" : "meh"}"><b>Short answer:</b> ${r.leads >= 2 ? "Yes: these sliders keep two leads (Brand + Experience)" : `These sliders lead ${r.leads} quadrant${r.leads === 1 ? "" : "s"}`}${r.gaps ? `; ${r.cls.filter(c => c.status === "GAP").map(c => c.q).join(", ")} is below the slides' 75% fair value` : "; fair value everywhere"}.</div>
+        <div class="ask-sub">Now (Round ${S.round} status, real game data)</div>${li(now.map((v, i) => quadStanding(v, i)))}
+        <div class="ask-sub">After these sliders (projected)</div>${li(r.sc.map((v, i) => quadStanding(v, i)))}
+        <div class="ask-plain">Professor: lead (or be close to) two quadrants and hold fair value (75% of the leader) in the other two. The game's chart draws its fair line near 2/3.</div>${confPill("High")}`;
+    }
+    // projected value
+    if (!change && /(market value|value|worth).*(be|end|get|look|reach)|what will|projected|forecast|how much (will|would|can)|how high/.test(t)) {
+      const fr = (((S.endgame || {}).steps || [])[1] || [])[2] || "";
+      return `<div class="ask-short meh"><b>Short answer:</b> about <b>${fmtM(r.mv)}</b> after this round with these sliders (likely ${fmtM(r.mv * 0.92)}–${fmtM(r.mv * 1.08)}); about $1.62–1.67B after a steady final round.</div>
+        ${li([`Value = P/E × net income: ${r.pe.toFixed(1)} × $${r.niProj.toFixed(1)}M.`, `Now: ${fmtM(S.base.marketValue)} (Round ${S.round} status).`, "Final round: " + fr])}${confPill("Medium")}`;
+    }
+    // professor / rules
+    if (/professor|slides?\b|guideline|official|by the book|kahn|rules?\b|course material/.test(t)) {
+      const k = P && P.keys && P.keys[0];
+      if (k && !change) return `<div class="ask-short meh"><b>Short answer:</b> ${(S.guide || {})[k] || "The slides don't single this lever out."}</div><div class="ask-rec"><b>How we apply it:</b> ${((S.leverInfo || {})[k] || {}).longTerm || ""}. Final round: ${(S.finalCall || {})[k] || "hold"}</div>${confPill("High")}`;
+      if (!k) { const chk = [[r.leads >= 2, `Lead two quadrants: ${r.leads} lead${r.leads === 1 ? "" : "s"}`], [!r.gaps, `Fair value in the other two: ${r.gaps ? r.cls.filter(c => c.status === "GAP").map(c => c.q + " " + c.score.toFixed(2) + " vs 75% " + c.fair.toFixed(2)).join(", ") : "yes"}`], [r.spend <= S.base.budget + 1e-6, `Within budget: ${fmtM(r.spend)} of ${fmtM(S.base.budget)}`], [r.roic > r.wacc, `ROIC beats WACC: ${(r.roic - r.wacc).toFixed(1)} pts`]];
+        return `<div class="ask-short meh"><b>Short answer:</b> the professor's rules, checked against your current sliders.</div>${li(chk.map(([ok, x]) => `${ok ? "✓" : "✗"} ${x}`))}<div class="ask-data"><b>The official rules</b><ul>${((S.guide || {}).general || []).map(x => `<li>${x}</li>`).join("")}</ul></div>${confPill("High")}`; }
+    }
+    return null;
   }
   function askAnswer(q, baseOverride) {
-    const rec = (S.plans || []).find(p => p.badge === "Recommended") || {};
-    const base = baseOverride ? Object.assign({}, baseOverride) : Object.assign({}, S.defaults, rec.levers || {});
-    const vsLbl = baseOverride ? "vs your current sliders" : `vs Plan ${rec.id || "A"}`;
+    const base = baseOverride ? Object.assign({}, baseOverride) : recPlanD();
+    const vsLbl = baseOverride ? "vs your current sliders" : "vs Plan A";
     let P = askParse(q);
     const tl = q.toLowerCase(), faqHit = (S.faq || []).find(x => x.keys.some(k => tl.includes(k)));
+    const intent = askIntent(q, base, P); if (intent) return intent;
     if (P && faqHit && P.dir === 0 && P.num == null) P = null;   // no raise/cut/number → it's a "how does it work / what should we do" question
+    // several boxes in one question ("cut vendor to 15 and analytics to 4")
+    const multi = askPlan(q, base);
+    if (multi.changes.length >= 2) return askEval(q, base, multi.d, multi.changes, vsLbl);
     if (!P) {
-      const t = q.toLowerCase();
-      const f = (S.faq || []).find(x => x.keys.some(k => t.includes(k)));
-      if (!f) return `<p>I can answer two kinds of questions:</p><ul><li><b>What-ifs</b>: “What if we lower online to $8M?”, “Raise markup by 2 points?”, “Cut vendor management?”</li><li><b>How things work</b>: debt, P/E, budget, analytics score, segments, fair value, final round, beating $1.5B.</li></ul>`;
-      return `${f.a}<div class="ask-rec"><b>What I'd do:</b> ${f.rec}</div>${confPill(f.conf)}`;
+      if (!faqHit) return `<div class="ask-short meh"><b>I didn't catch a lever or topic in that.</b></div><p>Try:</p><ul><li><b>What-ifs:</b> “Cut online to $10M?”, “Service 30 instead of 32?”, “Cut vendor to 15 and analytics to 4”</li><li><b>Status:</b> “Are we leading two quadrants?”, “What will our market value be?”, “How accurate is the model?”</li><li><b>Rules + risk:</b> “What does the professor say about vendor?”, “Is service at 32 risky?”, “What moves Frictionless?”, “Plan A vs B?”</li></ul><p class="mut">For anything else, tap ✦ Ask Claude below and paste it into the chat.</p>`;
+      return `<div class="ask-short meh"><b>Short answer:</b> ${faqHit.rec || ""}</div><div class="ask-plain">${faqHit.a}</div>${confPill(faqHit.conf || "Medium")}`;
     }
     const d = Object.assign({}, base), changes = [];
     P.keys.forEach(k => {
       const L = LEVERS.find(x => x.key === k); if (!L) return;
       const was = base[k]; let v;
-      if (P.num != null && P.to) v = P.num;
-      else if (P.num != null) v = was + (P.dir || 1) * P.num;
+      const rel = P.pct && L.unit !== "%";   // "cut experience by 25%" → relative change
+      if (P.num != null && P.to) v = rel ? was * P.num / 100 : P.num;
+      else if (P.num != null && P.dir === 0 && !P.by) v = rel ? was * P.num / 100 : P.num;
+      else if (P.num != null) v = rel ? was * (1 + (P.dir || 1) * P.num / 100) : was + (P.dir || 1) * P.num;
       else v = was + (P.dir || 1) * STEP[k];
-      if (P.num != null && !P.to && !P.by && P.dir === 0) v = P.num;
-      v = Math.max(L.min, Math.min(L.max, Math.round(v * 10) / 10));
+      v = Math.max(L.min, Math.min(L.max, Math.round(v * 100) / 100));
       d[k] = v; changes.push([L, was, v]);
     });
-    const r0 = model(base), r1 = model(d);
-    const fmt = (L, v) => L.unit === "$M" ? "$" + v + "M" : v + (L.unit === "%" ? "%" : "");
-    const m = (x, dp = 1) => (x >= 0 ? "+" : "−") + "$" + Math.abs(x).toFixed(dp) + "M";
-    const gm0 = r0.gross / r0.revenue * 100, gm1 = r1.gross / r1.revenue * 100;
-    const dSpend = (d.online + d.service + d.experience + d.vendor + d.analytics) - (base.online + base.service + base.experience + base.vendor + base.analytics);
-    const qd = r1.sc.map((v, i) => [Q[i], v - r0.sc[i]]).filter(x => Math.abs(x[1]) >= 0.01);
-    const dMV = r1.mv - r0.mv, dNI = r1.niProj - r0.niProj, dRev = r1.revenue - r0.revenue, dDebt = r1.debt - r0.debt;
-    const k0 = changes[0][0].key, I = (S.leverInfo || {})[k0] || {}, G = (S.leverGroups || []).find(g => g.keys.includes(k0));
-    const what = changes.map(([L, a, b]) => `${L.label} ${fmt(L, a)} → <b>${fmt(L, b)}</b>`).join(", ");
-    // plain-English chain
-    const chain = [];
-    if (Math.abs(dSpend) >= 0.05) chain.push(`We ${dSpend > 0 ? "spend" : "save"} <b>$${Math.abs(dSpend).toFixed(1)}M</b> a year${["online", "experience"].includes(k0) ? ` (only part of it hits this year's costs: ${k0 === "online" ? "40%" : "80%"})` : ""}.`);
-    if (Math.abs(dRev) >= 0.5) chain.push(`Revenue ${dRev > 0 ? "rises" : "falls"} ≈${m(dRev, 0)}${Math.abs(gm1 - gm0) >= 0.05 ? ` and gross margin moves ${gm0.toFixed(1)}% → ${gm1.toFixed(1)}%` : ""}.`);
-    else if (Math.abs(gm1 - gm0) >= 0.05) chain.push(`Gross margin moves ${gm0.toFixed(1)}% → ${gm1.toFixed(1)}%.`);
-    if (qd.length) chain.push(`Quadrant scores: ${qd.map(([n, v]) => `${n} ${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`).join(", ")}.`);
-    chain.push(`Net income ${dNI >= 0 ? "rises" : "falls"} <b>${m(dNI)}</b>${Math.abs(dDebt) >= 0.5 ? `, debt ${dDebt > 0 ? "up" : "down"} ${m(Math.abs(dDebt), 1).replace("+", "")}` : ""}.`);
-    chain.push(`Market value (P/E × profit) moves <b>${m(dMV, 0)}</b>: ${fmtM(r0.mv)} → ${fmtM(r1.mv)}.`);
-    // recommendation
-    const lostLead = r0.leads > r1.leads, gainLead = r1.leads > r0.leads;
-    let verdict, vcls;
-    if (lostLead) { verdict = "Don't do it: we'd lose a quadrant lead, which costs P/E over time even if this round's number looks fine."; vcls = "no"; }
-    else if (dMV > 5) { verdict = `Worth doing: about ${m(dMV, 0)} of value${gainLead ? " and it adds a quadrant lead" : ""}.`; vcls = "yes"; }
-    else if (dMV < -5) { verdict = `Not recommended: it costs about ${m(dMV, 0).replace("−", "")} of value.`; vcls = "no"; }
-    else { verdict = "Roughly neutral this round (within the model's error). Decide on the long-term reason below."; vcls = "meh"; }
-    if (vcls === "yes" && I.conf === "Low") { verdict = `Looks worth it in our model (${m(dMV, 0)}), but this lever is untested, so the number is a guess. Take a small step first and check the result next round.`; vcls = "meh"; }
-    if (k0 === "vendor" && changes[0][2] < changes[0][1] && !lostLead) { verdict = `This round looks like ${m(dMV, 0)}, but the higher-cost penalty builds up over the following rounds (our costs are already 1.8% above rivals). Best saved for the final round.`; vcls = "meh"; }
-    const data = (I.data || []).slice(0, 2).map(x => `<li>${x}</li>`).join("");
-    const goingUp = changes[0][2] > changes[0][1];
-    const plain = I.what ? `<div class="ask-plain"><b>In plain English:</b> ${I.what}<br>${goingUp ? (I.up || "") : (I.down || "")}${I.build ? `<div class="lt-build bu-${I.build[0]}" style="margin-top:6px"><b>${I.build[1]}:</b> ${I.build[2]}</div>` : ""}</div>` : "";
-    return `<div class="ask-what">${what} <span class="mut">(${vsLbl})</span></div>${plain}
-      <div class="ask-sub">What our model says, in numbers:</div>
-      <ul class="ask-chain">${chain.map(c => `<li>${c}</li>`).join("")}</ul>
-      <div class="ask-verdict ${vcls}">${verdict}</div>
-      ${data ? `<div class="ask-data"><b>From the game data</b><ul>${data}</ul></div>` : ""}
-      ${I.hypothesis ? `<div class="ask-hyp"><b>Untested:</b> ${I.hypothesis}</div>` : ""}
-      <div class="ask-rec"><b>Long term:</b> ${I.longTerm || ""}. ${I.why || ""}${G ? ` <span class="mut">(${G.why})</span>` : ""}</div>
-      ${confPill(I.conf || "Medium")}`;
+    if (changes.every(([L, a, b]) => Math.abs(a - b) < 1e-9)) {
+      const L = changes[0][0];
+      return `<div class="ask-short meh"><b>Short answer:</b> ${L.label} is already ${fmtL(L, changes[0][1])} in ${baseOverride ? "your sliders" : "Plan A"}, so nothing changes.</div><p>Ask “Is ${L.label.toLowerCase()} at ${fmtL(L, changes[0][1])} risky?” or “What if we raise ${L.label.toLowerCase()} to …?”</p>`;
+    }
+    return askEval(q, base, d, changes, vsLbl);
   }
   // Hypothesis → plan: "experience to 24 and cut vendor by 2, breadth 60" → several lever changes applied together
   function askPlan(q, base) {

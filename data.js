@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R7-v108",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R7-v109",  // bump whenever data is updated (clears stale browser saves)
   round: 7,
 
   // Current financial position ($M) — END OF ROUND 6 = our Round 7 status (CSV "Round-6", exact)
@@ -127,6 +127,7 @@ window.SIM = {
     { round: 4, label: "R4", d: { online: 12.5, service: 18, experience: 17.5, vendor: 20, analytics: 6, pbLow: 60, pbHigh: 60, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 50, breadthHigh: 50 } },
     { round: 5, label: "R5", d: { online: 14.5, service: 18, experience: 20, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 6, nbQuality: 6, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 28, breadthLow: 55, breadthHigh: 50 } },
     { round: 6, label: "R6", d: { online: 16, service: 24, experience: 21.5, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 30, depthHigh: 30, breadthLow: 55, breadthHigh: 50 } },
+    { round: 7, label: "R7", d: { online: 17, service: 32.3, experience: 21.5, vendor: 18, analytics: 6, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, pbLow: 60, pbHigh: 60, stores: 185, depthLow: 33, depthHigh: 30, breadthLow: 55, breadthHigh: 50 } },
   ],
   // What each round's changes did (cause → effect → lesson)
   lessons: [
@@ -247,7 +248,7 @@ window.SIM = {
       { r: "R4", model: "v6", mvP: 717, mvA: 772.4, niP: 47.2, niA: 50.7, qErr: "Exp 6.29 vs 6.4", fix: "Debt = free cash flow" },
       { r: "R5", model: "v7", mvP: 952, mvA: 1024.2, niP: 63.2, niA: 66.6, qErr: "Brand 5.08 vs 4.9 · Exp 6.54 vs 6.3", fix: "v8: position model" },
       { r: "R6", model: "v8", mvP: 1354, mvA: 1179.4, niP: 77.4, niA: 74.3, qErr: "Brand 5.45 vs 5.2 · Exp 7.02 vs 6.9 · Fric 4.58 vs 4.3", fix: "v9: P/E bonus 0.035/pt; quality diminishing; growth 8.5%" },
-      { r: "R7 (now)", model: "v9", mvP: 1407, mvA: null, niP: 86.9, niA: null, qErr: "Plan A: Exp ≈7.57 · Fric ≈4.93", fix: "Compare when Round 7 results arrive" }
+      { r: "R7", model: "v9", mvP: 1403, mvA: 1464.9, niP: 86.5, niA: 85.7, qErr: "P/E 17.1 vs 16.2 forecast", fix: "Refit P/E when the CSVs arrive" }
     ],
     next: "So for this round: keep both leads (service $30M, experience $24.8M), hold quality 7 and depth 30, and start banking: vendor and analytics build nothing for the final, so cut them now. Next round is the last: that's when we cut hard."
   },
@@ -742,4 +743,64 @@ window.SIM = {
     a: "Cash <b>$122.4M</b> + inventory <b>$97.3M</b> = 87% of current assets ($250.3M). Cash earns nothing (interest $6.5M = exactly the cost of our $114M long-term debt) and there's no repay or dividend box, so it keeps piling up (≈$190M next round). It doesn't lower market value directly (value = P/E × profit, and P/E rose while cash grew), but it drags ROE (24.2% → 21.3%) and market-to-book (3.7 → 3.4). Inventory rose 11% (breadth 55, premium depth 30); days of inventory 72 → 75.",
     rec: "Spend the full budget; use cash for stock through lower-cost depth 33 (S1/S2 value depth most), not new stores (one round to pay back). In the final round hold depth flat." });
   S.minorCalls.unshift(["depthLow", "Raise to 33", "Paid from idle cash ($122M), no budget used; S1/S2 value depth more each round. Keep days of inventory under ≈80."]);
+})(window.SIM);
+
+// ---- Ask v2: the professor's official guidance per lever (quoted from the course slides) + final-round calls ----
+(function (S) {
+  S.gameFairRatio = 2 / 3;   // the fair line the game actually draws (≈2/3 of leader); the slides say 75%
+  S.guide = {
+    general: [
+      "Goal: increase the market value of Getchells (Intro slides).",
+      "Market value rises most by leading (or being close to leading) TWO quadrants while keeping fair value (75% of the leader) in the other two (Intro).",
+      "One dimension = one-trick pony; three or four = too costly. Two + parity is the sweet spot (Market Value slides).",
+      "Do NOT feel compelled to spend the entire budget; balance strategic spending against margins (Intro).",
+      "A clear, stable strategy shortens the forecast horizon T, which raises value. A 1–2 pt WACC change swings value 20–30% (Market Value slides).",
+      "Idle, growing cash is a warning signal: redeploy it into stores, breadth or depth (Market Value slides)."
+    ],
+    vendor: "“Most reliable long-term value lever… reduces COGS over time… can lower WACC by reducing financial risk. Start early.” Vendor management = Low Price (Market Value + Intro slides).",
+    analytics: "“Does not affect demand alone: a pure multiplier that amplifies online and experience investments.” Analytics = Frictionless + Experience (Market Value + Intro slides).",
+    service: "Customer service = Frictionless AND Experience (Intro). “Immediate satisfaction boost, little persistence, all costs expensed… tactical, not strategic” (Market Value slides).",
+    experience: "Shopping experience = Experience (Intro). “Medium-term persistence; most cost expensed… most effective when paired with analytics and margin discipline” (Market Value slides).",
+    online: "Online = Frictionless (Intro). “Partially capitalized… creates value only when demand gains exceed the financial risk added” (Market Value slides). Fair value is required in ALL four quadrants.",
+    stores: "“Stores change access, not preference… the most powerful growth lever and the most common value trap. Expand only after proving a positive ROIC–WACC spread” (Market Value slides).",
+    markupLow: "Markup = Low Price (Intro). “Immediate effect on demand, no persistence… the trade-off is direct and computable” (Market Value slides).",
+    pbQuality: "Carrying high-quality brands = Brand (Intro). “Raises willingness to pay but increases COGS… must be paired with supply-chain discipline (vendor management)” (Market Value slides).",
+    pbLow: "Private brand mix “boosts differentiation, loyalty and gross margins… requires quality and cost discipline” (Market Value slides).",
+    breadthLow: "Breadth & depth: “retained over time; increases customer appeal and basket size… capital-intensive, so watch ROIC” (Market Value slides). Idle cash should go into stores, breadth or depth.",
+    depthLow: "Breadth & depth: “retained over time; increases customer appeal and basket size… capital-intensive, so watch ROIC” (Market Value slides). Idle cash should go into stores, breadth or depth."
+  };
+  ["markupHigh"].forEach(k => S.guide[k] = S.guide.markupLow);
+  ["nbQuality"].forEach(k => S.guide[k] = S.guide.pbQuality);
+  ["pbHigh"].forEach(k => S.guide[k] = S.guide.pbLow);
+  ["breadthHigh"].forEach(k => S.guide[k] = S.guide.breadthLow);
+  ["depthHigh"].forEach(k => S.guide[k] = S.guide.depthLow);
+  // What we'd do with each lever in the final round (Round 8): steady finish, by the book
+  S.finalCall = {
+    online: "Keep ≈$16M. Never $0: Frictionless must stay at fair value.",
+    service: "Raise ≈10% (≈$35M): rivals add 10–12% a round and service holds both leads.",
+    experience: "Keep $19–21.5M (trim ≤10%). Deep cuts are untested and risk the Experience lead.",
+    vendor: "$15–18M. A small trim is the only cut we'd consider, since savings can't pay back after the game ends.",
+    analytics: "Keep $6M (the slides' multiplier for experience + online).",
+    stores: "Hold 185. New stores can't pay back after the game ends.",
+    markupLow: "Hold 54% / 66%. Untested; price moves cost sales at once.", markupHigh: "Hold 66%. Untested.",
+    pbQuality: "Hold 7.", nbQuality: "Hold 7.", pbLow: "Hold 60%.", pbHigh: "Hold 60%.",
+    breadthLow: "Hold 55.", breadthHigh: "Hold 50.", depthLow: "Hold (33 if we raise it now).", depthHigh: "Hold 30."
+  };
+  // Refresh FAQ answers that went stale (keep them in line with the by-the-book plan)
+  const fx = (k, o) => { const f = S.faq.find(x => x.keys.includes(k)); if (f) Object.assign(f, o); };
+  fx("p/e", { a: "In every round, <b>market value = P/E × net income</b> (Round 6: 15.9 × $74.3M = $1,179M). P/E rises ≈0.45 for each +1 point of Brand + Experience (fit on Rounds 1–6); the Round 1 undo suggests it falls about 3× harder when scores drop. WACC 10.7%.", rec: "Grow profit while holding both leads; avoid cuts that drop a quadrant score.", conf: "High" });
+  fx("budget", { a: "The slides say: <b>don't feel compelled to spend the entire budget</b>. Round 7 budget $94.83M; Plan A spends $93.5M. The final round (≈$104.5M) should spend only what holds both leads and fair value, and leave the rest unspent.", rec: "Round 7: Plan A ($93.5M). Final round: ≈$95–100M, rest unspent.", conf: "Medium" });
+  fx("why cut online", { a: "We don't cut online. About half our sales are online, and online is the professor's Frictionless lever: fair value is required in all four quadrants. Our data shows online spend builds Frictionless slowly (+0.02 per $1M), so we hold it at $16M rather than raise it.", rec: "Hold online at $16M in Round 7 and in the final round. Never $0.", conf: "Medium" });
+  fx("fair value", { a: "The slides set fair value at 75% of the leader; the game's chart draws its line nearer 2/3. Low Price 4.8 vs AIM 5.5 passes both. Frictionless 4.3 vs Cadabra 7.0 sits below both lines now (75% = 5.25; game line ≈4.67). Plan A lifts it to ≈4.9 with service, above the game's line. Reaching 5.25 would need service near $36M, which is untested.", rec: "Plan A: service $32M + hold online $16M. Don't cut online.", conf: "Medium" });
+})(window.SIM);
+// Long-term calls in line with the by-the-book plan (R7-v109)
+(function (S) {
+  const L = S.leverInfo, set = (k, v) => { if (L[k]) L[k].longTerm = v; };
+  set("vendor", "Hold $18M now; final round $15–18M (small trim at most)");
+  set("analytics", "Hold $6M now and in the final round (the slides' multiplier)");
+  set("online", "Hold ≈$16–17M now and in the final round; never $0");
+  set("service", "≈$32M now (rivals add 10–12% a round); ≈+10% in the final round");
+  set("experience", "Hold $21.5M now; final round $19–21.5M");
+  set("depthLow", "33 now (puts idle cash to work); hold in the final round");
+  set("breadthLow", "Hold 55 / 50");
 })(window.SIM);
