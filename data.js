@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R8-v111",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R8-v112",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -895,7 +895,7 @@ window.SIM = {
   S.backtest.push({ run: "R7 (forecast on file, v9)", cells: ["5.20 / 5.4", "7.60 / 7.7", "4.80 / 4.7", "4.98 / 5.1", "$829M / $836M", "$86.5M / $85.7M", "$1,403M / $1,465M"] });
   S.backtest.push({ run: "R7 (refit v10, real industry spend)", cells: ["5.20 / 5.4", "7.48 / 7.7", "4.80 / 4.7", "4.84 / 5.1", "$826M / $836M", "$86.0M / $85.7M", "$1,445M / $1,465M"] });
   S.recap.track[S.recap.track.length - 1] = { r: "R7", model: "v9", mvP: 1403, mvA: 1464.9, niP: 86.5, niA: 85.7, qErr: "Fric 4.98 vs 5.1 · Exp 7.60 vs 7.7", fix: "v10: P/E +0.64 with fair value in all four; service coef 2.2" };
-  S.recap.track.push({ r: "R8 (final)", model: "v10", mvP: 1693, mvA: null, niP: 98.4, niA: null, qErr: "Submitted: Brand ≈5.58 · Exp ≈7.73 · Fric ≈5.25", fix: "Final result" });
+  S.recap.track.push({ r: "R8 (final)", model: "v10", mvP: 1693, mvA: 1633.5, niP: 98.4, niA: 96.1, qErr: "Submitted: Brand ≈5.58 · Exp ≈7.73 · Fric ≈5.25", fix: "Final result" });
   Object.assign(S.recap, {
     title: "Round 7 screen → Round 8 status",
     kpis: [
