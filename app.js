@@ -71,7 +71,8 @@
     // depth 28 → 30 only +0.1 position (rivals' depth rose). Brand = 0.12/quality step (each) + 0.06/pt higher-cost depth
     const brand = 0.12 * (d.pbQuality - d0.pbQuality) + 0.12 * (d.nbQuality - d0.nbQuality) + 0.06 * (d.depthHigh - d0.depthHigh);
     // Service position is RELATIVE: ≈2.15 × (our spend ÷ industry avg). Rivals raise service ≈7.5%/round, so flat spend loses ground.
-    const svcPos = s => 2.15 * s / (A.service || 16.3), dSvc = svcPos(d.service) - 2.15 * d0.service / (A0.service || 15.2);
+    // v10: coefficient 2.2 fits R5–R7 (R7: $32.3M vs rivals' $19.6M → position 3.7)
+    const svcPos = s => 2.2 * s / (A.service || 16.3), dSvc = svcPos(d.service) - 2.2 * d0.service / (A0.service || 15.2);
     // Shopping-experience and online positions BUILD toward a target set by our spend ÷ industry avg (25% of the gap per round)
     const tExp = 2.5 * d.experience / (A.experience || 12.7) - (P.exp || 3.8);
     const dExp = (tExp >= 0 ? 0.25 : (S.expDown ?? 0.25)) * tExp;   // falling speed when cut is UNTESTED (stress test: S.expDown)
@@ -216,7 +217,11 @@
     // v9 P/E fit on R1–R6 (max error 0.26): P/E ≈ 14.06 + 0.445 × (Brand + Experience) − 0.33 × WACC → change form below
     const dBE = (sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1]);
     // 0.445 = fit on R1–R6; the R1 mulligan (a CUT) moved P/E ≈1.5 per point → peSlopeDown for stress tests
-    const peNext = (S.base.pe || 15) + (S.base.peSlope ?? 0.445) * Math.max(dBE, 0) + (S.base.peSlopeDown ?? S.base.peSlope ?? 0.445) * Math.min(dBE, 0);
+    // v10 (R1–R7 fit, max error 0.26): + 0.64 P/E while every quadrant is at or above the game's fair line (2/3 of the leader).
+    // R7 was the first round Frictionless cleared it (5.1 vs 4.6) and P/E jumped 15.9 → 17.1. Cuts: 0.76 per point (B+E-only fit; R1 undo ≈1.5).
+    const gameGaps = arr => { const { lead } = rivalLeaders(); return arr.filter((v, i) => v < (S.gameFairRatio || 2 / 3) * Math.max(lead[i], v) - 1e-9).length; };
+    const fairTerm = (S.base.peFairBonus ?? 0.64) * ((gameGaps(S.rivals[S.company]) ? 1 : 0) - (gameGaps(sc) ? 1 : 0));
+    const peNext = (S.base.pe || 15) + (S.base.peSlope ?? 0.445) * Math.max(dBE, 0) + (S.base.peSlopeDown ?? 0.76) * Math.min(dBE, 0) + fairTerm;
     const mvK = 1;
     // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
     const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
@@ -842,11 +847,11 @@
     // rivals push: rivals' service +15% (we assume +10%) and Zephara Experience +0.3
     if (/(zephara|rivals?|competitors?|cadabra|bestco|pricemart|kt benny|\baim\b)[^.]*\b(raise|raises|push|pushes|spend more|spends more|catch|catches|increase|increases|add|adds|beat|overtake)/.test(t)) {
       const keep = { a: S.indAvgNext, z: S.rivals.Zephara };
-      S.indAvgNext = Object.assign({}, S.indAvgNext, { service: (S.indAvgNow || {}).service * 1.15 }); S.rivals.Zephara = S.rivals.Zephara.slice(); S.rivals.Zephara[1] += 0.3;
+      S.indAvgNext = Object.assign({}, S.indAvgNext, { service: (S.indAvgNow || {}).service * 1.20 }); S.rivals.Zephara = S.rivals.Zephara.slice(); S.rivals.Zephara[1] += 0.3;
       let rp; try { rp = model(d); } finally { S.indAvgNext = keep.a; S.rivals.Zephara = keep.z; }
       const z = (S.rivals.Zephara[1] + 0.3), holds = rp.sc[1] > z;
       return `<div class="ask-short ${holds ? "yes" : "no"}"><b>Short answer:</b> ${holds ? `Yes, with these sliders we keep Experience #1 even if rivals push harder: ${rp.sc[1].toFixed(2)} vs Zephara ≈${z.toFixed(2)}` : `No: Experience ${rp.sc[1].toFixed(2)} would fall behind Zephara ≈${z.toFixed(2)}`}.</div>
-        <div class="ask-sub">Stress test: rivals raise service 15% (we plan for 10%) and Zephara's Experience jumps +0.3</div>
+        <div class="ask-sub">Stress test: rivals raise service 20% (we plan for ${Math.round(((S.indAvgNext || {}).service / (S.indAvgNow || {}).service - 1) * 100)}%) and Zephara's Experience jumps +0.3</div>
         ${li([`Normal case: Experience ${r.sc[1].toFixed(2)}, Frictionless ${r.sc[3].toFixed(2)}, value ${fmtM(r.mv)}.`, `Rivals push: Experience <b>${rp.sc[1].toFixed(2)}</b>, Frictionless <b>${rp.sc[3].toFixed(2)}</b> (game fair line ≈${(GF() * rivalLeaders().lead[3]).toFixed(2)}), value ${fmtM(rp.mv)}.`, "Service is scored against rivals' average, so it is the lever that answers a rival push; shopping experience builds slowly (25% of the gap a round)."])}
         <div class="ask-rec"><b>What I'd do:</b> ${holds ? "Keep Plan A's service ($32M). Watch Zephara's Experience each round; if it passes 7.0, raise service in the final round." : "Raise service by $2–4M before submitting."}</div>${confPill("Medium")}`;
     }
@@ -866,12 +871,12 @@
     // compare plans
     if (/plan\s*[abc]\b.*\b(vs|versus|or|better|compare|than|difference)|\bcompare\b.*plan|which plan|why plan/.test(t)) {
       const ps = S.plans || [];
-      return `<div class="ask-short yes"><b>Short answer:</b> Plan A follows the professor's rules with the fewest changes; B earns more in our model only by cutting the two levers the slides call most reliable (vendor) and a multiplier (analytics); C risks the Experience lead.</div>
+      return `<div class="ask-short yes"><b>Short answer:</b> Plan ${(ps.find(p => p.badge === "Recommended") || ps[0]).id} is recommended: it follows the professor's rules with the fewest changes. Gaps between plans are mostly inside the model's error (±8%), so the rules and the risk labels decide.</div>
         <table class="ask-tbl"><tr><th></th>${ps.map(p => `<th>Plan ${p.id}</th>`).join("")}</tr>
         ${[["Market value", p => fmtM(model(Object.assign({}, S.defaults, p.levers)).mv)], ["Net income", p => "$" + model(Object.assign({}, S.defaults, p.levers)).niProj.toFixed(1) + "M"], ["Spend", p => fmtM(model(Object.assign({}, S.defaults, p.levers)).spend)],
            ...Q.map((n, i) => [n, p => model(Object.assign({}, S.defaults, p.levers)).sc[i].toFixed(2)]), ["Leads", p => model(Object.assign({}, S.defaults, p.levers)).leads], ["Label", p => p.badge]]
           .map(([n, f]) => `<tr><td>${n}</td>${ps.map(p => `<td>${f(p)}</td>`).join("")}</tr>`).join("")}</table>
-        ${li(ps.map(p => `<b>Plan ${p.id} · ${p.name}:</b> ${p.why[0]}`))}<div class="ask-rec"><b>What I'd do:</b> Plan A. The ≈$38M gap to B is inside the model's error and rests on effects we can't verify.</div>${confPill("Medium")}`;
+        ${li(ps.map(p => `<b>Plan ${p.id} · ${p.name}:</b> ${p.why[0]}`))}<div class="ask-rec"><b>What I'd do:</b> Plan ${(ps.find(p => p.badge === "Recommended") || ps[0]).id}. Extra value in a "Riskier" plan rests on effects we can't verify.</div>${confPill("Medium")}`;
     }
     // model accuracy
     if (/accura|trust the model|how good is the model|model error|reliable is the model|how reliable|track record/.test(t)) {
@@ -884,9 +889,9 @@
     // risk of the current plan or a lever
     if (/\brisk|safe\b|safer|sure\b|danger|worried|confident/.test(t) && !(P && P.dir !== 0)) {
       const k = P && P.keys && P.keys[0];
-      if (k) { const L = LEVERS.find(x => x.key === k), [lo, hi] = testedRange(k), v = P.num != null && !P.pct ? P.num : d[k], avg = (S.indAvgNext || {})[k] || (S.indAvgNow || {})[k], I = (S.leverInfo || {})[k] || {}, out = v < lo - 1e-9 || v > hi + 1e-9;
-        return `<div class="ask-short ${out ? "meh" : "yes"}"><b>Short answer:</b> ${L.label} at ${fmtL(L, v)} is ${out ? `<b>outside what we've tested</b> (${fmtL(L, lo)}–${fmtL(L, hi)}), so the size of its effect is a guess` : `inside what we've tested (${fmtL(L, lo)}–${fmtL(L, hi)})`}.</div>
-          ${li([avg ? `Rivals' average ≈$${(+avg).toFixed(1)}M → we'd be at ${(v / avg).toFixed(1)}×.` : "", I.data && I.data[0], k === "service" ? "Downside if returns flatten above ≈1.5×: we overpay ≈$2–4M. It does not cost a lead. A smaller step ($30M) keeps both leads in our base case, but Frictionless then sits right on the game's fair line." : "", (S.guide || {})[k] ? "Professor: " + S.guide[k] : ""].filter(Boolean))}
+      if (k) { const L = LEVERS.find(x => x.key === k), [lo, hi] = testedRange(k), v = P.num != null && !P.pct ? P.num : d[k], avg = (S.indAvgNext || {})[k] || (S.indAvgNow || {})[k], I = (S.leverInfo || {})[k] || {}, sp = k === "service" && avg ? 2.2 * v / avg : null, out = sp != null ? sp > Math.max(3.7, (S.posNow || {}).svc || 0) + 0.1 : v < lo - 1e-9 || v > hi + 1e-9;
+        return `<div class="ask-short ${out ? "meh" : "yes"}"><b>Short answer:</b> ${L.label} at ${fmtL(L, v)} is ${sp != null ? (out ? `a service position ≈${sp.toFixed(2)}, <b>above anything we've played</b> (3.7), so the size of its effect is a guess` : `a service position ≈${sp.toFixed(2)} against rivals' expected spending: <b>inside what we've played</b> (up to 3.7), even though the dollar amount is new`) : out ? `<b>outside what we've tested</b> (${fmtL(L, lo)}–${fmtL(L, hi)}), so the size of its effect is a guess` : `inside what we've tested (${fmtL(L, lo)}–${fmtL(L, hi)})`}.</div>
+          ${li([avg ? `Rivals' average ≈$${(+avg).toFixed(1)}M → we'd be at ${(v / avg).toFixed(1)}×.` : "", I.data && I.data[0], k === "service" ? `What matters is the position, not the dollars: $${(+v).toFixed(1)}M against rivals' expected $${(+(S.indAvgNext || {}).service).toFixed(1)}M gives a service position ≈${(2.2 * v / (S.indAvgNext || {}).service).toFixed(2)} (now ${(S.posNow || {}).svc}; we've already played up to 3.7). Worst case if returns flatten: we overpay a few $M; it doesn't cost a lead.` : "", (S.guide || {})[k] ? "Professor: " + S.guide[k] : ""].filter(Boolean))}
           <div class="ask-rec"><b>What I'd do:</b> ${I.longTerm || "Hold Plan A's value"}.</div>${confPill(out ? "Low" : I.conf || "Medium")}`; }
       const fl = riskFlags(d);
       return `<div class="ask-short ${fl.length ? "meh" : "yes"}"><b>Short answer:</b> ${fl.length ? `${fl.length} thing${fl.length > 1 ? "s" : ""} to double-check in the current sliders` : "nothing risky in the current sliders"}.</div>
@@ -1121,7 +1126,7 @@
       <div class="zc-w"><b>Watch next round:</b> ${Z.watch}</div></div>`;
     const E = S.endgame, eg = !E ? "" : (() => { const mx = Math.max(...E.share.map(x => x[1]));
       return `<div class="zc eg"><div class="zc-h"><div><div class="zc-t">${E.title}</div><div class="zc-s">${E.sub}</div></div></div>
-      <div class="eg-grid"><div class="eg-share"><div class="eg-lab">Revenue market share · Round 6</div>${E.share.map(([n, v]) => `<div class="eg-bar ${n === S.company ? "us" : ""}"><span>${n}</span><i><b style="width:${v / mx * 100}%"></b></i><em>${v}%</em></div>`).join("")}<div class="eg-note">${E.shareNote}</div></div>
+      <div class="eg-grid"><div class="eg-share"><div class="eg-lab">Revenue market share · Round ${S.round - 1}</div>${E.share.map(([n, v]) => `<div class="eg-bar ${n === S.company ? "us" : ""}"><span>${n}</span><i><b style="width:${v / mx * 100}%"></b></i><em>${v}%</em></div>`).join("")}<div class="eg-note">${E.shareNote}</div></div>
       <div class="eg-steps">${E.steps.map(([r, t, d, c], i) => `<div class="eg-step"><span class="eg-n">${i + 1}</span><div><small>${r}</small><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div>
       ${E.check ? `<div class="eg-check"><div class="eg-lab">${E.check.title}</div><div class="eg-cgrid"><div><div class="eg-bt">${E.check.rows.map(([r, e]) => `<span><small>${r}</small><b class="${Math.abs(parseFloat(e.replace("−", "-"))) <= 5 ? "up" : "fl"}">${e}</b></span>`).join("")}</div><div class="eg-note">${E.check.note}</div></div>
         <div><b class="up">✓ Verified on game data</b><ul>${E.check.verified.map(x => `<li>${x}</li>`).join("")}</ul></div><div><b class="dn">⚠ Untested: be careful</b><ul>${E.check.untested.map(x => `<li>${x}</li>`).join("")}</ul></div></div></div>` : ""}</div>`; })();
