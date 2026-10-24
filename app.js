@@ -73,7 +73,8 @@
     // Service position is RELATIVE: ≈2.15 × (our spend ÷ industry avg). Rivals raise service ≈7.5%/round, so flat spend loses ground.
     const svcPos = s => 2.15 * s / (A.service || 16.3), dSvc = svcPos(d.service) - 2.15 * d0.service / (A0.service || 15.2);
     // Shopping-experience and online positions BUILD toward a target set by our spend ÷ industry avg (25% of the gap per round)
-    const dExp = 0.25 * (2.5 * d.experience / (A.experience || 12.7) - (P.exp || 3.8));
+    const tExp = 2.5 * d.experience / (A.experience || 12.7) - (P.exp || 3.8);
+    const dExp = (tExp >= 0 ? 0.25 : (S.expDown ?? 0.25)) * tExp;   // falling speed when cut is UNTESTED (stress test: S.expDown)
     const dOnl = 0.2 * (2.2 * d.online / (A.online || 19.4) - (P.onl || 1.4));   // v9: builds 20% of the gap per round (R5 +0.2, R6 +0.1)
     const dAn = 0.03 * (d.analytics - d0.analytics);   // tiny, untested
     const lowP = 1.0 * (sq(d.vendor, 30) - sq(d0.vendor, 30)) - 0.07 * (d.markupLow - d0.markupLow) - 0.035 * (d.markupHigh - d0.markupHigh);
@@ -214,7 +215,8 @@
     // v9: R6 Brand + Experience +0.9 lifted P/E only ≈3% (15.4 → 15.9) → 0.035 per point (was 0.10 from the R1 mulligan)
     // v9 P/E fit on R1–R6 (max error 0.26): P/E ≈ 14.06 + 0.445 × (Brand + Experience) − 0.33 × WACC → change form below
     const dBE = (sc[0] - S.rivals[S.company][0]) + (sc[1] - S.rivals[S.company][1]);
-    const peNext = (S.base.pe || 15) + 0.445 * dBE;
+    // 0.445 = fit on R1–R6; the R1 mulligan (a CUT) moved P/E ≈1.5 per point → peSlopeDown for stress tests
+    const peNext = (S.base.pe || 15) + (S.base.peSlope ?? 0.445) * Math.max(dBE, 0) + (S.base.peSlopeDown ?? S.base.peSlope ?? 0.445) * Math.min(dBE, 0);
     const mvK = 1;
     // Fitted on R1 try 1, R1 final, R2: market value ≈ P/E × net income (all within 1%)
     const niProj = (ebit - interest) * 0.65 * (S.base.niK || 1);
@@ -993,7 +995,9 @@
     const E = S.endgame, eg = !E ? "" : (() => { const mx = Math.max(...E.share.map(x => x[1]));
       return `<div class="zc eg"><div class="zc-h"><div><div class="zc-t">${E.title}</div><div class="zc-s">${E.sub}</div></div></div>
       <div class="eg-grid"><div class="eg-share"><div class="eg-lab">Revenue market share · Round 6</div>${E.share.map(([n, v]) => `<div class="eg-bar ${n === S.company ? "us" : ""}"><span>${n}</span><i><b style="width:${v / mx * 100}%"></b></i><em>${v}%</em></div>`).join("")}<div class="eg-note">${E.shareNote}</div></div>
-      <div class="eg-steps">${E.steps.map(([r, t, d, c], i) => `<div class="eg-step"><span class="eg-n">${i + 1}</span><div><small>${r}</small><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div></div>`; })();
+      <div class="eg-steps">${E.steps.map(([r, t, d, c], i) => `<div class="eg-step"><span class="eg-n">${i + 1}</span><div><small>${r}</small><b>${t}</b> <span class="zconf" style="color:${CC[c]}">${c}</span><div class="zd">${d}</div></div></div>`).join("")}</div></div>
+      ${E.check ? `<div class="eg-check"><div class="eg-lab">${E.check.title}</div><div class="eg-cgrid"><div><div class="eg-bt">${E.check.rows.map(([r, e]) => `<span><small>${r}</small><b class="${Math.abs(parseFloat(e.replace("−", "-"))) <= 5 ? "up" : "fl"}">${e}</b></span>`).join("")}</div><div class="eg-note">${E.check.note}</div></div>
+        <div><b class="up">✓ Verified on game data</b><ul>${E.check.verified.map(x => `<li>${x}</li>`).join("")}</ul></div><div><b class="dn">⚠ Untested: be careful</b><ul>${E.check.untested.map(x => `<li>${x}</li>`).join("")}</ul></div></div></div>` : ""}</div>`; })();
     document.querySelectorAll(".zeph-slot").forEach(el => el.innerHTML = eg + html);
   }
 

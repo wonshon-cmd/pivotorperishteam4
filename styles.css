@@ -867,3 +867,7 @@ details.fold[open] summary { margin-bottom: 12px; }
   #miniBar b { font-size: 16px; } #miniBar i { font-style: normal; font-size: 10.5px; font-weight: 800; border-radius: 6px; padding: 1px 5px; margin-left: 3px; background: #3a3a40; }
   #miniBar .mb-lead i { background: #2E5BFF; } #miniBar .mb-gap i { background: #b42318; } #miniBar .mb-sp { color: #b8b8be; }
 }
+.eg-check { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.eg-cgrid { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 18px; font-size: 13px; } @media (max-width: 1000px) { .eg-cgrid { grid-template-columns: 1fr; } }
+.eg-bt { display: flex; gap: 8px; flex-wrap: wrap; } .eg-bt span { background: var(--bg); border-radius: 8px; padding: 4px 8px; display: flex; flex-direction: column; } .eg-bt small { color: var(--muted); font-size: 11px; } .eg-bt b { font-size: 14px; }
+.eg-cgrid ul { margin: 4px 0 0 16px; padding: 0; line-height: 1.45; }

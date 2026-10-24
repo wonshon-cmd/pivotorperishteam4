@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "R7-v105",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "R7-v107",  // bump whenever data is updated (clears stale browser saves)
   round: 7,
 
   // Current financial position ($M) — END OF ROUND 6 = our Round 7 status (CSV "Round-6", exact)
@@ -12,7 +12,7 @@ window.SIM = {
     interest: 6.47, cash: 122.35, debt: 112.01, stLoans: 0, equity: 349.39, ap: 45.35,
     inventory: 97.33, receivables: 30.66, netPPE: 256.41,
     wacc: 10.7, marketValue: 1179.4, budget: 94.834, stores: 185, clv: 1716.7,
-    netIncome: 74.29, pe: 15.9, peDrift: 1.0, growth: 0.085, demandW: 0.09, debtPrev: 116.70
+    netIncome: 74.29, pe: 15.9, peDrift: 1.0, growth: 0.093, demandW: 0.09, debtPrev: 116.70
     // budget 94.834 = REAL (Round 7 input screen) = 14% × Round 5 revenue 677.39 (lagged rule confirmed twice). Next (R8) ≈ 14% × 746.09 = $104.5M.
     // Cash $49M → $122M (idle; LT debt only runs off ≈$4.7M/round). Market grew only ≈6.4% (units ≈+1.5%); we +10.1% via share 15.2 → 15.7%.
     // P/E 15.4 → 15.9 (WACC 10.7%). Growth: 14.5, 14.5, 12.4, 11.2, 10.9, 10.1% → 8.5% next.
@@ -247,7 +247,7 @@ window.SIM = {
       { r: "R4", model: "v6", mvP: 717, mvA: 772.4, niP: 47.2, niA: 50.7, qErr: "Exp 6.29 vs 6.4", fix: "Debt = free cash flow" },
       { r: "R5", model: "v7", mvP: 952, mvA: 1024.2, niP: 63.2, niA: 66.6, qErr: "Brand 5.08 vs 4.9 · Exp 6.54 vs 6.3", fix: "v8: position model" },
       { r: "R6", model: "v8", mvP: 1354, mvA: 1179.4, niP: 77.4, niA: 74.3, qErr: "Brand 5.45 vs 5.2 · Exp 7.02 vs 6.9 · Fric 4.58 vs 4.3", fix: "v9: P/E bonus 0.035/pt; quality diminishing; growth 8.5%" },
-      { r: "R7 (now)", model: "v9", mvP: 1400, mvA: null, niP: null, niA: null, qErr: "Plan A: Exp ≈7.43 · Fric ≈4.63", fix: "Compare when Round 7 results arrive" }
+      { r: "R7 (now)", model: "v9", mvP: 1445, mvA: null, niP: 89.4, niA: null, qErr: "Plan A: Exp ≈7.5 · Fric ≈4.86", fix: "Compare when Round 7 results arrive" }
     ],
     next: "So for this round: keep both leads (service $30M, experience $24.8M), hold quality 7 and depth 30, and start banking: vendor and analytics build nothing for the final, so cut them now. Next round is the last: that's when we cut hard."
   },
@@ -341,44 +341,52 @@ window.SIM = {
   // ---- Top 3 plans for the next round (levers in $M / % / count). Breadth stays 50/50 in all plans. ----
   plans: [
     {
-      id: "A", name: "Bank the free gains, keep building", badge: "Recommended", segs: [5, 1],
-      tag: "Service $30M, experience $24.83M, online $16M, lower-cost depth 33; vendor $15M and analytics $3.78M (they build nothing for the final) · $89.6M",
-      levers: { vendor: 15, online: 16, experience: 24.83, service: 30, analytics: 3.78, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, stores: 185, depthLow: 33, depthHigh: 30, pbLow: 60, pbHigh: 60 },
+      id: "A", name: "Protect both leads, bank the rest", badge: "Recommended", segs: [5, 1],
+      tag: "Service $32M, experience held at $21.5M, online $16M, lower-cost depth 33; vendor $15M, analytics $3.78M · $88.3M of $94.8M",
+      levers: { vendor: 15, online: 16, experience: 21.5, service: 32, analytics: 3.78, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, stores: 185, depthLow: 33, depthHigh: 30, pbLow: 60, pbHigh: 60 },
       why: [
-        "<b>Same final value, ≈$40M more now</b>: we played Round 8 on top of every option; all end within 1–2% ($1.63B careful / $1.86B aggressive). Cutting vendor and analytics adds ≈$38M this round without hurting the final.",
-        "<b>Experience ≈7.4 and Frictionless ≈4.6</b>: service $30M keeps our position climbing as rivals raise theirs (+10–12%/round); experience keeps building into the final round.",
-        "<b>A preview of the final round</b>: we'll see what a vendor cut does to cost and Low Price before cutting harder in Round 8. $5.2M unspent joins idle cash either way."
+        "<b>Best final value in every scenario we tested</b> (base, harsh cuts, rivals pushing harder): ≈$1.79B after a careful final round, never below ≈$1.75B with the best final round for each scenario. Value after this round ≈$1.45B.",
+        "<b>Keeps both leads even if rivals push</b>: service $32M lifts our service position (3.0 → ≈3.7) → Experience ≈7.5 and Frictionless ≈4.9, above the fair line. Service is the one lever that lifts two quadrants.",
+        "<b>Banks what can't pay off in time</b>: vendor and analytics build nothing before the game ends; holding experience at $21.5M keeps the position (3.9, #1) at a lower cost."
       ],
-      risks: ["Low Price ≈4.73 (fair line 3.7): safe. Unit cost gap widens a little. Depth 33 untested (Low). Model ±8%."]
+      risks: ["Service $32M is ≈1.7× the industry average; we've only seen up to 1.5× (Medium–Low on size). Model accuracy: ≈4% average error on value over Rounds 2–6 (worst 7%)."]
     },
     {
-      id: "B", name: "All-in build", badge: "Build", segs: [5, 1],
-      tag: "Full $94.83M: service $30M, experience $24.83M, online $16M, depth 33; vendor $18M, analytics $6M",
-      levers: { vendor: 18, online: 16, experience: 24.83, service: 30, analytics: 6, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, stores: 185, depthLow: 33, depthHigh: 30, pbLow: 60, pbHigh: 60 },
-      why: ["≈$1.36B now; same final as Plan A (≈$1.63–1.87B). Spends vendor and analytics money that won't pay off before the game ends."],
-      risks: ["≈$38M less value this round than Plan A for no final-round gain."]
+      id: "B", name: "Build experience into the final", badge: "Build", segs: [5, 1],
+      tag: "Service $30M, experience $24.83M, online $16M, depth 33; vendor $15M, analytics $3.78M · $89.6M",
+      levers: { vendor: 15, online: 16, experience: 24.83, service: 30, analytics: 3.78, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, stores: 185, depthLow: 33, depthHigh: 30, pbLow: 60, pbHigh: 60 },
+      why: ["≈$1.42B now. Builds more experience position for the final round, but if rivals push, Experience can slip to one lead; final ≈1% below Plan A in every scenario."],
+      risks: ["Only pays off if we cut experience hard in the final round, which is the untested move."]
     },
     {
       id: "C", name: "Change nothing", badge: "Safe", segs: [5, 1],
       tag: "Repeat Round 6 · $85.5M",
       levers: { vendor: 18, online: 16, experience: 21.5, service: 24, analytics: 6, breadthLow: 55, breadthHigh: 50, markupLow: 54, markupHigh: 66, pbQuality: 7, nbQuality: 7, stores: 185, depthLow: 30, depthHigh: 30, pbLow: 60, pbHigh: 60 },
-      why: ["≈$1.38B now, but Experience slips to ≈6.65 and Frictionless to ≈4.0 as rivals raise service; lowest final value."],
-      risks: ["Enters the final round with one lead after the harvest."]
+      why: ["≈$1.40B now, but Experience slips to ≈6.65 and Frictionless to ≈4.0 as rivals raise service; lowest final value in every scenario."],
+      risks: ["Enters the final round with the weakest Experience lead."]
     }
   ],
 
   // ---- Game plan to the finish (Build plan card): market share + 2 rounds left ----
   endgame: {
-    title: "Game plan to the finish · 2 rounds left",
-    sub: "Only the final market value counts. Round 7 builds and holds; Round 8 harvests.",
+    title: "Game plan to the finish · 2 decisions left · goal: the highest FINAL market value",
+    sub: "Only the value after Round 8 counts. Every option below was played through Round 8 with the model verified on Rounds 2–6.",
     share: [["PriceMart", 23.2], ["BestCo", 17.1], ["Getchells", 15.7], ["Cadabra", 13.4], ["Zephara", 11.5], ["AIM", 9.8], ["KT Benny", 9.3]],
-    shareNote: "Our revenue share 13.5% → 15.7% over 6 rounds (+0.3–0.5 pt every round, fastest grower). In lower-cost goods we're 11.2% vs PriceMart 11.5%: one more good round makes us #1 there.",
+    shareNote: "Our revenue share 13.5% → 15.7% over 6 rounds (+0.3–0.5 pt every round, fastest grower). In lower-cost goods we're 11.2% vs PriceMart 11.5%.",
     steps: [
-      ["Round 7 · now", "Bank free gains, keep building", "Cut what builds nothing for the final (vendor $15M, analytics $3.78M); keep service $30M (rivals +10–12%/round), experience $24.8M (builds into the final), online $16M, lower-cost depth 33 for S1/S2. Hold quality 7, premium depth 30, breadth 55.", "Medium"],
-      ["Round 8 · final", "Harvest", "Budget ≈$104.5M (14% of $746M). Cut vendor to ≈$10–15M, analytics and online to near the minimum (online's position mostly stays). Keep service high enough to hold Experience. Decide how far to trim shopping experience with fresh data: cutting it adds profit but risks the Experience lead.", "Low"],
-      ["Both rounds", "Grow where customers grow", "S1 Online Bargain (+14.7%, biggest CLV) and S4 Omni Mix (+12.3%) reward service, online and depth. Defend S5/S3 with the Experience + Brand leads. Aim to pass PriceMart in lower-cost share.", "Medium"]
-    ]
+      ["Round 7 · now", "Protect both leads, bank the rest", "Service $32M (rivals add 10–12% a round), experience held at $21.5M, online $16M, lower-cost depth 33 for S1/S2. Cut vendor to $15M and analytics to $3.78M: they can't pay off before the game ends. ≈$1.45B after this round.", "Medium"],
+      ["Round 8 · final", "Harvest, but don't break the leads", "Budget ≈$104.5M. Raise service ≈$4M, trim shopping experience ≈25% (don't zero it), online and analytics to the minimum, vendor ≈$10M. ≈$1.79B base / ≈$1.70B if cuts hit hard. Zeroing experience could reach $1.90B but could fall to $1.53B: untested, not worth the risk.", "Medium"],
+      ["Both rounds", "Grow where customers grow", "S1 Online Bargain (+14.7%, biggest CLV) and S4 Omni Mix (+12.3%) reward service, online and depth. The Experience + Brand leads hold S5 and S3. Check the game allows $0 online before the final round; otherwise use its minimum.", "Medium"]
+    ],
+    check: {
+      title: "How far can we trust the model?",
+      rows: [["Round 2", "+2.2%"], ["Round 3", "+4.7%"], ["Round 4", "−3.6%"], ["Round 5", "−7.4%"], ["Round 6", "+3.0%"]],
+      note: "Each round replayed from its real starting point with only what we knew at the time: value within ≈4% on average (worst 7%), all four quadrants within 0.15.",
+      verified: ["Service, experience and online positions (relative to rivals' spend)", "Brand from quality and premium depth", "Profit accounting (exact game rules)", "Budget = 14% of revenue two results back", "P/E vs Brand + Experience gains"],
+      untested: ["How fast Experience falls if we cut shopping experience", "How hard P/E reacts to cuts (Round 1 undo: much harder than to gains)", "Service above ≈1.5× the industry average", "Lower-cost depth above 30"]
+    }
   },
+
 
   // ---- Round-by-round snapshots (real game data). Add one per round. ----
   rounds: [
