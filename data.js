@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v119",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v120",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1292,4 +1292,37 @@ window.SIM = {
   const sh = { goals: "Goals & metrics", stp: "Target customers (STP, 3 C's)", value: "How we created value", change: "Strategy over time, matrix, debt", resources: "Spending time & money", positioning: "Positioning statement",
     team: "How the team organized", consensus: "Hard decisions", data: "Useful data reports", takeaways: "Takeaways" };
   S.writeup.parts.forEach(p => p.qs.forEach(q => q.short = sh[q.id] || q.id));
+})(window.SIM);
+// Write-up: the Round 1 mulligan mistakes, spelled out (user request)
+(function (S) {
+  const q = id => S.writeup.parts.reduce((a, p) => a.concat(p.qs), []).find(x => x.id === id);
+  const ch = q("change");
+  ch.draft = ch.draft.replace("Round 1 taught us the most. On our first try we cut customer service to save money. Our Brand and Experience scores dropped right away. We used the game's one 'undo', put service back, and our value almost doubled compared with the first try. Service was not just a cost; it was part of what customers bought.",
+    "Round 1 taught us the most, through our mistakes. On our first try (the 'mulligan') we focused on fixing the finances and made four mistakes:\n- We cut customer service in half ($15M to $7M) because we were the industry's biggest spender. We treated it as overhead, but it is one of the main things that drives the Experience score.\n- We raised our own-label share to 60% while keeping product quality at 5, which weakened our brand.\n- We changed seven things at once, so it was hard to tell which change caused what.\n- We put the finances ahead of customers, the opposite of the professor's advice for the early rounds.\nThe result: we lost our #1 spot in Brand (6.3 to 4.7), Experience fell from 5.8 to 4.8, and value rose only to $113M. We used the game's one 'undo': we kept the debt and inventory fixes, put service back to $15M and raised quality to 6. Value reached $184M instead. From then on we changed fewer things at a time and protected what customers valued.");
+  ch.facts.unshift("Mulligan (Round 1, first try): service $15M → $7M, own-label 60% at quality 5, 7 changes at once → Brand 6.3 → 4.7 (lost #1), Experience 5.8 → 4.8, value $113M; redo with service kept + quality 6 → $184M");
+  const tk = q("takeaways");
+  tk.draft = tk.draft.replace("5. Test, measure and learn. Changing one or two things at a time and checking the results made us better every round. Our biggest mistakes came from untested moves, like cutting service in Round 1.",
+    "5. Learn from mistakes, fast. Our biggest mistake was the Round 1 mulligan: we cut customer service to save money and changed seven things at once. It cost us our Brand lead and nearly $71M of value until we undid it. After that we changed one or two things at a time and checked the results, and we got better every round.");
+})(window.SIM);
+// Write-up + story: the team's own framing (dominate Brand + Experience → catch up the other two; capitalize on segments; cost cuts lost customers; grow CLV)
+(function (S) {
+  const q = id => S.writeup.parts.reduce((a, p) => a.concat(p.qs), []).find(x => x.id === id);
+  const g = q("goals");
+  g.draft = g.draft.replace("We also kept an eye on a few other numbers:",
+    "We also worked to grow customer lifetime value (CLV): how much our customers are worth to us over the years they keep shopping with us. The game counts strong customer relationships in a company's value, so loyal, growing customer groups were worth investing in. Our CLV grew from $818M to $2.19B.\n\nWe also kept an eye on a few other numbers:");
+  g.facts.push("Customer lifetime value $818M → $2,187M (2.7×); biggest at the end: Online Bargain shoppers ($516M)");
+  const c = q("change");
+  c.draft = c.draft.replace("Our big idea never changed: lead in Brand and Experience, and be good enough in the other two. How we got there changed as we learned.",
+    "Our plan had two steps. First, dominate Brand and Experience, the two areas where we were already strong and where our target customers cared most. Then catch up in the other two, Low Price and Frictionless, until they were 'good enough' (the professor's fair value). That plan never changed; how we carried it out changed as we learned.");
+  c.draft = c.draft.replace("The result: we lost our #1 spot in Brand (6.3 to 4.7), Experience fell from 5.8 to 4.8, and value rose only to $113M.",
+    "The result: cutting costs cost us customers. We lost our #1 spot in Brand (6.3 to 4.7), Experience fell from 5.8 to 4.8, sales reached only $403.6M (13.2% market share) instead of $426.7M (13.9%) after the redo, and value rose only to $113M.");
+  const st = q("stp");
+  st.draft = st.draft.replace("So we targeted Segments 5 and 3,",
+    "Every round we re-checked which customer groups were growing and what they valued, so we could put money where the growth was. So we targeted Segments 5 and 3,");
+  // story: plan scene + narration in the team's words
+  S.story.plan.pts = [["Dominate Brand + Experience first", "Our strengths, and what our target customers value most (shopping experience was customers' #1 preference)"], ["Then catch up in the other two", "Bring Low Price and Frictionless up to 'good enough': at least 75% of the leader"], ["Capitalize on segments", "Re-check every round which customer groups grow, and invest where they are"], ["Grow customer lifetime value", "Loyal customers count in the company's value: CLV $818M → $2.19B"]];
+  S.story.say.plan = "Our plan had two steps: first dominate Brand and Experience, then catch up in Low Price and Frictionless until they were good enough. Every round we looked at which customer groups were growing, and we worked to grow customer lifetime value.";
+  const r1 = S.story.rounds[0];
+  r1.found = "Cutting costs lost us customers: Experience 5.8 → 4.8, Brand lost #1, and sales fell short ($404M vs $427M on the redo).";
+  r1.say = "Round one. Our first worry was the balance sheet: we were losing money and carried 287 million dollars of debt. So we cut costs where we outspent everyone, including customer service. We learned the hard way that cutting costs lost us customers: Brand and Experience fell, and sales came in 23 million dollars lower. We used the game's one undo.";
 })(window.SIM);
