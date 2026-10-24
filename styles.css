@@ -1024,3 +1024,17 @@ details.fold[open] summary { margin-bottom: 12px; }
 .wu-wc.short { color: #9a6700; font-weight: 600; } .wu-wc.ok { color: #1a7f37; font-weight: 600; } .wu-wc.over { color: #b42318; font-weight: 600; }
 .wu-brow a .wu-wc { display: block; font-size: 13px; margin-top: 2px; }
 .wu-alloc { font-size: 15px; color: #444; margin: -2px 0 10px; } .wu-alloc .short { color: #9a6700; font-weight: 700; } .wu-alloc .ok { color: #1a7f37; font-weight: 700; } .wu-alloc .over { color: #b42318; font-weight: 700; }
+/* Write-up: save + ask Claude */
+.wu-saveb { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 14px; }
+.wu-saveb .primary { padding: 7px 16px; font-size: 15px; } .wu-saved { color: #1a7f37; font-weight: 700; }
+.wu-vlist { margin-top: 4px; } .wu-vlist summary { cursor: pointer; color: #2E5BFF; font-weight: 600; } .wu-vlist div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid #eee; }
+.wu-chatd { margin-top: 12px; border: 1px solid #dfe3f3; border-radius: 12px; background: #f7f8ff; } .wu-chatd summary { cursor: pointer; padding: 10px 14px; font-weight: 700; color: #1d3fcc; font-size: 15px; }
+.wu-chat { padding: 0 14px 14px; }
+.wu-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.wu-chip { border: 1px solid #ccd3ee; background: #fff; color: #1d3fcc; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-family: inherit; cursor: pointer; } .wu-chip:hover { background: #eef1ff; }
+.wu-ask { display: flex; gap: 8px; } .wu-ask input { flex: 1; padding: 9px 12px; border: 1px solid #ccd; border-radius: 10px; font-size: 15px; font-family: inherit; } .wu-ask .primary { white-space: nowrap; padding: 8px 14px; font-size: 14px; }
+.wu-step { font-size: 14px; color: #1a7f37; margin: 8px 0; min-height: 4px; }
+.wu-reply { width: 100%; box-sizing: border-box; min-height: 90px; padding: 10px 12px; border: 1px dashed #aab4dd; border-radius: 10px; font-size: 15px; line-height: 1.5; font-family: inherit; background: #fff; }
+.wu-replyb { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; } .wu-replyb .ghost { font-size: 14px; padding: 7px 12px; }
+.wu-log { margin-top: 10px; display: grid; gap: 4px; font-size: 13px; } .wu-log .me { color: #1d3fcc; } .wu-log .cl { color: #444; }
+@media (max-width: 700px) { .wu-ask { flex-direction: column; } }

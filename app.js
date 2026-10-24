@@ -663,6 +663,59 @@
     const b = document.querySelector(`[data-cl="${id}"]`), done = () => { b.textContent = "✓ Copied: paste into the Claude chat"; setTimeout(() => b.textContent = "✦ Rewrite with Claude", 2500); };
     if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy this into the Claude chat:", t)); else prompt("Copy this into the Claude chat:", t);
   }
+  // ---- Save + versions (saved on this computer; the answer itself syncs to the team) ----
+  const WUV_KEY = "getchells-wu-ver", wuvLoad = () => jl(WUV_KEY) || {}, wuvSave = o => localStorage.setItem(WUV_KEY, JSON.stringify(o));
+  function wuSaveQ(id, quiet) {
+    const q = wuQs().find(x => x.id === id), t = wuText(q), all = wuvLoad(), list = all[id] || [], me = localStorage.getItem(ME_KEY) || "";
+    if (!list.length || list[0].text !== t) { list.unshift({ text: t, by: me, ts: Date.now() }); all[id] = list.slice(0, 15); wuvSave(all); }
+    const e = wuLoad(); e[id] = { text: t, ts: Date.now(), by: me }; wuSave(e); wuPub(id, e[id]);
+    if (!quiet) wuVers(id, true);
+  }
+  function wuVers(id, justSaved) {
+    const box = document.querySelector(`[data-vers="${id}"]`); if (!box) return;
+    const list = wuvLoad()[id] || [], fmt = ts => new Date(ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
+    box.innerHTML = `${justSaved ? `<span class="wu-saved">✓ Saved ${fmt(list[0].ts)}</span>` : list.length ? `<span class="mut">Last saved ${fmt(list[0].ts)}</span>` : ""}
+      ${list.length > 1 ? `<details class="wu-vlist"><summary>Earlier versions (${list.length - 1})</summary>${list.slice(1).map((v, i) => `<div><span>${fmt(v.ts)}${v.by ? " · " + wuEsc(v.by) : ""} · ${wuWords(v.text)} words</span><button type="button" class="wu-link" data-restore="${id}" data-i="${i + 1}">Restore</button></div>`).join("")}</details>` : ""}`;
+    box.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => { const v = (wuvLoad()[id] || [])[+b.dataset.i]; if (!v || !confirm("Replace the current answer with this saved version? (The current text is saved first.)")) return; wuSaveQ(id, true); wuSetText(id, v.text); wuVers(id); });
+  }
+  // ---- Ask Claude: the page writes a data-packed request for the main Claude chat; paste the reply back here ----
+  const WU_QUICK = ["Make it simpler and easier to read", "Fit it to the word count", "Add more data and numbers", "Explain our thinking more", "Make it sound more professional", "Make it shorter and punchier"];
+  function wuBrief(q, ask) {
+    const S8 = S.story || {}, rounds = (S8.rounds || []).map(r => `- ${r.r} (${r.t}): changed ${r.ch.map(c => c[0] + " " + c[1] + "→" + c[2]).join("; ")} → market value ${r.mv >= 1000 ? "$" + (r.mv / 1000).toFixed(2) + "B" : "$" + r.mv + "M"} (${r.chg}); ${r.kpi}. Why: ${r.why || ""} Found: ${r.found || r.lesson}`).join("\n");
+    return `WRITE-UP REQUEST (Getchells / Team 4 · Pivot or Perish write-up, < 2,500 words total)
+Please rewrite our answer below. My instruction: ${ask || "improve it"}.
+Rules: keep every number accurate to our game data (check against the copilot data); plain English; our team's voice ("we"); about ${q.target} words (now ${wuWords(wuText(q))}). Reply with only the new answer text.
+
+QUESTION: ${q.q}
+
+FACTS FOR THIS QUESTION:
+- ${q.facts.join("\n- ")}
+
+GAME SUMMARY: ${(S.writeup.facts || []).map(f => f[0] + " " + f[1]).join(" · ")}
+${rounds}
+
+OUR CURRENT ANSWER:
+${wuText(q)}`;
+  }
+  function wuChat(id) {
+    const q = wuQs().find(x => x.id === id), box = document.querySelector(`[data-chat="${id}"]`); if (!box) return;
+    const log = (jl("getchells-wu-chat") || {})[id] || [];
+    box.innerHTML = `<div class="wu-chips">${WU_QUICK.map(t => `<button type="button" class="wu-chip" data-quick="${id}">${t}</button>`).join("")}</div>
+      <div class="wu-ask"><input type="text" data-askin="${id}" placeholder="Or type how you want it rewritten, e.g. 'mention the Zephara rivalry more'"><button type="button" class="primary" data-askgo="${id}">Copy request for Claude</button></div>
+      <div class="wu-step" data-askst="${id}"></div>
+      <textarea class="wu-reply" data-reply="${id}" placeholder="Step 2: paste Claude's reply here"></textarea>
+      <div class="wu-replyb"><button type="button" class="ghost" data-use="${id}" data-how="replace">Replace my answer with this</button><button type="button" class="ghost" data-use="${id}" data-how="add">Add to the end of my answer</button></div>
+      ${log.length ? `<div class="wu-log">${log.slice(-4).map(m => `<div class="${m.me ? "me" : "cl"}">${m.me ? "You asked" : "Used reply"} · ${wuEsc(m.t).slice(0, 140)}${m.t.length > 140 ? "…" : ""}</div>`).join("")}</div>` : ""}`;
+    const addLog = (t, me) => { const all = jl("getchells-wu-chat") || {}; (all[id] = all[id] || []).push({ t, me, ts: Date.now() }); all[id] = all[id].slice(-20); localStorage.setItem("getchells-wu-chat", JSON.stringify(all)); };
+    const go = ask => { const t = wuBrief(q, ask), st = box.querySelector(`[data-askst="${id}"]`), ok = () => { st.innerHTML = `✓ Copied. <b>Paste it into the Claude chat</b>, then paste Claude's reply in the box below.`; addLog(ask || "improve it", true); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok).catch(() => { prompt("Copy this into the Claude chat:", t); ok(); }); else { prompt("Copy this into the Claude chat:", t); ok(); } };
+    box.querySelectorAll("[data-quick]").forEach(b => b.onclick = () => go(b.textContent));
+    box.querySelector("[data-askgo]").onclick = () => go(box.querySelector("[data-askin]").value.trim());
+    box.querySelector("[data-askin]").onkeydown = e => { if (e.key === "Enter") go(e.target.value.trim()); };
+    box.querySelectorAll("[data-use]").forEach(b => b.onclick = () => { const r = box.querySelector(`[data-reply="${id}"]`).value.trim(); if (!r) { box.querySelector(`[data-askst="${id}"]`).textContent = "Paste Claude's reply in the box first."; return; }
+      wuSaveQ(id, true); wuSetText(id, b.dataset.how === "replace" ? r : wuText(q).trim() + "\n\n" + r); wuSaveQ(id); addLog(r, false); wuChat(id);
+      document.querySelector(`[data-askst="${id}"]`) && (document.querySelector(`[data-askst="${id}"]`).innerHTML = "✓ Answer updated and saved (the old text is in Earlier versions)."); });
+  }
   function renderWriteup() {
     const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
     const me = localStorage.getItem(ME_KEY) || "";
@@ -671,9 +724,9 @@
         <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div><div class="wu-alloc" id="wuAlloc"></div>
         <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
           <label>Writing as <select id="wuMe">${[""].concat(S.team || []).map(n => `<option value="${n}" ${n === me ? "selected" : ""}>${n || "pick your name"}</option>`).join("")}</select></label>
-          <button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
+          <button type="button" class="primary" id="wuSaveAll">💾 Save all</button><button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
         <div id="wuBoard" class="wu-board"></div>
-        <div class="wu-tip"><b>Tips:</b> one person per box at a time (the newest save wins). 🎤 Speak types what you say into the box (Chrome, Edge or Safari). ✦ Rewrite with Claude copies the question and your answer so you can paste them into the Claude chat.</div></div>
+        <div class="wu-tip"><b>Tips:</b> one person per box at a time (the newest save wins). 🎤 Speak types what you say into the box (Chrome, Edge or Safari). 💾 Save keeps a version you can restore. ✦ Ask Claude builds a request with our game data: paste it into the Claude chat, then paste the reply back.</div></div>
       ${W.matrix ? `<div class="card wu-mx"><h2>${W.matrix.title}</h2><p class="wu-mxs">${W.matrix.sub}</p>
         <div class="wu-mxg">${W.matrix.cells.map(c => `<div class="wu-mxc ${c.aim === "Lead" ? "lead" : "fair"}"><div class="wu-mxh"><b>${c.q}</b><em>${c.aim}</em></div>
           <div class="wu-mxn"><span>${c.from.toFixed(1)}</span> → <b>${c.to.toFixed(1)}</b> <small>${c.rank}</small></div>
@@ -684,8 +737,10 @@
         <div class="wu-qown" data-qown="${q.id}"></div>
         <details class="wu-f"><summary>Facts to use</summary><ul>${q.facts.map(f => `<li>${f}</li>`).join("")}</ul></details>
         <div class="wu-voice"><button type="button" class="wu-mic" data-mic="${q.id}">🎤 Speak</button><select data-vm="${q.id}" aria-label="What voice does"><option value="add">add to my answer</option><option value="replace">replace my answer</option></select>
-          <button type="button" class="wu-cl" data-cl="${q.id}">✦ Rewrite with Claude</button><span class="wu-vs" data-vs="${q.id}"></span></div>
+          <span class="wu-vs" data-vs="${q.id}"></span></div>
         <textarea data-wu="${q.id}" spellcheck="true"></textarea>
+        <div class="wu-saveb"><button type="button" class="primary" data-save="${q.id}">💾 Save</button><span data-vers="${q.id}"></span></div>
+        <details class="wu-chatd"><summary>✦ Ask Claude to rewrite this answer</summary><div class="wu-chat" data-chat="${q.id}"></div></details>
         <div class="wu-meta"><span data-meta="${q.id}"></span><button type="button" class="wu-reset" data-reset="${q.id}">↺ Back to the starter answer</button></div></div>`).join("")).join("")}`;
     wuQs().forEach(q => wuFill(q.id)); wuBoard();
     $("#wuMe").onchange = e => localStorage.setItem(ME_KEY, e.target.value);
@@ -696,7 +751,9 @@
       ta.addEventListener("blur", () => { const p = wuPending[id], e = wuLoad()[id]; if (p && (!e || p.ts > e.ts)) { const all = wuLoad(); all[id] = p; wuSave(all); } delete wuPending[id]; wuFill(id); });
     });
     el.querySelectorAll("[data-mic]").forEach(b => b.onclick = () => { if (wuRec && wuRecId !== b.dataset.mic) return; wuVoice(b.dataset.mic); });
-    el.querySelectorAll("[data-cl]").forEach(b => b.onclick = () => wuClaude(b.dataset.cl));
+    el.querySelectorAll("[data-save]").forEach(b => b.onclick = () => wuSaveQ(b.dataset.save));
+    wuQs().forEach(q => { wuVers(q.id); wuChat(q.id); });
+    if ($("#wuSaveAll")) $("#wuSaveAll").onclick = () => { wuQs().forEach((q, i) => setTimeout(() => wuSaveQ(q.id), i * 400)); $("#wuSaveAll").textContent = "✓ All saved"; setTimeout(() => $("#wuSaveAll").textContent = "💾 Save all", 2500); };
     el.querySelectorAll("[data-reset]").forEach(b => b.onclick = () => { const id = b.dataset.reset, q = wuQs().find(x => x.id === id);
       if (!confirm("Replace this answer with the starter answer? Everyone's edits to this box will be replaced.")) return;
       const all = wuLoad(); all[id] = { text: q.draft, ts: Date.now(), by: localStorage.getItem(ME_KEY) || "" }; wuSave(all); wuPub(id, all[id]); wuFill(id); });
