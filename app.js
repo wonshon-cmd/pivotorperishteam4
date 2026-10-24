@@ -564,6 +564,7 @@
       .then(r => wuSetLive(r.ok)).catch(() => wuSetLive(false)), i * 300);
   }
   function wuApply(o) {
+    if (o && o.v === 1 && o.k === "wuo") return wuoApply(o.m);
     if (!o || o.v !== 1 || o.k !== "wu") return;
     const key = o.id + "@" + o.ts, b = wuBuf[key] = wuBuf[key] || { n: o.n, parts: {}, by: o.by };
     b.parts[o.i] = o.p; if (Object.keys(b.parts).length < b.n) return;
@@ -574,7 +575,34 @@
     if (ta && document.activeElement === ta) { wuPending[o.id] = { text, ts: o.ts, by: b.by }; wuFill(o.id); return; }
     all[o.id] = { text, ts: o.ts, by: b.by }; wuSave(all); wuFill(o.id);
   }
-  function wuSnap() { Object.entries(wuLoad()).forEach(([id, e], k) => setTimeout(() => wuPub(id, e), k * 1500)); }
+  // who owns each question + status (Not started / Working on it / Done), synced on the same relay
+  const WUO_KEY = "getchells-wu-own", WU_ST = [["todo", "Not started"], ["doing", "Working on it"], ["done", "Done"]];
+  const wuoLoad = () => jl(WUO_KEY) || {}, wuoSave = o => localStorage.setItem(WUO_KEY, JSON.stringify(o));
+  function wuoPub() { if (!WU_LIVE) return; fetch(WU_LIVE, { method: "POST", body: JSON.stringify({ v: 1, k: "wuo", m: wuoLoad() }) }).then(r => wuSetLive(r.ok)).catch(() => wuSetLive(false)); }
+  function wuoSet(id, patch) { const all = wuoLoad(), cur = all[id] || { o: "", s: "todo" }; all[id] = Object.assign({}, cur, patch, { ts: Date.now() }); wuoSave(all); wuoPub(); wuBoard(); }
+  function wuoApply(m) { const all = wuoLoad(); let ch = false; Object.entries(m || {}).forEach(([id, e]) => { if (!all[id] || (e.ts || 0) > (all[id].ts || 0)) { all[id] = e; ch = true; } }); if (ch) { wuoSave(all); wuBoard(); } }
+  function wuBoard() {
+    const all = wuoLoad(), qs = wuQs(), team = S.team || [], done = qs.filter(q => (all[q.id] || {}).s === "done").length;
+    const pill = (id, st) => WU_ST.map(([k, l]) => `<button type="button" class="wu-st ${k} ${st === k ? "on" : ""}" data-st="${id}" data-v="${k}">${l}</button>`).join("");
+    const sel = (id, o) => `<select data-own="${id}" aria-label="Who is writing this"><option value="">Unclaimed</option>${team.map(n => `<option ${n === o ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+    const b = $("#wuBoard");
+    if (b) b.innerHTML = `<div class="wu-bh"><b>Who's doing what</b><span>${done} of ${qs.length} done</span><div class="wu-btrack"><i style="width:${done / qs.length * 100}%"></i></div>
+        <button type="button" class="ghost" id="wuSplit">Split evenly (${Math.ceil(qs.length / Math.max(team.length, 1))} each)</button></div>
+      <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}</a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div></div>`; }).join("")}</div>
+      <div class="wu-bsum">${team.map(n => { const mine = qs.filter(q => (all[q.id] || {}).o === n); return `<span><b>${n}</b> ${mine.length ? mine.map(q => "Q" + (qs.indexOf(q) + 1) + ((all[q.id] || {}).s === "done" ? " ✓" : "")).join(", ") : "—"}</span>`; }).join("")}</div>`;
+    qs.forEach(q => { const e = all[q.id] || { o: "", s: "todo" }, h = document.querySelector(`[data-qown="${q.id}"]`);
+      if (h) h.innerHTML = `${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div>`;
+      const card = document.getElementById("wuq-" + q.id); if (card) card.dataset.st = e.s; });
+    document.querySelectorAll("#wuBody [data-own]").forEach(x => x.onchange = () => wuoSet(x.dataset.own, { o: x.value, s: x.value && ((wuoLoad()[x.dataset.own] || {}).s || "todo") === "todo" ? "doing" : ((wuoLoad()[x.dataset.own] || {}).s || "todo") }));
+    document.querySelectorAll("#wuBody [data-st]").forEach(x => x.onclick = () => wuoSet(x.dataset.st, { s: x.dataset.v }));
+    document.querySelectorAll("#wuBody [data-jump]").forEach(a => a.onclick = e => { e.preventDefault(); const c = document.getElementById("wuq-" + a.dataset.jump); if (c) window.scrollTo({ top: c.getBoundingClientRect().top + window.scrollY - 150, behavior: "smooth" }); });
+    if ($("#wuSplit")) $("#wuSplit").onclick = () => {
+      if (!team.length) return; if (Object.values(all).some(e => e.o) && !confirm("Re-split every question evenly? This replaces current claims (statuses stay).")) return;
+      const order = qs.slice().sort((a, b) => wuWords(b.draft) - wuWords(a.draft)), m = wuoLoad();   // snake order: heavy + light per person
+      order.forEach((q, i) => { const r = Math.floor(i / team.length), k = i % team.length, who = team[r % 2 ? team.length - 1 - k : k]; m[q.id] = Object.assign({ s: "todo" }, m[q.id] || {}, { o: who, ts: Date.now() }); });
+      wuoSave(m); wuoPub(); wuBoard(); };
+  }
+  function wuSnap() { Object.entries(wuLoad()).forEach(([id, e], k) => setTimeout(() => wuPub(id, e), k * 1500)); if (Object.keys(wuoLoad()).length) setTimeout(wuoPub, 400); }
   function wuLiveStart() {
     if (!WU_LIVE || !window.EventSource || wuLiveStart.on) return; wuLiveStart.on = 1;
     const take = l => { try { const m = JSON.parse(l); if (m.event === "message") wuApply(JSON.parse(m.message)); } catch (e) {} };
@@ -637,15 +665,17 @@
         <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
           <label>Writing as <select id="wuMe">${[""].concat(S.team || []).map(n => `<option value="${n}" ${n === me ? "selected" : ""}>${n || "pick your name"}</option>`).join("")}</select></label>
           <button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
+        <div id="wuBoard" class="wu-board"></div>
         <div class="wu-tip"><b>Tips:</b> one person per box at a time (the newest save wins). 🎤 Speak types what you say into the box (Chrome, Edge or Safari). ✦ Rewrite with Claude copies the question and your answer so you can paste them into the Claude chat.</div></div>
-      ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q">
+      ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q" id="wuq-${q.id}">
         <div class="wu-qh"><b>${q.q}</b><span class="wu-wc" data-wc="${q.id}"></span></div>
+        <div class="wu-qown" data-qown="${q.id}"></div>
         <details class="wu-f"><summary>Facts to use</summary><ul>${q.facts.map(f => `<li>${f}</li>`).join("")}</ul></details>
         <div class="wu-voice"><button type="button" class="wu-mic" data-mic="${q.id}">🎤 Speak</button><select data-vm="${q.id}" aria-label="What voice does"><option value="add">add to my answer</option><option value="replace">replace my answer</option></select>
           <button type="button" class="wu-cl" data-cl="${q.id}">✦ Rewrite with Claude</button><span class="wu-vs" data-vs="${q.id}"></span></div>
         <textarea data-wu="${q.id}" spellcheck="true"></textarea>
         <div class="wu-meta"><span data-meta="${q.id}"></span><button type="button" class="wu-reset" data-reset="${q.id}">↺ Back to the starter answer</button></div></div>`).join("")).join("")}`;
-    wuQs().forEach(q => wuFill(q.id));
+    wuQs().forEach(q => wuFill(q.id)); wuBoard();
     $("#wuMe").onchange = e => localStorage.setItem(ME_KEY, e.target.value);
     el.querySelectorAll("textarea[data-wu]").forEach(ta => {
       const id = ta.dataset.wu;

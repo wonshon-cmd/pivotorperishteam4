@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v118",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v119",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1286,4 +1286,10 @@ window.SIM = {
   W.parts.forEach(p => p.qs.forEach(q => { if (D[q.id]) q.draft = D[q.id]; }));
   W.intro = "Starter answers in plain English, built from our game data. Rewrite them in your own words, add what only the team knows, and keep the total under 2,500 words. Every box saves on its own and is shared live with the team.";
   W.facts = [["Market value", "$93M → $1.63B"], ["Sales", "$373M → $907M (#2 of 7)"], ["Profit", "−$6M → $96M"], ["Debt", "$287M → $100M"], ["End result", "#1 Brand, #1 Experience"]];
+})(window.SIM);
+// Write-up: short labels for the "who's doing what" board
+(function (S) {
+  const sh = { goals: "Goals & metrics", stp: "Target customers (STP, 3 C's)", value: "How we created value", change: "Strategy over time, matrix, debt", resources: "Spending time & money", positioning: "Positioning statement",
+    team: "How the team organized", consensus: "Hard decisions", data: "Useful data reports", takeaways: "Takeaways" };
+  S.writeup.parts.forEach(p => p.qs.forEach(q => q.short = sh[q.id] || q.id));
 })(window.SIM);

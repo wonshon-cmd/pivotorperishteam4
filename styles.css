@@ -994,3 +994,20 @@ details.fold[open] summary { margin-bottom: 12px; }
 .wu-q textarea { font-size: 18px; line-height: 1.8; padding: 18px 20px; color: #1b1f2a; border-radius: 12px; letter-spacing: .005em; }
 .wu-meta { font-size: 14px; }
 .wu-mic, .wu-cl, .wu-voice select { font-size: 15px; padding: 7px 14px; }
+/* Write-up: who's doing what */
+.wu-board { margin: 16px 0 6px; border-top: 1px solid #e6e8ef; padding-top: 14px; }
+.wu-bh { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 17px; }
+.wu-bh span { color: #555; font-size: 15px; }
+.wu-btrack { flex: 1; min-width: 120px; height: 8px; background: #e6e8ef; border-radius: 6px; overflow: hidden; } .wu-btrack i { display: block; height: 100%; background: #1a7f37; transition: width .3s; }
+.wu-blist { display: grid; gap: 6px; }
+.wu-brow { display: grid; grid-template-columns: 1fr 150px auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: #f6f7fb; }
+.wu-brow.done { background: #e6f4ea; } .wu-brow.doing { background: #fdf3dc; }
+.wu-brow a { color: #1b1f2a; font-weight: 600; text-decoration: none; font-size: 15px; } .wu-brow a:hover { color: #2E5BFF; }
+.wu-board select, .wu-qown select { padding: 5px 8px; border-radius: 8px; border: 1px solid #ccd; font-size: 14px; font-family: inherit; background: #fff; }
+.wu-sts { display: flex; gap: 4px; flex-wrap: wrap; }
+.wu-st { border: 1px solid #d5d8e3; background: #fff; color: #555; border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.wu-st.todo.on { background: #6b7185; border-color: #6b7185; color: #fff; } .wu-st.doing.on { background: #9a6700; border-color: #9a6700; color: #fff; } .wu-st.done.on { background: #1a7f37; border-color: #1a7f37; color: #fff; }
+.wu-bsum { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 14px; color: #444; } .wu-bsum b { color: #1b1f2a; margin-right: 4px; }
+.wu-qown { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.wu-q[data-st="done"] { box-shadow: inset 5px 0 0 #1a7f37; } .wu-q[data-st="doing"] { box-shadow: inset 5px 0 0 #9a6700; }
+@media (max-width: 700px) { .wu-brow { grid-template-columns: 1fr; } }
