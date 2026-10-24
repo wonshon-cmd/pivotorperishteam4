@@ -502,7 +502,7 @@
     const plan = S.plans.find(p => p.id === tlPlan) || S.plans[0];
     const nd = Object.assign({}, S.defaults, plan.levers), pr = model(nd);
     const nextR = S.round;
-    $("#tlPlans").innerHTML = S.plans.map(p => `<button class="chipbtn ${p.id === tlPlan ? "on" : ""}" data-tl="${p.id}">Plan ${p.id}: ${p.name}</button>`).join("");
+    $("#tlPlans").innerHTML = S.gameOver ? "" : S.plans.map(p => `<button class="chipbtn ${p.id === tlPlan ? "on" : ""}" data-tl="${p.id}">Plan ${p.id}: ${p.name}</button>`).join("");
     document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { tlPlan = b.dataset.tl; renderTimeline(); });
 
     // Series: real values per round + projected next round
@@ -513,16 +513,16 @@
     const fser = i => rr.map((r, k) => [r, tr[i]["Fair value"][k] / 0.66 * (S.fairRatio || 0.75)]);
     const lser = i => rr.map((r, k) => [r, Math.max(...Object.entries(tr[i]).filter(([n]) => n !== "Fair value" && n !== S.company).map(([, v]) => v[k]))]);
     const charts = [
-      { t: "Market value ($M)", s: kp("marketValue"), p: pr.mv, fmt: v => "$" + v.toFixed(0) },
+      { t: "Market value ($M)", s: kp("marketValue"), p: S.gameOver ? null : pr.mv, fmt: v => "$" + v.toFixed(0) },
       { t: "Net income ($M)", s: kp("netIncome"), p: null, fmt: v => (v < 0 ? "−$" : "$") + Math.abs(v).toFixed(1) },
-      { t: "Debt ($M)", s: kp("debt"), p: pr.debt, fmt: v => "$" + v.toFixed(0), down: true },
-      ...Q.map((q, i) => ({ t: q, s: qser(i), p: pr.sc[i], fair: fser(i), lead: lser(i), fmt: v => v.toFixed(1), q: true }))
+      { t: "Debt ($M)", s: kp("debt"), p: S.gameOver ? null : pr.debt, fmt: v => "$" + v.toFixed(0), down: true },
+      ...Q.map((q, i) => ({ t: q, s: qser(i), p: S.gameOver ? null : pr.sc[i], fair: fser(i), lead: lser(i), fmt: v => v.toFixed(1), q: true }))
     ];
     $("#tlCharts").innerHTML = charts.map(c => miniChart(c, nextR)).join("");
 
     // Decision table
     const log = S.decisionLog;
-    const cols = log.map(l => ({ label: l.label, d: l.d })).concat([{ label: "R" + nextR + " Plan " + plan.id, d: nd, plan: true }]);
+    const cols = log.map(l => ({ label: l.label, d: l.d })).concat(S.gameOver ? [] : [{ label: "R" + nextR + " Plan " + plan.id, d: nd, plan: true }]);
     const fmtV = (L, v) => L.unit === "$M" ? "$" + (+v.toFixed(1)) + "M" : (+v.toFixed(1)) + (L.unit || "");
     $("#tlTable").innerHTML = `<tr><th>Lever</th>${cols.map(c => `<th class="${c.plan ? "pl" : ""}">${c.label}</th>`).join("")}</tr>` +
       LEVERS.map(L => `<tr><td>${L.label}</td>${cols.map((c, k) => {
@@ -540,13 +540,19 @@
     const Ls = S.lessons || [], older = Ls.slice(0, -1).reverse();
     $("#tlLessons").innerHTML = (Ls.length ? lessonHTML(Ls[Ls.length - 1]) : "") +
       (older.length ? `<details class="fold tl-older"><summary>Earlier rounds (${older.length})</summary>${older.map(lessonHTML).join("")}</details>` : "") +
-      `<div class="ls proj"><div class="lsr">Round ${nextR} projection · Plan ${plan.id}</div>
+      (S.gameOver ? "" : `<div class="ls proj"><div class="lsr">Round ${nextR} projection · Plan ${plan.id}</div>
         <ul><li>Market value ≈ <b>$${pr.mv.toFixed(0)}M</b> · net income ≈ $${pr.niProj.toFixed(1)}M</li>
         <li>Debt ≈ <b>$${pr.debt.toFixed(0)}M</b></li>
         <li>Leads: <b>${lead}</b> · ${pr.gaps} quadrant(s) below 75% fair value</li></ul>
-        <div class="lsl">Watch next round: does Experience pass Zephara, and how much does service move Frictionless?</div></div>`;
+        <div class="lsl">Watch next round: does Experience pass Zephara, and how much does service move Frictionless?</div></div>`);
     if ($("#tlAcc") && S.backtest) $("#tlAcc").innerHTML = `<tr><th>Run</th><th>Brand</th><th>Experience</th><th>Low Price</th><th>Frictionless</th><th>Revenue</th><th>Net income</th><th>Market value</th></tr>` +
       S.backtest.map(b => `<tr><td>${b.run}</td>${b.cells.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
+  }
+  // Game over: hide the forward-looking pieces (next input screen, "build this round" buttons, projection picker)
+  function gameOverUI() {
+    const ct = document.getElementById("curTitle"); if (ct && ct.parentElement) ct.parentElement.style.display = "none";
+    document.body.classList.add("game-over");
+    const h = document.querySelector("#timeline h1"); if (h) h.textContent = "What we changed → what happened";
   }
   function miniChart(c, nextR) {
     const W = 300, H = 150, P = 26;
@@ -557,7 +563,7 @@
     const x = r => P + (r - r0) / Math.max(r1 - r0, 1) * (W - 2 * P), y = v => H - 22 - (v - lo) / (hi - lo) * (H - 44);
     const line = (arr, cls) => `<polyline class="${cls}" points="${arr.map(p => x(p[0]) + "," + y(p[1])).join(" ")}"/>`;
     let g = `<svg viewBox="0 0 ${W} ${H}">`;
-    for (let r = r0; r <= r1; r++) g += `<text x="${x(r)}" y="${H - 6}" class="mx">${r === r1 ? "R" + r + "*" : "R" + r}</text>`;
+    for (let r = r0; r <= r1; r++) g += `<text x="${x(r)}" y="${H - 6}" class="mx">${r === r1 && !S.gameOver ? "R" + r + "*" : "R" + r}</text>`;
     if (c.lead) g += line(c.lead, "mlead");
     if (c.fair) g += line(c.fair, "mfair");
     g += line(pts, "mreal");
@@ -1788,7 +1794,7 @@
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; window.__calibrate = () => calibrate(); renderTeamCmp(); autoFillTitle(); liveStart();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; window.__calibrate = () => calibrate(); renderTeamCmp(); autoFillTitle(); liveStart(); if (S.gameOver) gameOverUI();
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };

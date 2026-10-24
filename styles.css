@@ -877,3 +877,5 @@ details.fold[open] summary { margin-bottom: 12px; }
 .ask-tbl { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
 .ask-tbl th, .ask-tbl td { padding: 4px 6px; border-bottom: 1px solid #e6e8ef; text-align: right; }
 .ask-tbl th:first-child, .ask-tbl td:first-child { text-align: left; color: #555; }
+/* Game over: hide forward-looking controls */
+.game-over #stand [data-go="start"], .game-over .rc-next [data-go="start"], .game-over .tl-pick { display: none; }
