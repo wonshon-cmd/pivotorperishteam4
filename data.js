@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v121",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v123",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1339,4 +1339,37 @@ window.SIM = {
   const v = q("value");
   v.draft += "\n\nWatching the competition: every round we checked how rivals were moving. Zephara (like Sephora) was competing for the same two customer groups we wanted, Brand Lovers and Experience Seekers. So we looked for its weak points and played to our strengths instead of copying it. Zephara is a narrow specialist: very little of its sales come from premium products (about 1% of the market vs our 5.5%), its selection is much narrower, and its Brand score kept slipping (from 5.0 to 4.4). We set ourselves apart with the widest premium selection in the market, higher product quality (7, the industry maximum), the biggest investment in the store experience, and more customer service than Zephara: our service score passed theirs in Round 7 (3.7 vs 3.1). We took Experience from Zephara in Round 6 and kept growing the lead (8.0 vs 6.2 at the end).";
   v.facts.push("Zephara vs us at the end: Experience 6.2 vs 8.0; Brand 4.4 vs 5.5; service score 3.0 vs 4.1; premium sales share 1.2% vs 5.5%; premium selection score 1.6 vs 3.9");
+})(window.SIM);
+// Write-up: quadrant-by-quadrant focus, framed by the professor's rules (user request) + reference card data
+(function (S) {
+  const W = S.writeup, q = id => W.parts.reduce((a, p) => a.concat(p.qs), []).find(x => x.id === id);
+  const v = q("value");
+  v.q = v.q;   // same rubric question
+  v.draft = "We built everything around the Kahn Retail Success Matrix and the professor's rules: lead (or come close to leading) two quadrants, stay at 'fair value' (at least 75% of the leader) in the other two, and don't overspend where you aren't trying to win. The intro slides also showed which tools move which quadrant, so we used them as our map:\n\n- Experience (aim: lead). The professor's tools: shopping experience, customer service and customer analytics. We raised customer service from $15M to $37M and the store experience from $10M to $21.5M (the most in the industry). Result: 5.8 to 8.0, #1 from Round 6 on.\n- Brand (aim: lead). The tool: carrying high-quality brands. We raised own-label and name-brand quality from 5 to 7 (the industry maximum) and kept the widest premium selection. Result: #1 at the end (5.5 vs Zephara's 4.4).\n- Low Price (aim: fair value). The tools: vendor management and price markup. We didn't try to win here (PriceMart and AIM do). We kept prices steady and stayed above the fair line all game (4.7 vs 4.1 needed).\n- Frictionless (aim: fair value). The tools: online, customer service and analytics. This was our weak spot for six rounds, and online spending alone barely moved it. Customer service counts for both Experience and Frictionless, so raising it fixed both. Result: 3.4 to 5.5, at fair value from Round 7.\n\nWe followed the professor's other advice too: pick customers you can satisfy, serve them efficiently, extend your strength into a second quadrant, put customers before finances early on (the lesson of our mulligan), treat new stores as a possible 'value trap', and don't spend the whole budget just because you have it.\n\nZephara competed for the same two customer groups, so we played to its weak spots rather than copying it: it is a narrow specialist with little premium business (about 1% of the market vs our 5.5%) and a slipping Brand score. Our wide premium selection, top quality and stronger service set us apart.";
+  v.facts = ["Professor's lever map (Intro slides): Online = Frictionless · Customer service = Frictionless + Experience · Shopping experience = Experience · Vendor management = Low Price · Customer analytics = Frictionless + Experience · High-quality brands = Brand · Markup = Low Price",
+    "Start → end: Brand 6.3 → 5.5 (#1) · Experience 5.8 → 8.0 (#1) · Low Price 4.9 → 4.7 (fair) · Frictionless 3.4 → 5.5 (fair)",
+    "Zephara vs us at the end: Experience 6.2 vs 8.0; Brand 4.4 vs 5.5; service score 3.0 vs 4.1; premium sales share 1.2% vs 5.5%"];
+  W.matrix = {
+    title: "The professor's playbook → what we focused on",
+    sub: "The Kahn Retail Success Matrix, the way we used it. Reference only: not counted in the word limit.",
+    cells: [
+      { q: "Brand", aim: "Lead", tools: "High-quality brands (own-label + name-brand quality)", did: "Quality 5 → 7 (industry max) · widest premium selection", from: 6.3, to: 5.5, rank: "#1" },
+      { q: "Experience", aim: "Lead", tools: "Shopping experience · customer service · analytics", did: "Service $15M → $37M · store experience $10M → $21.5M (industry max)", from: 5.8, to: 8.0, rank: "#1" },
+      { q: "Low Price", aim: "Fair value", tools: "Vendor management · price markup", did: "Prices held 54% / 66% · no price war", from: 4.9, to: 4.7, rank: "fair (75% = 4.1)" },
+      { q: "Frictionless", aim: "Fair value", tools: "Online · customer service · analytics", did: "Online $2M → $18M · service lifted it to fair value in Round 7", from: 3.4, to: 5.5, rank: "fair (75% = 5.2)" }
+    ],
+    rules: [
+      ["Lead two quadrants, fair value in the other two", "Brand + Experience #1; Low Price and Frictionless above 75% of the leader by Round 7"],
+      ["Be best in one, use it to win a second", "Brand was our starting strength; we extended into Experience (#1 from Round 6)"],
+      ["Pick customers you can satisfy", "Experience Seekers + Brand Lovers matched our strengths"],
+      ["Early on, customers before financials", "Learned in the mulligan: cutting service lost customers and scores"],
+      ["Stores can be a value trap", "Held at 185 all game; no new debt for stores"],
+      ["Don't feel compelled to spend the whole budget", "Left $3.95M unspent in the final round"]
+    ]
+  };
+})(window.SIM);
+// Write-up: word allocation per question (sums to the 2,500 limit)
+(function (S) {
+  const T = { goals: 220, stp: 280, value: 330, change: 380, resources: 200, positioning: 120, team: 180, consensus: 260, data: 220, takeaways: 310 };
+  S.writeup.parts.forEach(p => p.qs.forEach(q => q.target = T[q.id] || 200));
 })(window.SIM);

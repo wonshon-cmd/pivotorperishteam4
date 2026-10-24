@@ -588,7 +588,7 @@
     const b = $("#wuBoard");
     if (b) b.innerHTML = `<div class="wu-bh"><b>Who's doing what</b><span>${done} of ${qs.length} done</span><div class="wu-btrack"><i style="width:${done / qs.length * 100}%"></i></div>
         <button type="button" class="ghost" id="wuSplit">Split evenly (${Math.ceil(qs.length / Math.max(team.length, 1))} each)</button></div>
-      <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}</a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div></div>`; }).join("")}</div>
+      <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}<span class="wu-wc" data-wc="${q.id}"></span></a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div></div>`; }).join("")}</div>
       <div class="wu-bsum">${team.map(n => { const mine = qs.filter(q => (all[q.id] || {}).o === n); return `<span><b>${n}</b> ${mine.length ? mine.map(q => "Q" + (qs.indexOf(q) + 1) + ((all[q.id] || {}).s === "done" ? " ✓" : "")).join(", ") : "—"}</span>`; }).join("")}</div>`;
     qs.forEach(q => { const e = all[q.id] || { o: "", s: "todo" }, h = document.querySelector(`[data-qown="${q.id}"]`);
       if (h) h.innerHTML = `${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div>`;
@@ -601,7 +601,9 @@
       const order = qs.slice().sort((a, b) => wuWords(b.draft) - wuWords(a.draft)), m = wuoLoad();   // snake order: heavy + light per person
       order.forEach((q, i) => { const r = Math.floor(i / team.length), k = i % team.length, who = team[r % 2 ? team.length - 1 - k : k]; m[q.id] = Object.assign({ s: "todo" }, m[q.id] || {}, { o: who, ts: Date.now() }); });
       wuoSave(m); wuoPub(); wuBoard(); };
+    wuCounts();
   }
+  function wuSnapX() {}
   function wuSnap() { Object.entries(wuLoad()).forEach(([id, e], k) => setTimeout(() => wuPub(id, e), k * 1500)); if (Object.keys(wuoLoad()).length) setTimeout(wuoPub, 400); }
   function wuLiveStart() {
     if (!WU_LIVE || !window.EventSource || wuLiveStart.on) return; wuLiveStart.on = 1;
@@ -612,11 +614,16 @@
     es.onmessage = e => take(e.data);
   }
   function wuGrow(ta) { ta.style.height = "auto"; ta.style.height = Math.max(150, ta.scrollHeight + 4) + "px"; }
+  // words written vs the words allocated to this question: "short by N" / "on target" (±10%) / "over by N"
+  function wuStat(q) { const w = wuWords(wuText(q)), t = q.target || 200, d = w - t;
+    return Math.abs(d) <= t * 0.1 ? { w, t, cls: "ok", txt: `on target (${w} / ${t})` } : d < 0 ? { w, t, cls: "short", txt: `${-d} more to write (${w} / ${t})` } : { w, t, cls: "over", txt: `${d} over (${w} / ${t})` }; }
   function wuCounts() {
     const W = S.writeup, tot = wuQs().reduce((s, q) => s + wuWords(wuText(q)), 0), over = tot > W.limit;
     if ($("#wuCount")) $("#wuCount").innerHTML = `<b style="${over ? "color:#b42318" : ""}">${tot.toLocaleString()}</b> of ${W.limit.toLocaleString()} words${over ? ` · <b style="color:#b42318">${(tot - W.limit).toLocaleString()} over</b>` : ` · ${(W.limit - tot).toLocaleString()} left`}`;
     if ($("#wuFillBar")) { $("#wuFillBar").style.width = Math.min(100, tot / W.limit * 100) + "%"; $("#wuFillBar").style.background = over ? "#b42318" : "#2E5BFF"; }
-    wuQs().forEach(q => { const el = document.querySelector(`[data-wc="${q.id}"]`); if (el) el.textContent = wuWords(wuText(q)) + " words"; });
+    wuQs().forEach(q => { const st = wuStat(q); document.querySelectorAll(`[data-wc="${q.id}"]`).forEach(el => { el.className = "wu-wc " + st.cls; el.textContent = st.txt; }); });
+    const qs = wuQs(), alloc = qs.reduce((a, q) => a + (q.target || 0), 0), short = qs.filter(q => wuStat(q).cls === "short"), overQ = qs.filter(q => wuStat(q).cls === "over");
+    if ($("#wuAlloc")) $("#wuAlloc").innerHTML = `Allocated: <b>${alloc.toLocaleString()}</b> words across ${qs.length} questions · <span class="short">${short.length} short</span> · <span class="ok">${qs.length - short.length - overQ.length} on target</span> · <span class="over">${overQ.length} over</span>`;
   }
   function wuFill(id) {
     const q = wuQs().find(x => x.id === id), ta = document.querySelector(`#wuBody textarea[data-wu="${id}"]`); if (!q || !ta) return;
@@ -661,12 +668,17 @@
     const me = localStorage.getItem(ME_KEY) || "";
     el.innerHTML = `<h1>Write-up</h1><p class="wu-intro">${W.intro}</p><button type="button" class="story-btn" data-story style="margin:0 0 16px">▶ Watch our story · round by round, 2 min</button>
       <div class="card wu-top"><div class="wu-facts">${W.facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>
-        <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div>
+        <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div><div class="wu-alloc" id="wuAlloc"></div>
         <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
           <label>Writing as <select id="wuMe">${[""].concat(S.team || []).map(n => `<option value="${n}" ${n === me ? "selected" : ""}>${n || "pick your name"}</option>`).join("")}</select></label>
           <button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
         <div id="wuBoard" class="wu-board"></div>
         <div class="wu-tip"><b>Tips:</b> one person per box at a time (the newest save wins). 🎤 Speak types what you say into the box (Chrome, Edge or Safari). ✦ Rewrite with Claude copies the question and your answer so you can paste them into the Claude chat.</div></div>
+      ${W.matrix ? `<div class="card wu-mx"><h2>${W.matrix.title}</h2><p class="wu-mxs">${W.matrix.sub}</p>
+        <div class="wu-mxg">${W.matrix.cells.map(c => `<div class="wu-mxc ${c.aim === "Lead" ? "lead" : "fair"}"><div class="wu-mxh"><b>${c.q}</b><em>${c.aim}</em></div>
+          <div class="wu-mxn"><span>${c.from.toFixed(1)}</span> → <b>${c.to.toFixed(1)}</b> <small>${c.rank}</small></div>
+          <div class="wu-mxl"><small>Professor's tools</small>${c.tools}</div><div class="wu-mxl"><small>What we did</small>${c.did}</div></div>`).join("")}</div>
+        <div class="wu-mxr"><b>The professor's rules, and how we followed them</b><ul>${W.matrix.rules.map(([a, b]) => `<li><span>✓</span><div><b>${a}</b><br>${b}</div></li>`).join("")}</ul></div></div>` : ""}
       ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q" id="wuq-${q.id}">
         <div class="wu-qh"><b>${q.q}</b><span class="wu-wc" data-wc="${q.id}"></span></div>
         <div class="wu-qown" data-qown="${q.id}"></div>
