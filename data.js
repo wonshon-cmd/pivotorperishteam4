@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v120",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v121",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1325,4 +1325,18 @@ window.SIM = {
   const r1 = S.story.rounds[0];
   r1.found = "Cutting costs lost us customers: Experience 5.8 → 4.8, Brand lost #1, and sales fell short ($404M vs $427M on the redo).";
   r1.say = "Round one. Our first worry was the balance sheet: we were losing money and carried 287 million dollars of debt. So we cut costs where we outspent everyone, including customer service. We learned the hard way that cutting costs lost us customers: Brand and Experience fell, and sales came in 23 million dollars lower. We used the game's one undo.";
+})(window.SIM);
+// Write-up: team's account of Round 1 (fact-checked) + matrix moves + Zephara (user input)
+(function (S) {
+  const q = id => S.writeup.parts.reduce((a, p) => a.concat(p.qs), []).find(x => x.id === id);
+  const cs = q("consensus");
+  cs.draft = cs.draft.replace(/1\. How much to cut costs at the start\.[^\n]*/,
+    "1. Keep our first Round 1 result, or use the mulligan? On our first try we went straight for market value by cutting costs, and it worked on paper: value rose 21% (from $93M to $113M) and we made a profit for the first time. So we argued about whether to keep it. But the matrix told a different story: we lost our lead in Brand (6.3 to 4.7, with Zephara taking first place), Experience fell from 5.8 to 4.8, and Frictionless fell too. Only Low Price held. We decided to use the mulligan, kept the debt and inventory fixes, and put customer service back. Value came in even higher ($184M), which showed the scores and the value were linked. That debate is where we agreed on our core rule: lead two areas.");
+  const ch = q("change");
+  ch.draft = ch.draft.replace("That plan never changed; how we carried it out changed as we learned.",
+    "We chose that pair on purpose. In class we discussed that it is easiest to lead two areas side by side on the matrix (a horizontal move), harder to lead two on a diagonal, and hardest to lead two on top of each other (a vertical move). Brand and Experience sit side by side, and we were already strong in both, so we decided to be the best there. That plan never changed; how we carried it out changed as we learned.");
+  ch.facts.push("Matrix layout: Brand (top-left) and Experience (top-right) are side by side, a horizontal pair; Low Price and Frictionless are the bottom row [confirm the horizontal/diagonal/vertical point against class notes]");
+  const v = q("value");
+  v.draft += "\n\nWatching the competition: every round we checked how rivals were moving. Zephara (like Sephora) was competing for the same two customer groups we wanted, Brand Lovers and Experience Seekers. So we looked for its weak points and played to our strengths instead of copying it. Zephara is a narrow specialist: very little of its sales come from premium products (about 1% of the market vs our 5.5%), its selection is much narrower, and its Brand score kept slipping (from 5.0 to 4.4). We set ourselves apart with the widest premium selection in the market, higher product quality (7, the industry maximum), the biggest investment in the store experience, and more customer service than Zephara: our service score passed theirs in Round 7 (3.7 vs 3.1). We took Experience from Zephara in Round 6 and kept growing the lead (8.0 vs 6.2 at the end).";
+  v.facts.push("Zephara vs us at the end: Experience 6.2 vs 8.0; Brand 4.4 vs 5.5; service score 3.0 vs 4.1; premium sales share 1.2% vs 5.5%; premium selection score 1.6 vs 3.9");
 })(window.SIM);
