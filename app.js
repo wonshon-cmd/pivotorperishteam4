@@ -315,8 +315,9 @@
   function show(id) {
     document.querySelectorAll(".screen").forEach(el => el.classList.toggle("active", el.id === id));
     if (id === "team" && $("#tcCards")) renderTeamCmp();
+    if (id === "writeup") { renderWriteup(); setTimeout(() => document.querySelectorAll("#wuBody textarea").forEach(wuGrow), 0); }
     if (id === "recap") { document.querySelectorAll(".rc-grow").forEach(b => { b.style.transition = "none"; b.style.width = "0"; }); requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".rc-grow").forEach(b => { b.style.transition = ""; b.style.width = b.dataset.w + "%"; }))); }
-    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", recap: "recap", guide: "guide", learn: "learn" }[id];
+    const nav = { stand: "stand", rivals: "rivals", start: "start", thinking: "start", cockpit: "start", timeline: "timeline", team: "team", recap: "recap", writeup: "writeup", guide: "guide", learn: "learn" }[id];
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.go === nav));
     window.scrollTo(0, 0);
   }
@@ -547,6 +548,122 @@
         <div class="lsl">Watch next round: does Experience pass Zephara, and how much does service move Frictionless?</div></div>`);
     if ($("#tlAcc") && S.backtest) $("#tlAcc").innerHTML = `<tr><th>Run</th><th>Brand</th><th>Experience</th><th>Low Price</th><th>Frictionless</th><th>Revenue</th><th>Net income</th><th>Market value</th></tr>` +
       S.backtest.map(b => `<tr><td>${b.run}</td>${b.cells.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
+  }
+  // ---------- Write-up page: one editable box per question, saved on this computer + shared live (ntfy relay, sent in small pieces) ----------
+  const WU_KEY = "getchells-wu-v1", WU_LIVE = S.liveTopic ? "https://ntfy.sh/" + S.liveTopic + "-wu" : "";
+  const wuLoad = () => jl(WU_KEY) || {}, wuSave = o => localStorage.setItem(WU_KEY, JSON.stringify(o));
+  const wuWords = t => (String(t || "").trim().match(/\S+/g) || []).length;
+  const wuQs = () => (S.writeup ? S.writeup.parts.reduce((a, p) => a.concat(p.qs), []) : []);
+  const wuText = q => { const e = wuLoad()[q.id]; return e ? e.text : q.draft; };
+  const wuPending = {}, wuBuf = {}, wuTimers = {};
+  const wuEsc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function wuSetLive(on) { wuSetLive.on = on; const el = $("#wuLive"); if (el) { el.className = "tr-live " + (on ? "on" : "off"); el.textContent = on ? "● Live: everyone on this page sees edits" : "○ Offline: edits stay on this computer"; } }
+  function wuPub(id, e) {
+    if (!WU_LIVE) return; const t = e.text || "", n = Math.max(1, Math.ceil(t.length / 1000));
+    for (let i = 0; i < n; i++) setTimeout(() => fetch(WU_LIVE, { method: "POST", body: JSON.stringify({ v: 1, k: "wu", id, ts: e.ts, by: e.by || "", n, i, p: t.slice(i * 1000, (i + 1) * 1000) }) })
+      .then(r => wuSetLive(r.ok)).catch(() => wuSetLive(false)), i * 300);
+  }
+  function wuApply(o) {
+    if (!o || o.v !== 1 || o.k !== "wu") return;
+    const key = o.id + "@" + o.ts, b = wuBuf[key] = wuBuf[key] || { n: o.n, parts: {}, by: o.by };
+    b.parts[o.i] = o.p; if (Object.keys(b.parts).length < b.n) return;
+    delete wuBuf[key];
+    const text = Array.from({ length: b.n }, (_, i) => b.parts[i] || "").join(""), all = wuLoad();
+    if (all[o.id] && all[o.id].ts >= o.ts) return;
+    const ta = document.querySelector(`#wuBody textarea[data-wu="${o.id}"]`);
+    if (ta && document.activeElement === ta) { wuPending[o.id] = { text, ts: o.ts, by: b.by }; wuFill(o.id); return; }
+    all[o.id] = { text, ts: o.ts, by: b.by }; wuSave(all); wuFill(o.id);
+  }
+  function wuSnap() { Object.entries(wuLoad()).forEach(([id, e], k) => setTimeout(() => wuPub(id, e), k * 1500)); }
+  function wuLiveStart() {
+    if (!WU_LIVE || !window.EventSource || wuLiveStart.on) return; wuLiveStart.on = 1;
+    const take = l => { try { const m = JSON.parse(l); if (m.event === "message") wuApply(JSON.parse(m.message)); } catch (e) {} };
+    fetch(WU_LIVE + "/json?poll=1&since=12h").then(r => r.text()).then(txt => { txt.split("\n").forEach(take); wuSetLive(true); wuSnap(); }).catch(() => wuSetLive(false));
+    setInterval(wuSnap, 3600 * 1000);
+    const es = new EventSource(WU_LIVE + "/sse"); es.onopen = () => wuSetLive(true); es.onerror = () => wuSetLive(false);
+    es.onmessage = e => take(e.data);
+  }
+  function wuGrow(ta) { ta.style.height = "auto"; ta.style.height = Math.max(150, ta.scrollHeight + 4) + "px"; }
+  function wuCounts() {
+    const W = S.writeup, tot = wuQs().reduce((s, q) => s + wuWords(wuText(q)), 0), over = tot > W.limit;
+    if ($("#wuCount")) $("#wuCount").innerHTML = `<b style="${over ? "color:#b42318" : ""}">${tot.toLocaleString()}</b> of ${W.limit.toLocaleString()} words${over ? ` · <b style="color:#b42318">${(tot - W.limit).toLocaleString()} over</b>` : ` · ${(W.limit - tot).toLocaleString()} left`}`;
+    if ($("#wuFillBar")) { $("#wuFillBar").style.width = Math.min(100, tot / W.limit * 100) + "%"; $("#wuFillBar").style.background = over ? "#b42318" : "#2E5BFF"; }
+    wuQs().forEach(q => { const el = document.querySelector(`[data-wc="${q.id}"]`); if (el) el.textContent = wuWords(wuText(q)) + " words"; });
+  }
+  function wuFill(id) {
+    const q = wuQs().find(x => x.id === id), ta = document.querySelector(`#wuBody textarea[data-wu="${id}"]`); if (!q || !ta) return;
+    if (document.activeElement !== ta) { ta.value = wuText(q); wuGrow(ta); }
+    const e = wuLoad()[id], p = wuPending[id], meta = document.querySelector(`[data-meta="${id}"]`);
+    if (meta) meta.innerHTML = (e ? `Edited${e.by ? " by <b>" + wuEsc(e.by) + "</b>" : ""} · ${new Date(e.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}` : "Starter answer (not edited yet)") +
+      (p && (!e || p.ts > e.ts) ? ` · <span class="wu-new">⟳ ${wuEsc(p.by || "A teammate")} saved a newer version: it loads when you click outside this box</span>` : "");
+    wuCounts();
+  }
+  function wuPlain() { return S.writeup.parts.map(p => p.h + "\n\n" + p.qs.map(q => q.q + "\n\n" + wuText(q)).join("\n\n")).join("\n\n\n"); }
+  // Voice: the browser's built-in speech-to-text (Chrome / Edge / Safari) → adds to or replaces the answer; "Rewrite with Claude" hands off to the chat
+  const WU_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let wuRec = null, wuRecId = null;
+  function wuSetText(id, text) { const ta = document.querySelector(`#wuBody textarea[data-wu="${id}"]`); if (!ta) return;
+    ta.value = text; const all = wuLoad(); all[id] = { text, ts: Date.now(), by: localStorage.getItem(ME_KEY) || "" }; wuSave(all); wuGrow(ta); wuFill(id);
+    clearTimeout(wuTimers[id]); wuTimers[id] = setTimeout(() => wuPub(id, wuLoad()[id]), 800); }
+  function wuVoice(id) {
+    const btn = document.querySelector(`[data-mic="${id}"]`), st = document.querySelector(`[data-vs="${id}"]`), mode = (document.querySelector(`[data-vm="${id}"]`) || {}).value || "add";
+    if (!WU_SR) { st.innerHTML = "Voice typing needs Chrome, Edge or Safari."; return; }
+    if (wuRec) { wuRec.stop(); return; }
+    const q = wuQs().find(x => x.id === id), before = wuText(q); let said = "";
+    wuRec = new WU_SR(); wuRecId = id; wuRec.lang = "en-US"; wuRec.continuous = true; wuRec.interimResults = true;
+    btn.classList.add("rec"); btn.textContent = "■ Stop"; st.innerHTML = "<b>● Listening…</b> speak, then press Stop.";
+    wuRec.onresult = e => { let fin = "", tmp = ""; for (let i = 0; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) fin += r[0].transcript + " "; else tmp += r[0].transcript; }
+      said = fin.trim(); st.innerHTML = `<b>● Listening…</b> ${wuEsc((fin + tmp).trim()).slice(-160)}`; };
+    wuRec.onerror = e => { st.innerHTML = e.error === "not-allowed" ? "Microphone blocked: allow it in the browser's address bar." : "Voice stopped (" + e.error + ")."; };
+    wuRec.onend = () => { btn.classList.remove("rec"); btn.textContent = "🎤 Speak"; wuRec = null; wuRecId = null;
+      if (!said) { if (!/blocked|stopped/.test(st.textContent)) st.textContent = "Didn't catch anything."; return; }
+      const txt = said.charAt(0).toUpperCase() + said.slice(1) + (/[.!?]$/.test(said) ? "" : ".");
+      wuSetText(id, mode === "replace" ? txt : (before.trim() + "\n\n" + txt));
+      st.innerHTML = `✓ ${mode === "replace" ? "Answer replaced" : "Added to the end"} (${wuWords(txt)} words). <button type="button" class="wu-link" data-vundo="${id}">↶ Undo</button>`;
+      st.querySelector("[data-vundo]").onclick = () => { wuSetText(id, before); st.textContent = "Undone."; }; };
+    wuRec.start();
+  }
+  function wuClaude(id) {
+    const q = wuQs().find(x => x.id === id), t = `Please rewrite our Pivot or Perish write-up answer. Keep every fact and number, use plain, confident academic English in our team's voice ("we"), and keep it under ${Math.max(120, wuWords(wuText(q)))} words. Use my spoken notes at the end if there are any.\n\nQUESTION: ${q.q}\n\nFACTS WE CAN USE:\n- ${q.facts.join("\n- ")}\n\nCURRENT ANSWER (including any spoken notes):\n${wuText(q)}`;
+    const b = document.querySelector(`[data-cl="${id}"]`), done = () => { b.textContent = "✓ Copied: paste into the Claude chat"; setTimeout(() => b.textContent = "✦ Rewrite with Claude", 2500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy this into the Claude chat:", t)); else prompt("Copy this into the Claude chat:", t);
+  }
+  function renderWriteup() {
+    const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
+    const me = localStorage.getItem(ME_KEY) || "";
+    el.innerHTML = `<h1>Write-up</h1><p class="wu-intro">${W.intro}</p>
+      <div class="card wu-top"><div class="wu-facts">${W.facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>
+        <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div>
+        <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
+          <label>Writing as <select id="wuMe">${[""].concat(S.team || []).map(n => `<option value="${n}" ${n === me ? "selected" : ""}>${n || "pick your name"}</option>`).join("")}</select></label>
+          <button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
+        <div class="wu-tip">One person per box at a time: the newest save wins. Edits sync to everyone with this page open. 🎤 Speak types what you say into the box (Chrome, Edge or Safari; the browser sends the audio to its own speech service). ✦ Rewrite with Claude copies the question + your answer to paste into the Claude chat for a polished version.</div></div>
+      ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q">
+        <div class="wu-qh"><b>${q.q}</b><span class="wu-wc" data-wc="${q.id}"></span></div>
+        <details class="wu-f"><summary>Facts to use</summary><ul>${q.facts.map(f => `<li>${f}</li>`).join("")}</ul></details>
+        <div class="wu-voice"><button type="button" class="wu-mic" data-mic="${q.id}">🎤 Speak</button><select data-vm="${q.id}" aria-label="What voice does"><option value="add">add to my answer</option><option value="replace">replace my answer</option></select>
+          <button type="button" class="wu-cl" data-cl="${q.id}">✦ Rewrite with Claude</button><span class="wu-vs" data-vs="${q.id}"></span></div>
+        <textarea data-wu="${q.id}" spellcheck="true"></textarea>
+        <div class="wu-meta"><span data-meta="${q.id}"></span><button type="button" class="wu-reset" data-reset="${q.id}">↺ Back to the starter answer</button></div></div>`).join("")).join("")}`;
+    wuQs().forEach(q => wuFill(q.id));
+    $("#wuMe").onchange = e => localStorage.setItem(ME_KEY, e.target.value);
+    el.querySelectorAll("textarea[data-wu]").forEach(ta => {
+      const id = ta.dataset.wu;
+      ta.addEventListener("input", () => { const all = wuLoad(); all[id] = { text: ta.value, ts: Date.now(), by: localStorage.getItem(ME_KEY) || "" }; wuSave(all); wuGrow(ta); wuFill(id);
+        clearTimeout(wuTimers[id]); wuTimers[id] = setTimeout(() => wuPub(id, wuLoad()[id]), 1500); });
+      ta.addEventListener("blur", () => { const p = wuPending[id], e = wuLoad()[id]; if (p && (!e || p.ts > e.ts)) { const all = wuLoad(); all[id] = p; wuSave(all); } delete wuPending[id]; wuFill(id); });
+    });
+    el.querySelectorAll("[data-mic]").forEach(b => b.onclick = () => { if (wuRec && wuRecId !== b.dataset.mic) return; wuVoice(b.dataset.mic); });
+    el.querySelectorAll("[data-cl]").forEach(b => b.onclick = () => wuClaude(b.dataset.cl));
+    el.querySelectorAll("[data-reset]").forEach(b => b.onclick = () => { const id = b.dataset.reset, q = wuQs().find(x => x.id === id);
+      if (!confirm("Replace this answer with the starter answer? Everyone's edits to this box will be replaced.")) return;
+      const all = wuLoad(); all[id] = { text: q.draft, ts: Date.now(), by: localStorage.getItem(ME_KEY) || "" }; wuSave(all); wuPub(id, all[id]); wuFill(id); });
+    $("#wuCopy").onclick = () => { const t = wuPlain(), done = () => { $("#wuCopy").textContent = "✓ Copied"; setTimeout(() => $("#wuCopy").textContent = "Copy all text", 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy:", t)); else prompt("Copy:", t); };
+    $("#wuDoc").onclick = () => { const html = `<html><head><meta charset="utf-8"><title>Getchells write-up</title></head><body style="font-family:Calibri,Arial;font-size:11pt">
+      <h1>Team 4 · Getchells · Pivot or Perish write-up</h1>` + S.writeup.parts.map(p => `<h2>${p.h}</h2>` + p.qs.map(q => `<h3>${wuEsc(q.q)}</h3>` + wuText(q).split(/\n+/).map(x => `<p>${wuEsc(x)}</p>`).join("")).join("")).join("") + `</body></html>`;
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + html], { type: "application/msword" })); a.download = "Getchells-writeup.doc"; a.click(); };
+    wuCounts(); wuSetLive(!!wuSetLive.on); wuLiveStart();
   }
   // Game over: hide the forward-looking pieces (next input screen, "build this round" buttons, projection picker)
   function gameOverUI() {
