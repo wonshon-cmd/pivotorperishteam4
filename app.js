@@ -631,13 +631,13 @@
   function renderWriteup() {
     const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
     const me = localStorage.getItem(ME_KEY) || "";
-    el.innerHTML = `<h1>Write-up</h1><p class="wu-intro">${W.intro}</p>
+    el.innerHTML = `<h1>Write-up</h1><p class="wu-intro">${W.intro}</p><button type="button" class="story-btn" data-story style="margin:0 0 16px">▶ Watch our story · round by round, 2 min</button>
       <div class="card wu-top"><div class="wu-facts">${W.facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>
         <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div>
         <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
           <label>Writing as <select id="wuMe">${[""].concat(S.team || []).map(n => `<option value="${n}" ${n === me ? "selected" : ""}>${n || "pick your name"}</option>`).join("")}</select></label>
           <button type="button" class="ghost" id="wuDoc">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy">Copy all text</button></div>
-        <div class="wu-tip">One person per box at a time: the newest save wins. Edits sync to everyone with this page open. 🎤 Speak types what you say into the box (Chrome, Edge or Safari; the browser sends the audio to its own speech service). ✦ Rewrite with Claude copies the question + your answer to paste into the Claude chat for a polished version.</div></div>
+        <div class="wu-tip"><b>Tips:</b> one person per box at a time (the newest save wins). 🎤 Speak types what you say into the box (Chrome, Edge or Safari). ✦ Rewrite with Claude copies the question and your answer so you can paste them into the Claude chat.</div></div>
       ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q">
         <div class="wu-qh"><b>${q.q}</b><span class="wu-wc" data-wc="${q.id}"></span></div>
         <details class="wu-f"><summary>Facts to use</summary><ul>${q.facts.map(f => `<li>${f}</li>`).join("")}</ul></details>

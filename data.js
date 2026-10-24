@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v116",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v118",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1164,4 +1164,126 @@ window.SIM = {
       ] }
     ]
   };
+})(window.SIM);
+
+// ==== STORY (animated walkthrough / video): what we changed each round → what happened → lesson. Exact game data. ====
+(function (S) {
+  // q = our [Brand, Experience, Low Price, Frictionless]; rv = best rival in each; mv = market value $M after the round
+  S.story = {
+    title: "Getchells: $93M → $1.63B in 8 rounds",
+    sub: "What we changed, what happened, and what we learned. Team 4 · Pivot or Perish · MKTG 6110",
+    start: { mv: 93.2, q: [6.3, 5.8, 4.9, 3.4], rv: [4.9, 6.5, 5.4, 7.8],
+      facts: [["Net income", "−$6.3M (a loss)"], ["Debt", "$287M"], ["Current ratio", "0.56"], ["ROIC vs WACC", "6.8% < 7.8%"]],
+      note: "A legacy department store losing money: strong Brand, #2 in Experience, a big gap in Frictionless." },
+    plan: { t: "Our strategy (the professor's rule)", pts: [["Lead 2 quadrants", "Brand (we were #1) + Experience (customers' #1 preference, 1.44)"], ["Fair value in the other 2", "Low Price + Frictionless ≥ 75% of the leader"], ["Target customers", "S5 Experience Seekers + S3 Brand Lovers; S2/S4 through breadth and stores"], ["Judge everything by market value", "We found value = P/E × net income in every round"]] },
+    rounds: [
+      { r: "Round 1 · try 1", t: "Cut costs hard (then undone)", undo: true, mv: 113.0, chg: "+21%",
+        ch: [["Customer service", "$15M", "$7M"], ["Depth", "50", "30"], ["Stores", "200", "185"], ["Online", "$2M", "$9M"], ["Shopping experience", "$10M", "$15M"]],
+        q: [4.7, 4.8, 4.9, 2.7], rv: [5.1, 6.7, 5.5, 7.6], kpi: "Brand lost #1 (6.3 → 4.7); Experience 5.8 → 4.8",
+        lesson: "Cutting service wiped out Brand and Experience. We used the game's one undo." },
+      { r: "Round 1 · final", t: "Same plan, but keep service", mv: 184.1, chg: "+98%",
+        ch: [["Customer service", "$7M", "$15M (kept)"], ["Brand quality", "5", "6"], ["Vendor management", "$30M", "$25M"]],
+        q: [5.1, 6.2, 4.8, 3.5], rv: [5.0, 6.3, 5.5, 7.6], kpi: "$184M vs $113M on the first try",
+        lesson: "Service protects the matrix. Same cost cuts, $71M more value." },
+      { r: "Round 2", t: "One clean test: online", mv: 361.9, chg: "+97%",
+        ch: [["Online", "$9M", "$10.5M"]],
+        q: [5.1, 6.1, 4.8, 3.5], rv: [4.8, 6.4, 5.5, 7.5], kpi: "Net income $11.1M → $22.8M; Frictionless didn't move",
+        lesson: "Market value = P/E × net income. Online spend alone barely moves Frictionless." },
+      { r: "Round 3", t: "Push service + experience", mv: 533.8, chg: "+47%",
+        ch: [["Customer service", "$15M", "$17M"], ["Shopping experience", "$15M", "$17M"], ["Vendor management", "$25M", "$23M"]],
+        q: [5.1, 6.3, 4.8, 3.8], rv: [4.7, 6.4, 5.5, 7.4], kpi: "WACC 9.4% → 11.8%: P/E slipped",
+        lesson: "Scores are relative: rivals raised service too, so our position fell." },
+      { r: "Round 4", t: "Steady build, debt down", mv: 772.4, chg: "+45%",
+        ch: [["Customer service", "$17M", "$18M"], ["Vendor management", "$23M", "$20M"], ["Online", "$11.5M", "$12.5M"]],
+        q: [5.1, 6.4, 4.8, 3.9], rv: [4.6, 6.5, 5.5, 7.3], kpi: "Debt $213M → $167M; interest fell",
+        lesson: "Debt falls by free cash flow; lower interest turns straight into profit." },
+      { r: "Round 5", t: "Build experience, hold service", mv: 1024.2, chg: "+33%",
+        ch: [["Shopping experience", "$17.5M", "$20M"], ["Online", "$12.5M", "$14.5M"], ["Breadth (everyday)", "50", "55"], ["Customer service", "$18M", "$18M (flat)"]],
+        q: [4.9, 6.3, 4.8, 3.8], rv: [4.6, 6.5, 5.5, 7.1], kpi: "Experience still #2; Frictionless slipped",
+        lesson: "Flat service while rivals added 7% = falling behind in two quadrants." },
+      { r: "Round 6", t: "Service up, quality 7", mv: 1179.4, chg: "+15%",
+        ch: [["Customer service", "$18M", "$24M"], ["Brand quality", "6", "7"], ["Shopping experience", "$20M", "$21.5M"]],
+        q: [5.2, 6.9, 4.8, 4.3], rv: [4.5, 6.5, 5.5, 7.0], kpi: "Experience #1 (6.9 vs Zephara 6.5): two leads",
+        lesson: "Service is the lever that lifts two quadrants at once." },
+      { r: "Round 7", t: "Close the last gap", mv: 1464.9, chg: "+24%",
+        ch: [["Customer service", "$24M", "$32.3M"], ["Depth (everyday)", "30", "33"], ["Online", "$16M", "$17M"]],
+        q: [5.4, 7.7, 4.7, 5.1], rv: [4.4, 6.3, 5.5, 6.8], kpi: "Frictionless reached fair value; P/E 15.9 → 17.1",
+        lesson: "Two leads + fair value everywhere: the market paid a higher multiple." },
+      { r: "Round 8 · final", t: "Hold the shape", mv: 1633.5, chg: "+11.5%",
+        ch: [["Customer service", "$32.3M", "$37M"], ["Premium depth", "30", "33"], ["Budget", "$104.5M", "$3.95M left unspent"]],
+        q: [5.5, 8.0, 4.7, 5.5], rv: [4.4, 6.2, 5.5, 6.9], kpi: "#2 in revenue ($907M); MV $1.63B",
+        lesson: "Don't spend for its own sake; keep what built the value." }
+    ],
+    mvLine: [[0, 93.2], [1, 184.1], [2, 361.9], [3, 533.8], [4, 772.4], [5, 1024.2], [6, 1179.4], [7, 1464.9], [8, 1633.5]],
+    expLine: { us: [5.8, 6.2, 6.1, 6.3, 6.4, 6.3, 6.9, 7.7, 8.0], zeph: [6.5, 6.3, 6.4, 6.4, 6.5, 6.5, 6.5, 6.3, 6.2] },
+    fricLine: { us: [3.4, 3.5, 3.5, 3.8, 3.9, 3.8, 4.3, 5.1, 5.5], fair: [5.85, 5.7, 5.63, 5.55, 5.48, 5.33, 5.25, 5.1, 5.18] },
+    marks: [[1, "Undo: keep service"], [6, "Experience #1"], [7, "All 4 quadrants fair"]],
+    takeaways: [
+      ["Pick two, stay credible in the rest", "Leading Brand + Experience built value; P/E jumped the round Frictionless reached fair value."],
+      ["Competition is relative", "Positions are scored against rivals' spending: standing still means falling behind."],
+      ["Know which spend builds", "Service works now but must be paid every year; shopping experience builds over rounds; stores tie up capital."],
+      ["Test one thing, then measure", "Forecast → actual every round took our error from 50%+ to ≈4%."],
+      ["Customers surprise you", "Our fastest-growing segment was S1 (3.1×), because it values service, the thing we kept building."]
+    ]
+  };
+})(window.SIM);
+// Story: our thinking going into each round (why), what we found out (what moved what), and the narration script (say)
+(function (S) {
+  const T = S.story;
+  const add = [
+    { why: "The balance sheet was the emergency: a loss, $287M of debt, current ratio 0.56. We cut where we were the industry's biggest spender (service, analytics), trimmed excess stock and 15 stores, and started on online.",
+      found: "Cutting service dropped Experience 5.8 → 4.8 and cost us Brand #1. Service is a quadrant lever, not overhead.",
+      say: "Round one. Our first worry was the balance sheet: we were losing money and carried 287 million dollars of debt. So we cut where we outspent everyone, including customer service, trimmed inventory and closed fifteen stores. The result taught us our first big lesson: cutting service collapsed both Brand and Experience. We used the game's one undo." },
+    { why: "Keep the debt fixes but restore service, and lift brand quality 5 → 6 to win back Brand. It became a clean A/B test against the first try.",
+      found: "Same cost cuts, service kept: $184M instead of $113M. That $71M gap told us what service and quality are worth.",
+      say: "On the redo, we kept the cost and debt moves but put service back to fifteen million and raised brand quality. Market value nearly doubled, to 184 million, against 113 million on the first try. That side-by-side test became the foundation of our forecasting model." },
+    { why: "Change one lever only, online, to measure what it does to Frictionless, our weakest quadrant.",
+      found: "Frictionless didn't move. Profit doubled, and market value = P/E × net income, every round from here on.",
+      say: "In round two we changed just one thing, online investment, to see what it does. Frictionless didn't move at all. But we discovered how the game values us: market value equals the P E multiple times net income. From then on we managed two things, profit, and the quadrant scores that drive the multiple." },
+    { why: "Zephara led Experience by 0.3. We pushed both experience levers (+$2M each) and trimmed vendor to pay for it.",
+      found: "Experience rose only 0.2: rivals raised service too, so our service position fell. Every score is relative to rivals' spending.",
+      say: "In round three we went after Zephara's lead in Experience, adding two million each to service and shopping experience. Experience barely moved, because our rivals raised service too. That's when we learned that every score is relative: what matters is your spending compared with the industry." },
+    { why: "Keep building steadily, fund it by trimming vendor, and watch debt and interest.",
+      found: "Our forecast missed on interest: debt falls by free cash flow, and lower interest flows straight into profit.",
+      say: "Round four was about steady building. Our forecast missed, and the reason was interest: as profit grew, debt fell by our free cash flow, and every dollar of interest saved went straight to the bottom line. Market value rose forty-five percent." },
+    { why: "Shopping experience is partly capitalized, so it builds over rounds: we put the budget there and into online, tested wider everyday breadth, and held service flat.",
+      found: "Holding service flat while rivals added 7% lost ground in Experience AND Frictionless. Wider breadth barely moved sales.",
+      say: "In round five we bet on the levers that build up over time, shopping experience and online, and held service flat. That was a mistake: rivals added seven percent to service, so we fell behind in two quadrants at once. The breadth test told us wider assortment alone barely moves sales." },
+    { why: "Lesson applied: keep service well above rivals' average ($24M), and raise quality to 7 to protect Brand.",
+      found: "Service position 2.5 → 3.0: Experience #1 for the first time. Two leads. P/E rose less than our model said, so we refit it.",
+      say: "Round six applied that lesson. We raised service to twenty-four million, well above the rivals' average, and lifted quality to seven. We took Experience number one from Zephara and now led two quadrants. The value gain was smaller than our model expected, so we retrained it." },
+    { why: "Two rounds left, and only the final value counts. The professor's rule says fair value in ALL four quadrants, so we closed the Frictionless gap with the lever that moves two quadrants: service.",
+      found: "Frictionless reached exactly 75% of Cadabra, and the P/E jumped 15.9 → 17.1. Fair value everywhere earned a higher multiple.",
+      say: "With two rounds left, we went back to the professor's rule: lead two quadrants and hold fair value in the other two. Frictionless was our last gap, so we raised service to thirty-two million. Frictionless reached fair value, and our P E multiple jumped from 15.9 to 17.1." },
+    { why: "Final round: we scored every option across four what-if scenarios and picked the one that was never bad. Keep pace on service, add premium depth for Brand, and leave unneeded budget unspent.",
+      found: "The matrix beat our forecast and value reached $1.63B. Once we had the right shape, higher scores barely raised our valuation.",
+      say: "For the final round, we tested every option against four what-if scenarios and chose the plan that was safe in all of them. We kept pace on service, added premium depth, and left four million dollars unspent, because in the last round unspent budget becomes profit. We finished at 1.63 billion, second in revenue, leading Brand and Experience." }
+  ];
+  T.rounds.forEach((r, i) => Object.assign(r, add[i]));
+  T.say = {
+    title: "This is the story of how Team 4 grew Getchells from 93 million dollars to 1.63 billion in eight rounds: what we changed, why, and what we learned.",
+    start: "We started with a legacy department store that was losing money. We led Brand, were second in Experience, and had a big gap in Frictionless.",
+    plan: "Our strategy followed the professor's rule: lead two quadrants, Brand and Experience, and stay at fair value in Low Price and Frictionless. And we judged every decision by market value.",
+    whole: "Here is the whole game. Market value climbed every round. Experience passed Zephara in round six, and Frictionless reached fair value in round seven.",
+    take: "Five takeaways. Pick two quadrants and stay credible in the rest. Competition is relative. Know which spending builds over time. Test one thing and measure it. And listen to the data: our fastest-growing customers valued service most.",
+    end: "Final market value: 1.63 billion dollars, seventeen and a half times where we started."
+  };
+})(window.SIM);
+// Write-up v2: plain-English starter answers (user: "too much jargon, hard to read")
+(function (S) {
+  const W = S.writeup, D = {
+    goals: "Our goal was simple: end the game with the highest market value. So for every decision we asked one question: will this make the company worth more after the final round?\n\nWe started in a tough spot. Getchells was losing money ($6.3M), owed $287M, and earned less on its money than that money cost.\n\nEarly on we found out how the game sets market value. It equals our yearly profit times a multiple, the price investors pay for each dollar of profit. That gave us two things to watch:\n- Profit: grow sales faster than costs, and pay down debt so we pay less interest.\n- The multiple: it went up when our scores in the Kahn Retail Success Matrix went up, especially Brand and Experience.\n\nWe also kept an eye on a few other numbers: our scores and ranks against each rival, our debt, and how fast our customer groups were growing. We watched these because they were the things that moved profit and the multiple. Sales share mattered only if it led to profit.",
+    stp: "We used the 3 C's to pick our target customers.\n\nCustomers: the game's data showed that shoppers cared most about a great shopping experience (the top preference) and a wide selection (a close second). Brand mattered least overall, but a lot to one group. Segment 5 (Experience Seekers) cared mostly about the shopping experience. Segment 3 (Brand Lovers) cared about brand and experience.\n\nCompany: Getchells started as the Brand leader and second in Experience. Our two biggest customer groups were Segment 5 and Segment 2 (Breadth Shoppers). Our weak spot was Frictionless (convenience and online), where we spent the least in the industry.\n\nCompetition: Zephara (like Sephora) was our main rival for Experience and Brand shoppers. Cadabra (like Amazon) owned online shoppers. PriceMart and AIM went after low prices.\n\nSo we targeted Segments 5 and 3, where our strengths matched what those shoppers wanted, and kept Segments 2 and 4 through our wide selection and stores. One surprise: Segment 1 (Online Bargain) became our biggest group by the end. It tripled from $65M to $201M, because it cares most about customer service, which we kept improving.",
+    value: "Once we knew who we were serving, we put our money in this order:\n\n1. Win on Experience. Customer service turned out to be our strongest tool, because it raises two scores at once: Experience and Frictionless. We raised it from $15M to $37M. We also spent the most in the industry on the shopping experience in our stores ($21.5M).\n\n2. Protect Brand cheaply. We raised the quality of our own-label and name-brand products from 5 to 7, and kept the widest selection of premium products.\n\n3. Stay 'good enough' everywhere else. We kept our prices steady, so we stayed competitive on price without a price war. We grew online from $2M to $18M so that convenience would stop being a weakness.\n\n4. Protect profit. We did not open new stores, because they cost a lot and add debt. We spent less on supplier deals (vendor management) to pay for the experience.\n\nBy the end we were first in Brand and first in Experience, and good enough in Low Price and Frictionless.",
+    change: "Our big idea never changed: lead in Brand and Experience, and be good enough in the other two. How we got there changed as we learned.\n\nRound 1 taught us the most. On our first try we cut customer service to save money. Our Brand and Experience scores dropped right away. We used the game's one 'undo', put service back, and our value almost doubled compared with the first try. Service was not just a cost; it was part of what customers bought.\n\nWe used the Kahn Matrix every round as a checklist. Are we leading two areas? Are the other two good enough (at least 75% of the leader)? It also showed us that scores are relative. When rivals spent more on service, our score fell even though we spent the same. So we had to keep up.\n\nIn Round 6 we passed Zephara to lead Experience. In Round 7 we finally made Frictionless 'good enough', and our value jumped more than our profit did. That matched the professor's advice.\n\nOn spending and debt, we treated some spending as building for the future (store experience, online) and some as needed every year (service). We paid debt down from $287M to $100M, which cut our interest bill from $30M to $6M a year.",
+    resources: "Money: our budget grew with our sales, from $69.8M to $104.5M. Until the last round we spent nearly all of it, but only on things that built our position: customer service and the store experience. To pay for them we cut spending where it didn't help much, like supplier deals (from $30M to $18M) and customer data (from $10M to $6M). We left prices, our own-brand mix and store count alone, because we had no good evidence that changing them would help.\n\nIn the final round we followed the professor's advice not to spend money just because we had it. We left $3.95M unspent, because in the last round unspent budget turns straight into profit.\n\nTime: we split the work by role, kept a shared log of every decision and result, and built a simple website that showed what each change would likely do before we submitted. That kept our meetings short and focused on the one or two decisions that mattered each round.",
+    positioning: "For shoppers who want an enjoyable store visit and a wide choice of quality brands (mainly Experience Seekers and Brand Lovers), Getchells is the modern department store with the best shopping experience and customer service. Unlike Zephara (a narrow beauty specialist), PriceMart and AIM (cheap and convenient) or Cadabra (online only), Getchells combines trusted brands, a wide premium selection and real personal service.\n\nWhy customers can believe it: we finished first in both Brand and Experience, spent more than any rival on service and the store experience, carry high-quality own-label and name brands, and offer the widest premium selection in the market.",
+    team: "We split into five roles:\n- Strategy and competitors\n- Customers and segments\n- Products, prices and brands\n- Stores, online, service and the store experience\n- Finance (profit, cash, debt)\nBrian entered and submitted our decisions each round, and another teammate double-checked them.\n\nEach round followed the same steps: everyone looked at the new results on their own first, then shared what they saw, then we agreed on one plan. We wrote every decision, what we expected, and what actually happened in a shared log, so we could learn from each round.\n\nWe also built a 'Team room' on our website. Everyone could save their own version of the plan and see all versions side by side, with the expected result and the risks. That made the meeting before submitting a quick comparison instead of a long debate. [Add: how this worked for you, who led which round, and what you would do differently.]",
+    consensus: "Three decisions took the most discussion. [Edit with your own memories of who argued what.]\n\n1. How much to cut costs at the start. Some of us wanted to fix the finances first. Others worried about customers. Our first try cut service, and our scores dropped. We used the 'undo' to keep the money-saving moves but put service back, and got the best of both.\n\n2. Spend the whole budget, or save it as profit? Saving money raises profit right away, but some spending builds value over time. Since only the final value counted, we agreed to spend fully until the last round, but only on things that build up.\n\n3. How to play the final rounds. Our numbers said that cutting more in the last rounds, even turning off online spending, might add value. Others pointed out that this went against the professor's advice and had never been tested. We settled it by testing every option against several 'what if we're wrong' cases and picking the one that was safe in all of them: keep what built our lead, keep pace with rivals on service, and leave unneeded money unspent.",
+    data: "Most useful reports:\n- The Kahn Matrix with its 'fair value' line: where we stood each round.\n- The product position chart: why our scores moved. It showed us that our service score fell when rivals spent more, even though we didn't cut.\n- Industry decisions (average, lowest and highest spending): what rivals were doing, so we could keep up.\n- The income statement and balance sheet: how each type of spending affects profit.\n- The scorecard: market value, profit and the multiple, every round.\n- Segment sales and preferences: which customer groups were growing, and why.\n\nReports we used less: the pricing chart (all seven companies were within about 3% of each other, so we never changed prices) and the 'analytics score' (it barely moved whatever we did).\n\nWhat we learned from this: we leaned on the reports that showed cause and effect, from what we changed to what moved. Each round we compared our guess with what really happened. When we were wrong, the reports told us why, and our guesses got much better over the game (from off by half early on to off by about 4%).",
+    takeaways: "1. Be great at two things and good enough at the rest. Leading Brand and Experience built our value. But our value jumped the most when we finally fixed our weakest area.\n\n2. Competition is relative. You can do the same as last year and still fall behind, because rivals keep improving.\n\n3. Stick with a clear strategy. We never changed our positioning, and the value of our investments added up over time.\n\n4. Know which spending pays off now and which pays off later. Service helps right away but has to be paid every year. The store experience builds slowly. New stores tie up a lot of money.\n\n5. Test, measure and learn. Changing one or two things at a time and checking the results made us better every round. Our biggest mistakes came from untested moves, like cutting service in Round 1.\n\n6. Customers can surprise you. Our fastest-growing group was one we hadn't targeted, online bargain shoppers, because they valued the service we were already building.\n\nIn real life we would do the same: pick customers you can really win, invest in what they value most, stay good enough on everything else, watch competitors, and judge decisions by long-term value, not just this year's sales."
+  };
+  W.parts.forEach(p => p.qs.forEach(q => { if (D[q.id]) q.draft = D[q.id]; }));
+  W.intro = "Starter answers in plain English, built from our game data. Rewrite them in your own words, add what only the team knows, and keep the total under 2,500 words. Every box saves on its own and is shared live with the team.";
+  W.facts = [["Market value", "$93M → $1.63B"], ["Sales", "$373M → $907M (#2 of 7)"], ["Profit", "−$6M → $96M"], ["Debt", "$287M → $100M"], ["End result", "#1 Brand, #1 Experience"]];
 })(window.SIM);
