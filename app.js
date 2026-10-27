@@ -573,7 +573,7 @@
     if (all[o.id] && all[o.id].ts >= o.ts) return;
     const ta = document.querySelector(`#wuBody textarea[data-wu="${o.id}"]`);
     if (ta && document.activeElement === ta) { wuPending[o.id] = { text, ts: o.ts, by: b.by }; wuFill(o.id); return; }
-    all[o.id] = { text, ts: o.ts, by: b.by }; wuSave(all); wuFill(o.id);
+    all[o.id] = { text, ts: o.ts, by: b.by }; wuSave(all); wuFill(o.id); wuNewDraft(o.id);
   }
   // who owns each question + status (Not started / Working on it / Done), synced on the same relay
   const WUO_KEY = "getchells-wu-own", WU_ST = [["todo", "Not started"], ["doing", "Working on it"], ["done", "Done"]];
@@ -716,6 +716,48 @@ ${wuText(q)}`;
       wuSaveQ(id, true); wuSetText(id, b.dataset.how === "replace" ? r : wuText(q).trim() + "\n\n" + r); wuSaveQ(id); addLog(r, false); wuChat(id);
       document.querySelector(`[data-askst="${id}"]`) && (document.querySelector(`[data-askst="${id}"]`).innerHTML = "✓ Answer updated and saved (the old text is in Earlier versions)."); });
   }
+  // ---- New draft from the minutes, offered beside boxes someone already edited (never overwrites) ----
+  function wuNewDraft(id) {
+    const box = document.querySelector(`[data-newd="${id}"]`); if (!box) return;
+    const q = wuQs().find(x => x.id === id), e = wuLoad()[id], dis = jl("getchells-wu-dis") || {}, key = id + "@" + (S.writeup.draftV || "");
+    if (!e || e.text.trim() === q.draft.trim() || dis[key]) { box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="wu-nd"><b>📝 New draft from our meeting minutes is ready.</b> Your current text stays as it is unless you choose otherwise.
+      <details><summary>Read the new draft (${wuWords(q.draft)} words)</summary><div class="wu-ndt">${wuEsc(q.draft).replace(/\n/g, "<br>")}</div></details>
+      <div class="wu-ndb"><button type="button" class="primary" data-nd="use">Use the new draft</button><button type="button" class="ghost" data-nd="add">Add it below mine</button><button type="button" class="ghost" data-nd="hide">Keep mine, hide this</button></div>
+      <div class="wu-ndn">“Use” saves your current text in Earlier versions first.</div></div>`;
+    box.querySelectorAll("[data-nd]").forEach(b => b.onclick = () => {
+      const k = b.dataset.nd;
+      if (k !== "hide") { wuSaveQ(id, true); wuSetText(id, k === "use" ? q.draft : wuText(q).trim() + "\n\n" + q.draft); wuSaveQ(id); }
+      const d = jl("getchells-wu-dis") || {}; d[key] = 1; localStorage.setItem("getchells-wu-dis", JSON.stringify(d)); wuNewDraft(id); });
+  }
+  // ---- Assignment-ready paper: built live from the boxes (so it includes everyone's edits) ----
+  function wuPaperHTML(forDoc) {
+    const W = S.writeup, P = W.paper || {}, para = t => wuEsc(t).split(/\n{2,}/).map(b => { let out = "", li = [], txt = []; const flushP = () => { if (txt.length) { out += `<p>${txt.join(" ")}</p>`; txt = []; } }, flushL = () => { if (li.length) { out += `<ul>${li.map(x => `<li>${x}</li>`).join("")}</ul>`; li = []; } };
+      b.split("\n").forEach(l => { if (!l.trim()) return; if (/^\s*[-•]\s+/.test(l)) { flushP(); li.push(l.replace(/^\s*[-•]\s+/, "")); } else { flushL(); txt.push(l.trim()); } }); flushP(); flushL(); return out; }).join("");
+    return `<div class="pp-title"><h1>${wuEsc(P.title || "")}</h1><div>${wuEsc(P.sub || "")}</div><div>${wuEsc(P.authors || "")}</div></div>` +
+      W.parts.map(p => (p.ph ? `<h2>${p.ph}</h2>` : "") + p.qs.map(q => `<h3>${q.h || q.short}</h3>${para(wuText(q))}`).join("")).join("") +
+      `<h2>References</h2>${(P.refs || []).map(r => `<p class="pp-ref">${wuEsc(r)}</p>`).join("")}`;
+  }
+  function wuChecks() {
+    const qs = wuQs(), body = qs.reduce((a, q) => a + wuWords(wuText(q)), 0), ph = qs.filter(q => /\[[^\]]+\]/.test(wuText(q))), own = wuoLoad(), notDone = qs.filter(q => (own[q.id] || {}).s !== "done");
+    const auth = /\[[^\]]+\]/.test((S.writeup.paper || {}).authors || "");
+    return [[body <= 2500, `Length: ${body.toLocaleString()} words in the answers (limit 2,500)`],
+      [!ph.length, ph.length ? `Placeholders to fill or delete in: ${ph.map(q => q.short).join(", ")}` : "No [placeholders] left"],
+      [!auth, auth ? "Add Patrick's and Abhishek's last names to the title block (data.js paper.authors, or edit in Word)" : "Author names complete"],
+      [!notDone.length, notDone.length ? `${notDone.length} section${notDone.length > 1 ? "s" : ""} not marked Done yet` : "Every section marked Done"],
+      [true, "Course AI policy: the syllabus only covers AI for cases; confirm with the professor or TA, and rewrite in your own words"]];
+  }
+  function wuPaper() {
+    const box = $("#wuPaper"); if (!box) return;
+    box.innerHTML = `<div class="wu-pchk"><b>Before you submit</b><ul>${wuChecks().map(([ok, t]) => `<li class="${ok ? "ok" : "no"}"><span>${ok ? "✓" : "!"}</span>${t}</li>`).join("")}</ul></div>
+      <div class="wu-pbtn"><button type="button" class="primary" id="wuPdf">🖨 Save as PDF</button><button type="button" class="ghost" id="wuDoc2">⬇ Download for Word</button><button type="button" class="ghost" id="wuCopy2">Copy the whole paper</button></div>
+      <div class="wu-ppage">${wuPaperHTML()}</div>`;
+    const doc = () => `<html><head><meta charset="utf-8"><title>${wuEsc((S.writeup.paper || {}).title || "Write-up")}</title><style>body{font-family:'Times New Roman',Times,serif;font-size:12pt;line-height:1.5;max-width:6.5in;margin:1in auto;color:#000}h1{font-size:16pt;text-align:center;margin:0 0 4pt}.pp-title{text-align:center;margin-bottom:18pt}.pp-title div{font-size:11pt}h2{font-size:13pt;margin:18pt 0 6pt}h3{font-size:12pt;margin:12pt 0 4pt}p{margin:0 0 8pt}ul{margin:0 0 8pt 18pt;padding:0}.pp-ref{padding-left:.5in;text-indent:-.5in;font-size:11pt}@page{margin:1in}</style></head><body>${wuPaperHTML(true)}</body></html>`;
+    $("#wuPdf").onclick = () => { const w = window.open("", "_blank"); if (!w) { alert("Allow pop-ups to save the PDF."); return; } w.document.write(doc()); w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 400); };
+    $("#wuDoc2").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + doc()], { type: "application/msword" })); a.download = "Getchells-writeup.doc"; a.click(); };
+    $("#wuCopy2").onclick = () => { const t = document.querySelector(".wu-ppage").innerText; const done = () => { $("#wuCopy2").textContent = "✓ Copied"; setTimeout(() => $("#wuCopy2").textContent = "Copy the whole paper", 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy:", t)); else prompt("Copy:", t); };
+  }
   function renderWriteup() {
     const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
     const me = localStorage.getItem(ME_KEY) || "";
@@ -732,9 +774,11 @@ ${wuText(q)}`;
           <div class="wu-mxn"><span>${c.from.toFixed(1)}</span> → <b>${c.to.toFixed(1)}</b> <small>${c.rank}</small></div>
           <div class="wu-mxl"><small>Professor's tools</small>${c.tools}</div><div class="wu-mxl"><small>What we did</small>${c.did}</div></div>`).join("")}</div>
         <div class="wu-mxr"><b>The professor's rules, and how we followed them</b><ul>${W.matrix.rules.map(([a, b]) => `<li><span>✓</span><div><b>${a}</b><br>${b}</div></li>`).join("")}</ul></div></div>` : ""}
+      <details class="card wu-paper" id="wuPaperD"><summary><b>📄 The paper, ready to submit</b> <span>built live from the boxes below (everyone's edits included) · Save as PDF · Word · Copy</span></summary><div id="wuPaper"></div></details>
       ${W.parts.map(p => `<h2 class="wu-h">${p.h}</h2>` + p.qs.map(q => `<div class="card wu-q" id="wuq-${q.id}">
         <div class="wu-qh"><b>${q.q}</b><span class="wu-wc" data-wc="${q.id}"></span></div>
         <div class="wu-qown" data-qown="${q.id}"></div>
+        <div data-newd="${q.id}"></div>
         <details class="wu-f"><summary>Facts to use</summary><ul>${q.facts.map(f => `<li>${f}</li>`).join("")}</ul></details>
         <div class="wu-voice"><button type="button" class="wu-mic" data-mic="${q.id}">🎤 Speak</button><select data-vm="${q.id}" aria-label="What voice does"><option value="add">add to my answer</option><option value="replace">replace my answer</option></select>
           <span class="wu-vs" data-vs="${q.id}"></span></div>
@@ -752,7 +796,8 @@ ${wuText(q)}`;
     });
     el.querySelectorAll("[data-mic]").forEach(b => b.onclick = () => { if (wuRec && wuRecId !== b.dataset.mic) return; wuVoice(b.dataset.mic); });
     el.querySelectorAll("[data-save]").forEach(b => b.onclick = () => wuSaveQ(b.dataset.save));
-    wuQs().forEach(q => { wuVers(q.id); wuChat(q.id); });
+    wuQs().forEach(q => { wuVers(q.id); wuChat(q.id); wuNewDraft(q.id); });
+    if ($("#wuPaperD")) $("#wuPaperD").addEventListener("toggle", e => { if (e.target.open) wuPaper(); });
     if ($("#wuSaveAll")) $("#wuSaveAll").onclick = () => { wuQs().forEach((q, i) => setTimeout(() => wuSaveQ(q.id), i * 400)); $("#wuSaveAll").textContent = "✓ All saved"; setTimeout(() => $("#wuSaveAll").textContent = "💾 Save all", 2500); };
     el.querySelectorAll("[data-reset]").forEach(b => b.onclick = () => { const id = b.dataset.reset, q = wuQs().find(x => x.id === id);
       if (!confirm("Replace this answer with the starter answer? Everyone's edits to this box will be replaced.")) return;
