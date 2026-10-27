@@ -579,8 +579,22 @@
   const WUO_KEY = "getchells-wu-own", WU_ST = [["todo", "Not started"], ["doing", "Working on it"], ["done", "Done"]];
   const wuoLoad = () => jl(WUO_KEY) || {}, wuoSave = o => localStorage.setItem(WUO_KEY, JSON.stringify(o));
   function wuoPub() { if (!WU_LIVE) return; fetch(WU_LIVE, { method: "POST", body: JSON.stringify({ v: 1, k: "wuo", m: wuoLoad() }) }).then(r => wuSetLive(r.ok)).catch(() => wuSetLive(false)); }
-  function wuoSet(id, patch) { const all = wuoLoad(), cur = all[id] || { o: "", s: "todo" }; all[id] = Object.assign({}, cur, patch, { ts: Date.now() }); wuoSave(all); wuoPub(); wuBoard(); }
-  function wuoApply(m) { const all = wuoLoad(); let ch = false; Object.entries(m || {}).forEach(([id, e]) => { if (!all[id] || (e.ts || 0) > (all[id].ts || 0)) { all[id] = e; ch = true; } }); if (ch) { wuoSave(all); wuBoard(); } }
+  function wuoSet(id, patch) { const all = wuoLoad(), cur = all[id] || { o: "", s: "todo" }; all[id] = Object.assign({}, cur, patch, { ts: Date.now() }); wuoSave(all); wuoPub(); wuBoard(); wuoStore(); }
+  function wuoApply(m) { const all = wuoLoad(); let ch = false; Object.entries(m || {}).forEach(([id, e]) => { if (!all[id] || (e.ts || 0) > (all[id].ts || 0)) { all[id] = e; ch = true; } }); if (ch) { wuoSave(all); wuBoard(); } return ch; }
+  // Permanent copy of the board (jsonblob): read on open + every 30s, write (read → merge → write) after every change. Newest change per section wins.
+  const WUO_STORE = (S.writeup && S.writeup.boardStore) || "";
+  function wuoFetch() { return WUO_STORE ? fetch(WUO_STORE, { headers: { Accept: "application/json" }, cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => (j && j.board) || {}) : Promise.resolve(null); }
+  function wuoStore() {
+    if (!WUO_STORE) return; clearTimeout(wuoStore.t);
+    wuoStore.t = setTimeout(() => wuoFetch().then(remote => { wuoApply(remote); return fetch(WUO_STORE, { method: "PUT", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ v: 1, board: wuoLoad() }) }); })
+      .then(r => wuoSaved(r && r.ok)).catch(() => wuoSaved(false)), 400);
+  }
+  function wuoSaved(ok) { const el = $("#wuSaved"); if (el) { el.textContent = ok ? "✓ Saved for everyone" : "⚠ Not saved online yet: check your connection, then click again"; el.className = "wu-saved " + (ok ? "ok" : "bad"); } }
+  function wuoSync() {
+    if (!WUO_STORE || wuoSync.on) return; wuoSync.on = 1;
+    const pull = () => wuoFetch().then(remote => { const local = wuoLoad(), newer = Object.keys(local).some(id => !remote[id] || (local[id].ts || 0) > (remote[id].ts || 0)); wuoApply(remote); wuoSaved(true); if (newer) wuoStore(); }).catch(() => wuoSaved(false));
+    pull(); setInterval(pull, 30000);
+  }
   function wuBoard() {
     const all = wuoLoad(), qs = wuQs(), team = S.team || [], done = qs.filter(q => (all[q.id] || {}).s === "done").length;
     const pill = (id, st) => WU_ST.map(([k, l]) => `<button type="button" class="wu-st ${k} ${st === k ? "on" : ""}" data-st="${id}" data-v="${k}">${l}</button>`).join("");
@@ -600,7 +614,7 @@
       if (!team.length) return; if (Object.values(all).some(e => e.o) && !confirm("Re-split every question evenly? This replaces current claims (statuses stay).")) return;
       const order = qs.slice().sort((a, b) => wuWords(b.draft) - wuWords(a.draft)), m = wuoLoad();   // snake order: heavy + light per person
       order.forEach((q, i) => { const r = Math.floor(i / team.length), k = i % team.length, who = team[r % 2 ? team.length - 1 - k : k]; m[q.id] = Object.assign({ s: "todo" }, m[q.id] || {}, { o: who, ts: Date.now() }); });
-      wuoSave(m); wuoPub(); wuBoard(); };
+      wuoSave(m); wuoPub(); wuBoard(); wuoStore(); };
     wuCounts();
   }
   function wuSnapX() {}
@@ -763,9 +777,9 @@ ${wuText(q)}`;
     const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
     el.innerHTML = `<h1>${(W.paper || {}).title || "Write-up"}</h1><p class="wu-intro">Team 4 · ${(W.paper || {}).authors || ""}. Pick a section below, write it in the Google Doc under its heading, then mark it Done.</p>
       <div class="card wu-live"><div class="wu-lb"><a class="primary wu-btn" href="${W.gdoc}" target="_blank" rel="noopener">✍ Open the Google Doc</a>${W.pdf ? `<a class="ghost wu-btn" href="${W.pdf}" target="_blank" rel="noopener">📄 Open the PDF draft</a>` : ""}</div></div>
-      <div class="card wu-top"><div id="wuBoard" class="wu-board"></div><div class="wu-tip">Claims and statuses update live for everyone on this page. Word targets add up to ${W.limit.toLocaleString()} (the limit).</div></div>
+      <div class="card wu-top"><div id="wuBoard" class="wu-board"></div><div class="wu-tip">${W.boardStore ? `<span id="wuSaved" class="wu-saved">Loading the saved board…</span> ` : ""}Claims and statuses update live for everyone on this page. Word targets add up to ${W.limit.toLocaleString()} (the limit).</div></div>
       ${W.pdf ? `<div class="card wu-pdfv"><b>The PDF draft</b><iframe src="${W.pdf}" title="Paper PDF" loading="lazy"></iframe></div>` : ""}`;
-    wuBoard(); wuSetLive(!!wuSetLive.on); wuLiveStart();
+    wuBoard(); wuSetLive(!!wuSetLive.on); wuLiveStart(); wuoSync();
   }
   function renderWriteup() {
     if (S.paperOnly) return renderPaperOnly();
