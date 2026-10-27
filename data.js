@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v128",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v129",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1470,4 +1470,17 @@ window.SIM = {
     takeaways: "If we had to sum it up, the framework works if you actually follow it. Every time we went back to the 5 C's, STP and the 4 P's, things improved, and the clearest example is the jump after the Round 1 redo.\n\nA few things we'll take with us. An honest situation analysis shows you where your advantage really is. Ours was Brand and Experience, and heavy investment in service ended up helping a third quadrant too. Every part of the marketing mix has to support the position: cutting service and stores in Round 1 made the numbers look better while undermining exactly what we wanted to be known for. Customers are assets. Keeping all 185 stores and never discounting were really decisions about retention, the biggest driver of CLV, and Costco's renewal rate is the classic example. A lead only lasts if you keep paying for it, because competitors keep improving, but piling more money into an area you already lead gets less and less back. And small tests beat big bets. The changes we could measure taught us the most, and in the end discipline beat the big final swing.\n\nOur segments shifted over the game, but our focus on our strengths didn't, and that consistency is probably the main reason we did well.\n\n[Each member: add one real example from your own work, e.g., a time cost-cutting removed something customers valued.] For us, the practical lesson is to protect the parts of the business customers actually notice, and to test a change before betting on it."
   };
   Object.keys(D).forEach(id => { q(id).draft = D[id]; });
+})(window.SIM);
+// Trim ≈70 words so the whole Google Doc (title, headings, references included) stays under 2,500
+(function (S) {
+  const q = id => S.writeup.parts.reduce((a, p) => a.concat(p.qs), []).find(x => x.id === id);
+  const rm = (id, a, b) => { const x = q(id); if (x.draft.includes(a)) x.draft = x.draft.replace(a, b); };
+  rm("change", "\n\nWe made one more avoidable mistake. In Round 5 we widened our everyday assortment and trimmed premium depth at the same time, and Brand dropped from 5.1 to 4.9. To the market it looked like a downscale stretch. We reversed it the next round.", "");
+  rm("value", "For Brand we raised product quality from 5 to 7, and we learned the hard way in Round 5 that premium depth affects Brand too.", "For Brand we raised product quality from 5 to 7. We also learned the hard way in Round 5 that premium depth affects Brand: widening our everyday assortment while trimming premium depth looked like a downscale stretch, and Brand fell from 5.1 to 4.9 until we reversed it.");
+  rm("stp", " The segment work caught up around Round 5.", "");
+  rm("stp", ", and we had no business fighting either of them", "");
+  rm("takeaways", ", and Costco's renewal rate is the classic example", "");
+  rm("takeaways", "If we had to sum it up, the framework works if you actually follow it. ", "The framework works if you actually follow it. ");
+  rm("data", " The revenue split by channel showed that about half our sales were online, which changed how we thought about stores: less as a place to buy things, more as the experience itself.", " About half our sales were online, which made us see stores less as a place to buy things and more as the experience itself.");
+  rm("goals", " We were pleased for about a day.", " We were pleased for about a day.");
 })(window.SIM);
