@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v141",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v142",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1488,7 +1488,7 @@ window.SIM = {
 (function (S) {
   S.paperOnly = true;
   S.writeup.gdoc = "https://docs.google.com/document/d/1m9cwkjmR3NWtvVa0m_6GnjAHWPdvMZI3XiCywnvwdVM/edit?usp=sharing";
-  S.writeup.pdf = "https://wonshon-cmd.github.io/pivotorperishteam4/files/Getchells-Debrief-Paper.pdf";
+  S.writeup.pdf = "";   // PDF section removed (user); file still at files/Getchells-Debrief-Paper.pdf
   S.writeup.boardStore = "https://script.google.com/macros/s/AKfycbyleZzwEIka2s_qDqiPfi8tTIektkoUHuSoPHlz310agggxxYCYiX389by4Ucx-5Ibqfg/exec";   // permanent board save spot (jsonblob API URL); empty = live relay only
 })(window.SIM);
 
