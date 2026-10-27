@@ -1052,3 +1052,17 @@ details.fold[open] summary { margin-bottom: 12px; }
 .wu-ppage h2 { font-size: 20px; margin: 26px 0 8px; } .wu-ppage h3 { font-size: 17px; margin: 18px 0 6px; } .wu-ppage p { margin: 0 0 10px; } .wu-ppage ul { margin: 0 0 10px 22px; padding: 0; }
 .wu-ppage .pp-ref { padding-left: 2em; text-indent: -2em; font-size: 15px; }
 @media (max-width: 760px) { .wu-ppage { padding: 24px 18px; } }
+/* Write-up: Google Doc + PDF card */
+.wu-live { padding: 20px 24px; margin-bottom: 16px; border: 2px solid #2E5BFF33; background: #f6f8ff; }
+.wu-lh { display: flex; flex-direction: column; gap: 4px; } .wu-lh b { font-size: 22px; } .wu-lh span { font-size: 16px; color: #444; }
+.wu-lb { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.wu-btn { display: inline-block; text-decoration: none; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 17px; }
+a.primary.wu-btn { background: #2E5BFF; color: #fff; } a.ghost.wu-btn { background: #fff; color: #1b1f2a; border: 1px solid #ccd; }
+.wu-pdfd { margin-top: 12px; } .wu-pdfd summary { cursor: pointer; color: #1d3fcc; font-weight: 600; } .wu-pdfd iframe { width: 100%; height: 720px; border: 1px solid #dde; border-radius: 10px; margin-top: 8px; background: #fff; }
+a.wu-gd { text-decoration: none; color: #1d3fcc; border-color: #ccd3ee; background: #f4f6ff; }
+
+/* Paper-only site */
+body.paper-only .nav, body.paper-only #roundTabs, body.paper-only .mike-link, body.paper-only #askBtn, body.paper-only .ask-fab, body.paper-only #miniBar { display: none !important; }
+body.paper-only .wu-brow .wu-wc { display: block; color: #667085; font-weight: 500; }
+.wu-pdfv b { display: block; margin-bottom: 10px; } .wu-pdfv iframe { width: 100%; height: 80vh; border: 1px solid #e4e7ec; border-radius: 8px; }
+body.paper-only .wu-board { border-top: 0; padding-top: 0; margin-top: 0; }

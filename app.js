@@ -588,7 +588,7 @@
     const b = $("#wuBoard");
     if (b) b.innerHTML = `<div class="wu-bh"><b>Who's doing what</b><span>${done} of ${qs.length} done</span><div class="wu-btrack"><i style="width:${done / qs.length * 100}%"></i></div>
         <button type="button" class="ghost" id="wuSplit">Split evenly (${Math.ceil(qs.length / Math.max(team.length, 1))} each)</button></div>
-      <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}<span class="wu-wc" data-wc="${q.id}"></span></a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div></div>`; }).join("")}</div>
+      <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}${S.paperOnly ? `<span class="wu-wc">≈${q.target || 200} words · ${wuEsc(q.h || "")}</span>` : `<span class="wu-wc" data-wc="${q.id}"></span>`}</a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}${S.writeup.gdoc ? `<a class="wu-st wu-gd" href="${S.writeup.gdoc}" target="_blank" rel="noopener" title="Write it in the Google Doc under: ${wuEsc(q.h || q.short)}">✍ Write</a>` : ""}</div></div>`; }).join("")}</div>
       <div class="wu-bsum">${team.map(n => { const mine = qs.filter(q => (all[q.id] || {}).o === n); return `<span><b>${n}</b> ${mine.length ? mine.map(q => "Q" + (qs.indexOf(q) + 1) + ((all[q.id] || {}).s === "done" ? " ✓" : "")).join(", ") : "—"}</span>`; }).join("")}</div>`;
     qs.forEach(q => { const e = all[q.id] || { o: "", s: "todo" }, h = document.querySelector(`[data-qown="${q.id}"]`);
       if (h) h.innerHTML = `${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}</div>`;
@@ -758,10 +758,23 @@ ${wuText(q)}`;
     $("#wuCopy2").onclick = () => { const t = document.querySelector(".wu-ppage").innerText; const done = () => { $("#wuCopy2").textContent = "✓ Copied"; setTimeout(() => $("#wuCopy2").textContent = "Copy the whole paper", 1500); };
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy:", t)); else prompt("Copy:", t); };
   }
+  // Paper-only site: just the Google Doc, the PDF draft and who's writing which section
+  function renderPaperOnly() {
+    const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
+    el.innerHTML = `<h1>${(W.paper || {}).title || "Write-up"}</h1><p class="wu-intro">Team 4 · ${(W.paper || {}).authors || ""}. Pick a section below, write it in the Google Doc under its heading, then mark it Done.</p>
+      <div class="card wu-live"><div class="wu-lb"><a class="primary wu-btn" href="${W.gdoc}" target="_blank" rel="noopener">✍ Open the Google Doc</a>${W.pdf ? `<a class="ghost wu-btn" href="${W.pdf}" target="_blank" rel="noopener">📄 Open the PDF draft</a>` : ""}</div></div>
+      <div class="card wu-top"><div id="wuBoard" class="wu-board"></div><div class="wu-tip">Claims and statuses update live for everyone on this page. Word targets add up to ${W.limit.toLocaleString()} (the limit).</div></div>
+      ${W.pdf ? `<div class="card wu-pdfv"><b>The PDF draft</b><iframe src="${W.pdf}" title="Paper PDF" loading="lazy"></iframe></div>` : ""}`;
+    wuBoard(); wuSetLive(!!wuSetLive.on); wuLiveStart();
+  }
   function renderWriteup() {
+    if (S.paperOnly) return renderPaperOnly();
     const W = S.writeup, el = $("#wuBody"); if (!W || !el) return;
     const me = localStorage.getItem(ME_KEY) || "";
     el.innerHTML = `<h1>Write-up</h1><p class="wu-intro">${W.intro}</p><button type="button" class="story-btn" data-story style="margin:0 0 16px">▶ Watch our story · round by round, 2 min</button>
+      ${W.gdoc ? `<div class="card wu-live"><div class="wu-lh"><b>✍ Write the paper</b><span>Claim a section below, write it in the Google Doc under its heading, then mark it Done here.</span></div>
+        <div class="wu-lb"><a class="primary wu-btn" href="${W.gdoc}" target="_blank" rel="noopener">✍ Open the Google Doc</a>${W.pdf ? `<a class="ghost wu-btn" href="${W.pdf}" target="_blank" rel="noopener">📄 View the PDF draft</a>` : ""}</div>
+        ${W.pdf ? `<details class="wu-pdfd"><summary>Preview the PDF here</summary><iframe src="${W.pdf}" title="Paper PDF" loading="lazy"></iframe></details>` : ""}</div>` : ""}
       <div class="card wu-top"><div class="wu-facts">${W.facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>
         <div class="wu-bar"><div id="wuCount"></div><div class="wu-track"><i id="wuFillBar"></i></div></div><div class="wu-alloc" id="wuAlloc"></div>
         <div class="wu-tools"><span class="tr-live off" id="wuLive">○ Offline: edits stay on this computer</span>
@@ -2055,7 +2068,7 @@ ${wuText(q)}`;
 
   // ---------- Wire up ----------
   document.addEventListener("DOMContentLoaded", () => {
-    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; window.__calibrate = () => calibrate(); renderTeamCmp(); autoFillTitle(); liveStart(); if (S.gameOver) gameOverUI();
+    loadSaved(); calibrate(); buildLevers(); $("#teamName").value = state.team; renderStanding(); renderLandscape(); renderEdges(); renderPlans(); renderImpacts(); renderTimeline(); renderStart(); renderLearn(); initAsk(); bindValueTips(); renderZeph(); renderRecap(); initPaste(); window.__model = model; window.__calibrate = () => calibrate(); renderTeamCmp(); autoFillTitle(); liveStart(); if (S.gameOver) gameOverUI(); if (S.paperOnly) { document.body.classList.add("paper-only"); show("writeup"); }
     $("#goBtn").onclick = runCopilot;
     
     $("#resetBtn").onclick = () => { state.d = Object.assign({}, state.baseD || S.defaults); syncLevers(); update(); $("#aiBadge").style.display = "none"; };

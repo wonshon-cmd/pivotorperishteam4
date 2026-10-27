@@ -3,7 +3,7 @@
 
 window.SIM = {
   company: "Getchells",
-  dataVersion: "Final-v129",  // bump whenever data is updated (clears stale browser saves)
+  dataVersion: "Final-v131",  // bump whenever data is updated (clears stale browser saves)
   round: 8,
 
   // Current financial position ($M) — END OF ROUND 7 = our Round 8 status (CSV "Round-7", exact). Round 8 is the FINAL decision.
@@ -1483,4 +1483,10 @@ window.SIM = {
   rm("takeaways", "If we had to sum it up, the framework works if you actually follow it. ", "The framework works if you actually follow it. ");
   rm("data", " The revenue split by channel showed that about half our sales were online, which changed how we thought about stores: less as a place to buy things, more as the experience itself.", " About half our sales were online, which made us see stores less as a place to buy things and more as the experience itself.");
   rm("goals", " We were pleased for about a day.", " We were pleased for about a day.");
+})(window.SIM);
+// Write-up: the paper now lives in the team's Google Doc; PDF published on the site
+(function (S) {
+  S.paperOnly = true;
+  S.writeup.gdoc = "https://docs.google.com/document/d/1hT_EOATraFV_gAmFWu3lVgw28nQWNxroyKWF7Y-3jZs/edit?tab=t.0";
+  S.writeup.pdf = "https://wonshon-cmd.github.io/pivotorperishteam4/files/Getchells-Debrief-Paper.pdf";
 })(window.SIM);
