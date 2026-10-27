@@ -583,13 +583,28 @@
   function wuoApply(m) { const all = wuoLoad(); let ch = false; Object.entries(m || {}).forEach(([id, e]) => { if (!all[id] || (e.ts || 0) > (all[id].ts || 0)) { all[id] = e; ch = true; } }); if (ch) { wuoSave(all); wuBoard(); } return ch; }
   // Permanent copy of the board (jsonblob): read on open + every 30s, write (read → merge → write) after every change. Newest change per section wins.
   const WUO_STORE = (S.writeup && S.writeup.boardStore) || "";
-  function wuoFetch() { return WUO_STORE ? fetch(WUO_STORE, { headers: { Accept: "application/json" }, cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => (j && j.board) || {}) : Promise.resolve(null); }
-  function wuoStore() {
-    if (!WUO_STORE) return; clearTimeout(wuoStore.t);
-    wuoStore.t = setTimeout(() => wuoFetch().then(remote => { wuoApply(remote); return fetch(WUO_STORE, { method: "PUT", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ v: 1, board: wuoLoad() }) }); })
-      .then(r => wuoSaved(r && r.ok)).catch(() => wuoSaved(false)), 400);
+  // jsonblob has two address styles; try both and remember the one that answers
+  const WUO_ID = (WUO_STORE.match(/[0-9a-f-]{16,}/i) || [""])[0];
+  const WUO_URLS = WUO_STORE ? [WUO_STORE, "https://jsonblob.com/api/" + WUO_ID, "https://jsonblob.com/api/jsonBlob/" + WUO_ID].filter((u, i, a) => a.indexOf(u) === i) : [];
+  let wuoUrl = WUO_URLS[0], wuoErr = "";
+  function wuoFetch() {
+    if (!WUO_STORE) return Promise.resolve(null);
+    const tryAt = i => fetch(WUO_URLS[i], { headers: { Accept: "application/json" }, cache: "no-store" })
+      .then(r => { if (!r.ok) throw new Error("error " + r.status); return r.json(); })
+      .then(j => { wuoUrl = WUO_URLS[i]; return (j && j.board) || {}; })
+      .catch(e => { wuoErr = (e && e.message && /^error/.test(e.message)) ? e.message : "the browser blocked the request"; if (i + 1 < WUO_URLS.length) return tryAt(i + 1); throw e; });
+    return tryAt(Math.max(0, WUO_URLS.indexOf(wuoUrl)));
   }
-  function wuoSaved(ok) { const el = $("#wuSaved"); if (el) { el.textContent = ok ? "✓ Saved for everyone" : "⚠ Not saved online yet: check your connection, then click again"; el.className = "wu-saved " + (ok ? "ok" : "bad"); } }
+  function wuoStore() {
+    if (!WUO_STORE) return; clearTimeout(wuoStore.t); wuoSaved("saving");
+    wuoStore.t = setTimeout(() => wuoFetch().then(remote => { wuoApply(remote); return fetch(wuoUrl, { method: "PUT", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ v: 1, board: wuoLoad() }) }); })
+      .then(r => { if (!r.ok) wuoErr = "error " + r.status + " when saving"; wuoSaved(r.ok); }).catch(e => { if (e && e.message && !/^error/.test(e.message)) wuoErr = "the browser blocked the request"; wuoSaved(false); }), 300);
+  }
+  function wuoSaved(ok) { const el = $("#wuSaved"); if (!el) return;
+    if (ok === "saving") { el.textContent = "Saving…"; el.className = "wu-saved"; return; }
+    const t = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    el.textContent = ok ? `✓ Saved for everyone (${t})` : `⚠ Not saved online (${wuoErr || "no connection"}). Send this exact message to whoever manages the site.`;
+    el.className = "wu-saved " + (ok ? "ok" : "bad"); }
   function wuoSync() {
     if (!WUO_STORE || wuoSync.on) return; wuoSync.on = 1;
     const pull = () => wuoFetch().then(remote => { const local = wuoLoad(), newer = Object.keys(local).some(id => !remote[id] || (local[id].ts || 0) > (remote[id].ts || 0)); wuoApply(remote); wuoSaved(true); if (newer) wuoStore(); }).catch(() => wuoSaved(false));
