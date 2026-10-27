@@ -615,8 +615,7 @@
     const pill = (id, st) => WU_ST.map(([k, l]) => `<button type="button" class="wu-st ${k} ${st === k ? "on" : ""}" data-st="${id}" data-v="${k}">${l}</button>`).join("");
     const sel = (id, o) => `<select data-own="${id}" aria-label="Who is writing this"><option value="">Unclaimed</option>${team.map(n => `<option ${n === o ? "selected" : ""}>${n}</option>`).join("")}</select>`;
     const b = $("#wuBoard");
-    if (b) b.innerHTML = `<div class="wu-bh"><b>Who's doing what</b><span>${done} of ${qs.length} done</span><div class="wu-btrack"><i style="width:${done / qs.length * 100}%"></i></div>
-        <button type="button" class="ghost" id="wuSplit">Split evenly (${Math.ceil(qs.length / Math.max(team.length, 1))} each)</button></div>
+    if (b) b.innerHTML = `<div class="wu-bh"><b>Who's doing what</b><span>${done} of ${qs.length} done</span><div class="wu-btrack"><i style="width:${done / qs.length * 100}%"></i></div></div>
       <div class="wu-blist">${qs.map((q, i) => { const e = all[q.id] || { o: "", s: "todo" }; return `<div class="wu-brow ${e.s}"><a href="#" data-jump="${q.id}">${i + 1}. ${q.short}${S.paperOnly ? `<span class="wu-wc">≈${q.target || 200} words · ${wuEsc(q.h || "")}</span>` : `<span class="wu-wc" data-wc="${q.id}"></span>`}</a>${sel(q.id, e.o)}<div class="wu-sts">${pill(q.id, e.s)}${S.writeup.gdoc ? `<a class="wu-st wu-gd" href="${S.writeup.gdoc}" target="_blank" rel="noopener" title="Write it in the Google Doc under: ${wuEsc(q.h || q.short)}">✍ Write</a>` : ""}</div></div>`; }).join("")}</div>
       <div class="wu-bsum">${team.map(n => { const mine = qs.filter(q => (all[q.id] || {}).o === n); return `<span><b>${n}</b> ${mine.length ? mine.map(q => "Q" + (qs.indexOf(q) + 1) + ((all[q.id] || {}).s === "done" ? " ✓" : "")).join(", ") : "—"}</span>`; }).join("")}</div>`;
     qs.forEach(q => { const e = all[q.id] || { o: "", s: "todo" }, h = document.querySelector(`[data-qown="${q.id}"]`);
@@ -625,11 +624,6 @@
     document.querySelectorAll("#wuBody [data-own]").forEach(x => x.onchange = () => wuoSet(x.dataset.own, { o: x.value, s: x.value && ((wuoLoad()[x.dataset.own] || {}).s || "todo") === "todo" ? "doing" : ((wuoLoad()[x.dataset.own] || {}).s || "todo") }));
     document.querySelectorAll("#wuBody [data-st]").forEach(x => x.onclick = () => wuoSet(x.dataset.st, { s: x.dataset.v }));
     document.querySelectorAll("#wuBody [data-jump]").forEach(a => a.onclick = e => { e.preventDefault(); const c = document.getElementById("wuq-" + a.dataset.jump); if (c) window.scrollTo({ top: c.getBoundingClientRect().top + window.scrollY - 150, behavior: "smooth" }); });
-    if ($("#wuSplit")) $("#wuSplit").onclick = () => {
-      if (!team.length) return; if (Object.values(all).some(e => e.o) && !confirm("Re-split every question evenly? This replaces current claims (statuses stay).")) return;
-      const order = qs.slice().sort((a, b) => wuWords(b.draft) - wuWords(a.draft)), m = wuoLoad();   // snake order: heavy + light per person
-      order.forEach((q, i) => { const r = Math.floor(i / team.length), k = i % team.length, who = team[r % 2 ? team.length - 1 - k : k]; m[q.id] = Object.assign({ s: "todo" }, m[q.id] || {}, { o: who, ts: Date.now() }); });
-      wuoSave(m); wuoPub(); wuBoard(); wuoStore(); };
     wuCounts();
   }
   function wuSnapX() {}
