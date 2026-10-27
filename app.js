@@ -794,8 +794,30 @@ ${wuText(q)}`;
     el.innerHTML = `<h1>${(W.paper || {}).title || "Write-up"}</h1><p class="wu-intro">Team 4 · ${(W.paper || {}).authors || ""}. Pick a section below, write it in the Google Doc under its heading, then mark it Done.</p>
       <div class="card wu-live"><div class="wu-lb"><a class="primary wu-btn" href="${W.gdoc}" target="_blank" rel="noopener">✍ Open the Google Doc</a>${W.pdf ? `<a class="ghost wu-btn" href="${W.pdf}" target="_blank" rel="noopener">📄 Open the PDF draft</a>` : ""}</div></div>
       <div class="card wu-top"><div id="wuBoard" class="wu-board"></div><div class="wu-tip">${W.boardStore ? `<span id="wuSaved" class="wu-saved">Loading the saved board…</span> ` : ""}Claims and statuses update live for everyone on this page. Word targets add up to ${W.limit.toLocaleString()} (the limit).</div></div>
+      <div id="wuRecover"></div>
       ${W.pdf ? `<div class="card wu-pdfv"><b>The PDF draft</b><iframe src="${W.pdf}" title="Paper PDF" loading="lazy"></iframe></div>` : ""}`;
-    wuBoard(); wuSetLive(!!wuSetLive.on); wuLiveStart(); wuoSync();
+    wuBoard(); wuSetLive(!!wuSetLive.on); wuLiveStart(); wuoSync(); wuRecover();
+  }
+  // Answers typed on the old write-up boxes live only in each browser: show them so they can be copied into the Google Doc
+  function wuRecover() {
+    const box = $("#wuRecover"); if (!box) return;
+    const cur = wuLoad(), vers = wuvLoad(), when = ts => ts ? new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+    const rows = wuQs().map(q => {
+      const list = [].concat(cur[q.id] ? [cur[q.id]] : [], vers[q.id] || []).filter(e => e && e.text && e.text.trim() && e.text.trim() !== String(q.draft || "").trim())
+        .sort((a, b) => (b.ts || 0) - (a.ts || 0)).filter((e, i, a) => a.findIndex(x => x.text === e.text) === i);
+      return list.length ? { q, list } : null; }).filter(Boolean);
+    if (!rows.length) { box.innerHTML = ""; return; }
+    box.innerHTML = `<details class="card wu-rec" open><summary><b>📝 Answers saved in this browser (${rows.length} section${rows.length > 1 ? "s" : ""})</b> <span>typed on the website's old answer boxes. Copy them into the Google Doc.</span></summary>
+      <div class="wu-recb"><button type="button" class="primary" id="wuRecAll">⬇ Download all for Word</button></div>
+      ${rows.map(({ q, list }, k) => `<div class="wu-reci"><div class="wu-rech"><b>${wuEsc(q.h || q.short)}</b><span>${list[0].by ? "by " + wuEsc(list[0].by) + " · " : ""}${when(list[0].ts)} · ${wuWords(list[0].text)} words</span>
+        <button type="button" class="ghost" data-rcopy="${k}">Copy</button></div><div class="wu-rect">${wuEsc(list[0].text)}</div>
+        ${list.length > 1 ? `<details class="wu-recv"><summary>${list.length - 1} older saved version${list.length > 2 ? "s" : ""}</summary>${list.slice(1).map((e, j) => `<div class="wu-rech"><span>${e.by ? "by " + wuEsc(e.by) + " · " : ""}${when(e.ts)} · ${wuWords(e.text)} words</span><button type="button" class="ghost" data-rcopy="${k}:${j + 1}">Copy</button></div><div class="wu-rect">${wuEsc(e.text)}</div>`).join("")}</details>` : ""}</div>`).join("")}</details>`;
+    const textOf = key => { const [k, j] = String(key).split(":").map(Number); return rows[k].list[j || 0].text; };
+    box.querySelectorAll("[data-rcopy]").forEach(b => b.onclick = () => { const t = textOf(b.dataset.rcopy), done = () => { b.textContent = "✓ Copied"; setTimeout(() => b.textContent = "Copy", 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => prompt("Copy:", t)); else prompt("Copy:", t); });
+    $("#wuRecAll").onclick = () => { const html = `<html><head><meta charset="utf-8"><title>Saved answers</title></head><body style="font-family:'Times New Roman';font-size:12pt">` +
+      rows.map(({ q, list }) => `<h2>${wuEsc(q.h || q.short)}</h2>` + list[0].text.split(/\n+/).map(x => `<p>${wuEsc(x)}</p>`).join("")).join("") + `</body></html>`;
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "application/msword" })); a.download = "Getchells-saved-answers.doc"; a.click(); };
   }
   function renderWriteup() {
     if (S.paperOnly) return renderPaperOnly();
