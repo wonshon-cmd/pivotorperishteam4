@@ -587,8 +587,12 @@
   const WUO_ID = (WUO_STORE.match(/[0-9a-f-]{16,}/i) || [""])[0];
   const WUO_URLS = WUO_STORE ? [WUO_STORE, "https://jsonblob.com/api/" + WUO_ID, "https://jsonblob.com/api/jsonBlob/" + WUO_ID].filter((u, i, a) => a.indexOf(u) === i) : [];
   let wuoUrl = WUO_URLS[0], wuoErr = "";
+  // Google Apps Script save spot: GET returns the board; POST (plain text, no preflight) merges our board and returns the merged one
+  const WUO_GAS = /script\.google(usercontent)?\.com/.test(WUO_STORE);
   function wuoFetch() {
     if (!WUO_STORE) return Promise.resolve(null);
+    if (WUO_GAS) return fetch(WUO_STORE + (WUO_STORE.includes("?") ? "&" : "?") + "t=" + Date.now()).then(r => { if (!r.ok) throw new Error("error " + r.status); return r.json(); })
+      .then(j => (j && j.board) || {}).catch(e => { wuoErr = (e && /^error/.test(e.message)) ? e.message : "the browser blocked the request"; throw e; });
     const tryAt = i => fetch(WUO_URLS[i], { headers: { Accept: "application/json" }, cache: "no-store" })
       .then(r => { if (!r.ok) throw new Error("error " + r.status); return r.json(); })
       .then(j => { wuoUrl = WUO_URLS[i]; return (j && j.board) || {}; })
@@ -597,8 +601,11 @@
   }
   function wuoStore() {
     if (!WUO_STORE) return; clearTimeout(wuoStore.t); wuoSaved("saving");
+    const fail = e => { if (e && e.message && !/^error/.test(e.message)) wuoErr = "the browser blocked the request"; wuoSaved(false); };
+    if (WUO_GAS) { wuoStore.t = setTimeout(() => fetch(WUO_STORE, { method: "POST", body: JSON.stringify({ v: 1, board: wuoLoad() }) })
+      .then(r => { if (!r.ok) throw new Error("error " + r.status + " when saving"); return r.json(); }).then(j => { wuoApply((j && j.board) || {}); wuoSaved(true); }).catch(e => { if (e && /^error/.test(e.message)) wuoErr = e.message; fail(e); }), 150); return; }
     wuoStore.t = setTimeout(() => wuoFetch().then(remote => { wuoApply(remote); return fetch(wuoUrl, { method: "PUT", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ v: 1, board: wuoLoad() }) }); })
-      .then(r => { if (!r.ok) wuoErr = "error " + r.status + " when saving"; wuoSaved(r.ok); }).catch(e => { if (e && e.message && !/^error/.test(e.message)) wuoErr = "the browser blocked the request"; wuoSaved(false); }), 300);
+      .then(r => { if (!r.ok) wuoErr = "error " + r.status + " when saving"; wuoSaved(r.ok); }).catch(fail), 300);
   }
   function wuoSaved(ok) { const el = $("#wuSaved"); if (!el) return;
     if (ok === "saving") { el.textContent = "Saving…"; el.className = "wu-saved"; return; }
